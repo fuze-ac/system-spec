@@ -1,51 +1,129 @@
 # WORKSPACE_AND_ORGANIZATION_SPEC
 
+## Document Metadata
+
+- Document Name: `WORKSPACE_AND_ORGANIZATION_SPEC.md`
+- Document Type: Canonical refined system specification
+- Status: Active refined system spec
+- Governing Layer: Platform core / workspace and organization
+- Parent Registry: `REFINED_SYSTEM_SPEC_INDEX.md`
+- Primary Audience: Platform architecture, backend engineering, product engineering, security, support operations, audit, governance, API design, commerce/billing, operations
+- Primary Purpose: Define the canonical FUZE model for workspace and organization structure, collaborative scope, ownership, membership, lifecycle, workspace-owned resources, commercial attachment points, and downstream authorization dependency boundaries without collapsing identity, authentication, authorization, entitlement, billing truth, or wallet-aware participation into one ambiguous layer
+- Primary Upstream References:
+  - `REFINED_SYSTEM_SPEC_INDEX.md`
+  - `DOCS_SPEC_INDEX.md`
+  - `SYSTEM_SPEC_INDEX.md`
+  - `API_SPEC_INDEX.md`
+  - `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+  - `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+  - `PLATFORM_ARCHITECTURE_SPEC.md`
+  - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+  - `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+  - `IDENTITY_AND_ACCOUNT_SPEC.md`
+  - `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_THESIS_FINAL_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_CONTINUITY_SPEC.md`
+  - `FUZE_WORKSPACE_ACCESS_CONTROL_BASICS_THESIS_FINAL_SPEC.md`
+  - `FUZE_ACCOUNT_RECOVERY_AND_CONFLICT_HANDLING_SPEC.md`
+  - `WALLET_AWARE_USER_SPEC.md`
+  - `AUTH_IDENTITY_API_SPEC.md`
+  - `SESSION_AND_LINKED_LOGIN_API_SPEC.md`
+  - `SECURITY_AND_RISK_CONTROL_SPEC.md`
+- Primary Downstream Dependents:
+  - `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
+  - `WORKSPACE_MEMBERSHIP_LIFECYCLE_SPEC.md`
+  - `SCOPED_AUTHORIZATION_MODEL_SPEC.md`
+  - `ACCESS_EVALUATION_AND_EFFECTIVE_PERMISSION_SPEC.md`
+  - `ENTITLEMENT_AND_CAPABILITY_GATING_SPEC.md`
+  - `AUTH_IDENTITY_API_SPEC.md`
+  - `WORKSPACE_ORGANIZATION_API_SPEC.md`
+  - `ROLE_PERMISSION_ACCESS_API_SPEC.md`
+  - commerce and billing specifications
+  - product integration specifications
+  - audit and support/control-plane workflow specifications
+
+---
+
 ## Purpose
 
-This document defines the canonical workspace and organization model of the FUZE platform. Its purpose is to establish how collaborative entities are represented, how accounts participate in shared contexts, how workspace ownership and membership operate, how billing and balances may be attached to workspace scope, and how products should interpret organization-level access across the FUZE ecosystem.
+This specification defines the canonical FUZE workspace and organization model.
 
-This specification is essential because FUZE is not designed only for isolated individual usage. It is intended to support products used by teams, operators, trading groups, SMEs, internal business units, and future multi-user environments. The workspace and organization layer is therefore one of the core shared platform capabilities that turns FUZE from a set of user accounts into a real operating environment.
+Its purpose is to establish, in production-grade terms:
+
+- what a workspace is and what an organization is in FUZE
+- how collaborative operating scope differs from canonical account identity
+- how workspace and organization records are owned, created, mutated, restricted, transferred, archived, and closed
+- how accounts participate in collaborative scope through durable membership
+- how workspace-owned resources, billing context, credits context, and product enablement attach to workspace scope
+- how downstream authorization, role, entitlement, and capability evaluation depend on resolved workspace or organization context without being redefined by this document
+- how products, APIs, support tools, and reports must consume workspace truth without silently redefining it
+
+This specification is foundational because FUZE is a platform-first, multi-product ecosystem. A coherent platform cannot rely on product-local team models, ad hoc collaboration constructs, or product-specific scope semantics for shared operating behavior. Workspace and organization are platform primitives. Products may extend them, but they may not replace them.
 
 ---
 
 ## Scope
 
-This specification covers:
+This specification governs:
 
-- the canonical organization and workspace model
-- the distinction between account identity and collaborative context
+- the canonical meaning of workspace and organization in FUZE
+- the distinction between account identity and collaborative operating scope
+- workspace and organization ownership boundaries
 - workspace lifecycle and state transitions
-- workspace ownership and membership rules
-- role relationships at workspace level
-- account-to-workspace associations
-- billing ownership and shared-balance implications
-- workspace-scoped product access and entitlements
-- multi-workspace participation by one account
-- relationship between workspace context and product domains
-- audit, security, and control implications of workspace operations
+- organization-to-workspace relationship rules
+- account-to-workspace membership relationships
+- owner, admin, member, and billing-attachment semantics at the collaborative-scope layer
+- workspace-scoped resource ownership semantics
+- workspace-level commercial and credits attachment points where policy allows
+- active scope selection and multi-workspace participation requirements
+- API, event, data-model, security, audit, and operational implications of workspace truth
 
-This specification does not fully define detailed authorization semantics, wallet linkage, or billing algorithms. Those are refined in:
+This specification does not define:
 
-- `IDENTITY_AND_ACCOUNT_SPEC.md`
-- `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
-- `PLATFORM_CREDITS_SPEC.md`
-- `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`
-- `WALLET_AWARE_USER_SPEC.md`
+- detailed role matrices, permission catalogs, or capability grants
+- detailed authorization evaluation logic
+- detailed entitlement or commercial policy semantics
+- detailed seat-pricing formulas or invoice calculation behavior
+- detailed support staffing procedures
+- exact invite transport or token implementation
+- exact product-specific object models within a workspace
+- exact admin UI shape or exact service decomposition
+
+Those concerns are refined in downstream authorization, commerce, API, audit, and operational specifications.
+
+---
+
+## Out of Scope
+
+This specification is explicitly out of scope for:
+
+- canonical account identity definition
+- authentication method semantics
+- session issuance, refresh, or revocation behavior
+- product-local collaboration UX
+- wallet verification mechanics
+- provider-specific identity onboarding or provider resolution
+- exact pricing, billing, or credits algorithms
+- exact retention policy for every resource type
+- exact legal-entity compliance workflows for enterprise customers unless later promoted into scope
 
 ---
 
 ## Design Goals
 
-The design goals of the workspace and organization model are:
+The design goals of the FUZE workspace and organization model are:
 
-1. to provide one canonical collaborative layer across all FUZE products
-2. to separate individual account identity from team or business operating context
-3. to support both solo and multi-member product usage inside one platform
-4. to allow a single account to participate in multiple organizations or workspaces
-5. to support workspace-scoped balances, entitlements, and billing ownership where policy requires
-6. to provide a clean foundation for shared product usage across teams
-7. to prevent products from inventing incompatible collaboration models
-8. to preserve auditability and access clarity in multi-user environments
+1. provide one platform-wide collaborative scope model across FUZE products
+2. preserve strict separation between identity and collaborative scope
+3. support both individual and team-based usage within one ecosystem
+4. support one account participating in multiple workspaces and organizations
+5. support workspace-scoped resources, billing, credits, and product enablement where policy allows
+6. prevent product-local shadow collaboration models from becoming hidden platform truth
+7. make workspace ownership, membership, and lifecycle explicit and auditable
+8. preserve future-safe semantics for enterprise, partner, and multi-team expansion
+9. make authorization and entitlement derivable from resolved scope without collapsing those domains into this one
+10. preserve continuity of shared resources, membership history, billing attachment, and audit lineage across ownership changes and member changes
 
 ---
 
@@ -53,82 +131,301 @@ The design goals of the workspace and organization model are:
 
 This specification is not intended to:
 
-- treat a workspace as a replacement for canonical account identity
-- require every user to belong to an organization before using FUZE
-- define every product-specific team feature in this file
-- allow products to create incompatible organization models that replace platform workspace truth
-- define full enterprise account contracting or legal-entity compliance flows unless later added explicitly
-- treat wallet ownership as the same thing as workspace ownership
+- treat a workspace as canonical person-level identity
+- require every FUZE account to belong to a workspace before it can exist
+- treat organization as mandatory in all deployments
+- collapse role, permission, entitlement, and billing truth into workspace truth
+- let products invent incompatible workspace semantics for shared platform behavior
+- treat wallet ownership as workspace ownership
+- let membership or invitation state silently create canonical identity
+- let billing attachment redefine identity or authorization
 
 ---
 
-## Canonical Workspace Principle
+## Core Principles
 
-The primary principle of the FUZE workspace layer is:
+### 1. Account-Identity / Workspace-Scope Separation Principle
+The account is the canonical identity of the actor. The workspace is the canonical collaborative and operating context. Organization is the broader optional umbrella boundary above workspace. None of these may be collapsed into one concept.
 
-> the account is the canonical identity of the actor, while the workspace or organization is the canonical collaborative and operating context through which one or more accounts may access shared balances, shared permissions, and shared product resources.
+### 2. Collaborative Scope Principle
+Workspace scope is the layer in which shared resources, member participation, operational collaboration, and certain commercial and entitlement relationships may exist.
 
-This means:
+### 3. Organization Umbrella Principle
+Where implemented distinctly, organization is the broader grouping or administrative umbrella. Workspace remains the actionable operating environment.
 
-- accounts represent who the actor is
-- workspaces represent the collaborative context in which the actor is operating
-- products should resolve both account and workspace context where applicable
-- workspace context may affect access, billing, and entitlements, but it does not replace the account as canonical identity
+### 4. Platform-Owned Scope Principle
+Workspace and organization are platform-owned primitives. Products may extend them with product-local records and behavior, but they may not replace or redefine their canonical meaning.
 
-This distinction is mandatory across the ecosystem.
+### 5. Post-Authentication Scope Resolution Principle
+Workspace or organization scope must be resolved after successful authentication and session establishment, not instead of them.
+
+### 6. Scope-Then-Authorization Principle
+Workspace truth provides scope context. It does not, by itself, determine effective permission or product capability. Role evaluation, permission evaluation, entitlement evaluation, and product policy remain downstream.
+
+### 7. Explicit Ownership Principle
+Workspace owner, billing attachment, admin rights, and member participation must be explicit, durable, and auditable.
+
+### 8. Scope Continuity Principle
+Changes to membership, ownership, billing attachment, or product participation must preserve workspace continuity and audit lineage rather than silently rewriting or orphaning shared resources.
+
+### 9. Workspace-Owned Resource Principle
+If a resource is designated as workspace-scoped, the workspace is the owner even if an individual member created it.
+
+### 10. No Product-Local Shadow Scope Principle
+No product may silently create hidden team or collaboration scope that behaves like canonical workspace truth for shared platform behavior.
 
 ---
 
-## Core Concepts
+## Canonical Definitions
 
 ### Account
-The canonical individual identity object of FUZE.
+The durable canonical FUZE identity of an actor. Account identity remains upstream of collaborative scope.
 
 ### Organization
-A top-level collaborative container representing a business, team, project group, or structured multi-user entity.
+A broader collaborative, administrative, reporting, or commercial umbrella that may contain one or more workspaces where policy and implementation require that distinction.
 
 ### Workspace
-A concrete operating environment under an organization or directly attached collaborative scope in which members, balances, product access, roles, and workflows may be coordinated.
+The canonical actionable operating environment in which members, roles, resources, billing attachment, shared configurations, product participation, and collaborative workflows may be coordinated.
 
-### Membership
-The relationship between an account and a workspace.
+### Workspace Membership
+The durable relationship between an account and a workspace.
 
 ### Workspace Owner
-The account or authority designated as the primary owner/controller of the workspace, subject to governance and platform rules.
+The account or equivalent controlling authority recognized by the platform as holding the highest ordinary workspace-control posture subject to platform governance and security controls.
 
-### Billing Owner
-The account or workspace-level financial context responsible for subscriptions, credit balance ownership, or payment responsibility.
+### Workspace Administrator
+A member authorized for elevated administrative actions inside a workspace subject to downstream authorization rules.
 
-### Seat
-A unit of workspace participation used where licensing, plan limits, or product policy require member-count or access-count tracking.
+### Billing Attachment
+The commercial relationship that determines whether a workspace is account-funded, workspace-funded, or attached to another approved commercial context.
 
 ### Workspace-Scoped Resource
-Any product, balance, entitlement, setting, or shared object whose owner is the workspace rather than one individual account.
+A resource whose canonical owner is the workspace rather than an individual account.
+
+### Active Workspace Context
+The currently resolved workspace scope used for a given request, session interaction, or product action where scope ambiguity exists.
+
+### Organization-Level Administration
+Higher-level administration acting above one workspace when an organization model is implemented distinctly.
+
+### Seat
+A commercial or participation counting unit used downstream where licensing or plan policy requires it.
 
 ---
 
-## Canonical Model of Organization and Workspace
+## Architectural Position in the Spec Hierarchy
 
-FUZE should support a hierarchical but flexible model.
+This document sits below:
 
-### Recommended model
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `IDENTITY_AND_ACCOUNT_SPEC.md`
+- `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
+- `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
 
-- **Account** is the individual identity root
-- **Organization** is the broader container for business or group identity where needed
-- **Workspace** is the operating container where actual collaboration, billing scope, and product usage occur
+and above:
 
-In early implementations, organization and workspace may be closely aligned or represented in simplified form if operationally appropriate. However, the semantic distinction should still be preserved:
+- `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
+- `WORKSPACE_MEMBERSHIP_LIFECYCLE_SPEC.md`
+- `SCOPED_AUTHORIZATION_MODEL_SPEC.md`
+- `ACCESS_EVALUATION_AND_EFFECTIVE_PERMISSION_SPEC.md`
+- `ENTITLEMENT_AND_CAPABILITY_GATING_SPEC.md`
+- `WORKSPACE_ORGANIZATION_API_SPEC.md`
+- `ROLE_PERMISSION_ACCESS_API_SPEC.md`
+- downstream product integration specifications
 
-- organization represents the broader entity or grouping
-- workspace represents the actionable operating environment
-
-This distinction becomes more valuable as the platform grows into enterprise, partner, multi-team, or cross-product usage.
+This document defines the workspace and organization domain itself. It does not absorb downstream ownership for authentication, session lifecycle, effective permission evaluation, entitlement policy, billing logic, or wallet-link truth.
 
 ---
 
-## Workspace Lifecycle
+## System Boundaries
 
-At minimum, the workspace lifecycle should support the following states:
+This document governs only the following platform-owned boundaries:
+
+- canonical organization and workspace records
+- workspace lifecycle state
+- organization-to-workspace structural relationship
+- workspace ownership relationship
+- workspace membership relationship
+- workspace-scoped resource ownership semantics
+- active workspace-context resolution prerequisites and outputs
+- workspace-level commercial attachment semantics at the structural level
+- canonical audit lineage for workspace and membership mutations
+
+It does not govern:
+
+- person-level identity truth
+- raw authentication or provider identity truth
+- session runtime truth
+- role matrices, permission catalogs, or capability rules
+- pricing policy or invoice calculation
+- on-chain ownership semantics
+- wallet ownership semantics
+- product-local data models except where they declare workspace ownership
+
+---
+
+## Adjacent Boundaries
+
+### Identity and Account Domain
+Owns canonical account identity. Workspace membership always points to canonical account identity rather than replacing it.
+
+### Auth / Session / Linked Login Domain
+Owns authentication and session truth. Successful authentication precedes workspace resolution.
+
+### Authorization Domain
+Owns role, permission, and capability evaluation after workspace or organization context is resolved.
+
+### Entitlement and Capability Domain
+Owns commercial or policy-based product access gating. Workspace scope may be an input, not the final authority.
+
+### Commerce / Billing / Credits Domains
+Own shared commercial truth, credit balances, subscriptions, and billing state. This document only defines how such relationships may attach structurally to workspace scope.
+
+### Wallet-Aware Domain
+Owns wallet-link truth and wallet-aware participation. Wallet links may influence product behavior inside a workspace, but do not redefine workspace ownership or membership.
+
+### Product Domains
+May create workspace-owned product resources and product-local settings under workspace scope. They must not redefine canonical workspace existence, membership, or lifecycle.
+
+### Audit and Control-Plane Domains
+Own downstream audit surfaces, incident workflows, and support/admin pathways while respecting workspace-domain mutation boundaries.
+
+---
+
+## Roles / Actors / Entities
+
+### End User
+An account holder who may belong to zero, one, or many workspaces.
+
+### Workspace Owner
+The ordinary highest-privilege member at workspace scope, subject to platform governance and downstream authorization controls.
+
+### Workspace Administrator
+A member with elevated workspace-management capabilities as allowed downstream.
+
+### Workspace Member
+An account attached to a workspace through an active or transitional membership relationship.
+
+### Organization Administrator
+A higher-level administrator where a distinct organization layer exists.
+
+### Billing Owner / Commercial Controller
+The account or approved commercial context responsible for workspace-level financial obligations where policy allows.
+
+### Support / Admin Operator
+A privileged operator who may assist with ownership correction, reassignment, or containment through audited, policy-bound flows.
+
+### Product Service
+A non-owning consumer of workspace truth that may create or read product-local workspace-scoped artifacts through approved contracts.
+
+---
+
+## Ownership Model
+
+### Workspace and Organization Domain Owns
+- canonical organization records
+- canonical workspace records
+- organization-to-workspace structural relationships
+- workspace owner relationships
+- workspace membership records
+- workspace lifecycle state
+- workspace-scoped structural metadata
+- active scope-selection primitives and safe read models for scope resolution
+- canonical audit lineage for workspace-domain mutations in coordination with the audit domain
+
+### Workspace and Organization Domain May
+- create and mutate organization/workspace records
+- create and mutate membership relationships
+- transfer or reassign workspace ownership through explicit flows
+- expose canonical scope reads
+- publish domain events after canonical commits
+- coordinate with commerce, credits, and entitlement domains through explicit references
+
+### Workspace and Organization Domain Must Not
+- redefine account identity
+- issue sessions
+- grant final effective permissions directly
+- own pricing truth, invoice truth, or credits-ledger truth
+- own wallet-link truth
+- permit products to bypass workspace truth through hidden shortcuts
+
+### Product Domains May
+- read canonical workspace and membership context
+- create workspace-owned product resources
+- attach product-local workspace settings or views
+- enforce product-local behavior after scope, authorization, and entitlement checks are resolved downstream
+
+### Product Domains Must Not
+- create hidden canonical workspace-like constructs for shared platform behavior
+- redefine owner semantics
+- redefine membership truth
+- bypass lifecycle or governance restrictions on workspace state
+- treat invitation acceptance as separate identity creation
+
+---
+
+## Authority / Decision Model
+
+The decision model for workspace and organization behavior is layered.
+
+### Workspace/Organization Domain Decides
+- whether a workspace or organization exists
+- how it is structurally related
+- who its canonical owner is
+- which accounts are members and in which structural status
+- which lifecycle state the workspace is in
+- which resources are structurally workspace-owned
+
+### Authorization Domain Decides
+- what a resolved member may do inside the workspace
+- which role grants which actions
+- how effective permissions are calculated
+
+### Entitlement / Commerce Domain Decides
+- whether commercial conditions permit a product or capability in that workspace
+- what billing and credits rules apply
+
+### Security / Risk Domain May Override
+- whether a workspace must be restricted or suspended
+- whether ownership transfer or membership mutation requires stronger control or containment
+
+### Control-Plane / Support Operations May Assist
+- only through policy-bound, audited, privileged pathways
+- without becoming owners of workspace truth
+
+---
+
+## Canonical Structural Model
+
+FUZE supports a hierarchical but bounded collaborative model.
+
+### Required Semantic Hierarchy
+
+1. **Account** — person/actor identity root
+2. **Organization** — optional broader umbrella entity where needed
+3. **Workspace** — actionable operating environment
+4. **Membership** — account-to-workspace relationship
+5. **Workspace-Owned Resources** — shared objects and settings under workspace ownership
+
+### Structural Rules
+
+- an account may exist without a workspace
+- an account may belong to multiple workspaces
+- an organization may contain one or more workspaces where implemented distinctly
+- a workspace may exist with or without a distinct organization depending on implementation stage and product policy
+- early simplified implementations may map organization and workspace closely, but semantic distinction must remain preserved
+- workspace remains the primary actionable scope for collaborative operation even when organization exists
+
+---
+
+## Lifecycle / Workflow Model
+
+### Organization Lifecycle
+Where organization is implemented distinctly, the platform should support semantic states such as:
 
 - `pending_setup`
 - `active`
@@ -137,27 +434,46 @@ At minimum, the workspace lifecycle should support the following states:
 - `archived`
 - `closed`
 
-### Lifecycle meanings
+Organization state may constrain downstream workspace creation or administration where policy requires.
+
+### Workspace Lifecycle
+At minimum, workspace lifecycle must support semantic states such as:
+
+- `pending_setup`
+- `active`
+- `restricted`
+- `suspended`
+- `archived`
+- `closed`
+
+### Lifecycle Meanings
 
 #### Pending Setup
-Workspace exists but has not completed required setup steps.
+The workspace exists structurally but has not completed required setup or admission conditions.
 
 #### Active
-Workspace is operational and may hold members, balances, product access, and active workflows.
+The workspace may hold members, resources, billing attachments, entitlements, and active product participation.
 
 #### Restricted
-Workspace remains present but is limited due to risk controls, billing issues, policy concerns, or administrative constraints.
+The workspace remains present but is limited due to policy, risk, billing, governance, or operational constraints.
 
 #### Suspended
-Workspace access is materially limited pending review, abuse handling, security review, or billing/governance intervention.
+The workspace is materially limited pending review, abuse/security handling, governance intervention, or commercial containment.
 
 #### Archived
-Workspace is no longer active for normal operations but remains retained for reporting, recovery, export, or compliance reasons.
+The workspace is not active for ordinary operations but is retained for continuity, audit, reporting, recovery, or export needs.
 
 #### Closed
-Workspace is no longer intended for use and has been finalized according to platform retention and policy rules.
+The workspace is no longer intended for use and has entered final platform-managed retention and closure posture.
 
-Lifecycle transitions must be auditable.
+### Lifecycle Rules
+
+- lifecycle transitions must be durable and auditable
+- product domains may not invent incompatible lifecycle truth for canonical workspace state
+- restricted or suspended state may constrain downstream permission and commercial behavior, but does not erase membership history or workspace identity
+- archived or closed state must preserve enough lineage for reporting, audit, recovery, and retention obligations
+- closure must not erase canonical account identity
+- ownership transfer or membership correction must preserve workspace continuity and audit lineage
 
 ---
 
@@ -165,180 +481,145 @@ Lifecycle transitions must be auditable.
 
 Workspace creation is a platform-controlled capability.
 
-### Workspace may be created by:
+### Workspace May Be Created By
+- an authenticated account through approved self-service flows
+- an invitation/onboarding flow
+- an organization administration flow
+- an enterprise or managed provisioning pathway if later supported
+- a support/admin-controlled remediation or migration flow where separately approved
 
-- an authenticated account with appropriate platform permission
-- an approved invitation or onboarding workflow
-- future enterprise provisioning pathways if supported
+### Creation Must Define At Minimum
+- `workspace_id`
+- creator account reference
+- initial owner relationship
+- initial lifecycle state
+- initial membership relationship(s)
+- commercial attachment posture or billing placeholder
+- optional organization relationship
+- required audit and correlation references
 
-### Workspace creation must define at minimum:
-
-- workspace identifier
-- creator account
-- owner relationship
-- initial status
-- initial membership state
-- billing-owner model
-- optional organization association
-
-### Creation principles
-
-1. workspace creation must not create a new canonical user identity
-2. workspace creation must attach to an existing canonical account
-3. workspace creation should define initial access and ownership unambiguously
-4. workspace creation must produce audit events
-
----
-
-## Ownership Model
-
-Workspace ownership is a sensitive platform concept and must remain explicit.
-
-### Workspace owner responsibilities may include:
-
-- managing workspace settings
-- inviting or removing members
-- assigning or approving roles subject to access rules
-- controlling billing ownership or payment setup where policy allows
-- managing product-level enablement within workspace scope
-- initiating workspace archive or closure flows where permitted
-
-### Ownership rules
-
-- every workspace must have at least one valid owner or equivalent controlling authority
-- ownership transfer must be explicit and auditable
-- products may not reinterpret workspace ownership independently
-- owner status does not eliminate platform governance authority
-- workspace ownership is distinct from wallet ownership and token ownership
+### Creation Rules
+1. workspace creation must attach to existing canonical account identity
+2. workspace creation must not create a new canonical account
+3. initial owner and membership must be explicit
+4. products must not create shadow workspaces that bypass the canonical domain
+5. creation must produce durable audit lineage
 
 ---
 
 ## Membership Model
 
-Membership connects accounts to workspace context.
+Membership is the durable account-to-workspace relationship.
 
-### Membership must support:
-
-- account ID
-- workspace ID
+### Membership Must Support
+- canonical `account_id`
+- canonical `workspace_id`
 - membership status
-- role assignment(s)
-- invitation and acceptance flow where applicable
-- join time
-- removal or leave time where relevant
+- role reference(s) or role binding references
+- invite/join provenance where applicable
+- timestamps for invitation, acceptance, activation, removal, or leave
+- restriction or review markers where applicable
+- audit references
 
-### Membership states may include:
+### Membership Semantic States
+At minimum, the platform should support:
 
 - `invited`
+- `pending_acceptance`
 - `active`
 - `restricted`
 - `removed`
 - `left`
 
-### Membership principles
+Additional internal states may exist, but these meanings must remain expressible.
 
+### Membership Rules
 - one account may belong to multiple workspaces
 - a workspace may contain multiple accounts
-- product access inside a workspace must evaluate membership and role, not just login state
-- removed membership should not destroy canonical account identity
-- membership history should remain auditable
+- membership must attach to canonical account identity
+- membership removal must not destroy canonical account identity
+- membership history must remain auditable
+- products must not grant workspace-scoped shared access by bypassing membership truth unless a downstream spec explicitly defines a constrained exception
+- effective permission requires downstream authorization evaluation after membership and scope are resolved
+
+---
+
+## Invitation and Join Model
+
+Workspace admission must remain controlled.
+
+### Canonical Invite / Join Flow Should Support
+- invite issued by authorized actor
+- pending invite state
+- acceptance by canonical account or controlled identity-resolution flow
+- membership activation on successful acceptance
+- invite expiry, invalidation, or supersession
+- auditability and misuse detection
+
+### Invitation / Join Rules
+- invite acceptance must bind to canonical account identity
+- invite acceptance must not create duplicate identity when the actor already has a canonical account
+- identity ambiguity during invite acceptance must route through identity conflict/remediation logic rather than hidden account creation
+- products may not bypass canonical membership admission through ad hoc sharing models for shared platform behavior
 
 ---
 
 ## Multi-Workspace Participation
 
-A single canonical account may participate in multiple workspaces.
+A single canonical account may participate in multiple workspaces. This is a required FUZE behavior.
 
-This is a required platform behavior because:
+### Multi-Workspace Rules
+- access to one workspace does not imply access to another
+- active workspace context must be explicit where ambiguity exists
+- workspace selection changes collaborative scope, not identity truth
+- product state and shared-resource mutation must bind to the correct workspace when the resource is workspace-owned
+- session presence does not replace active scope resolution
+- downstream permission and entitlement evaluation must occur against the resolved scope
 
-- users may operate across multiple teams, companies, or project groups
-- service providers or partners may support several workspaces
-- one user may have both personal and organizational contexts
-- a user may interact with multiple products under different collaborative scopes
+---
 
-### Multi-workspace rules
+## Ownership Transfer and Control Continuity
 
-- workspace selection or workspace context resolution must be explicit where ambiguity exists
-- access to one workspace must not imply access to another
-- credits and billing scope must be determined according to account-vs-workspace ownership rules
-- product state must remain tied to the correct workspace context where a resource is workspace-owned
+Workspace ownership transfer is a high-sensitivity workflow.
 
-This model is essential for serious multi-user and multi-product operation.
+### Ownership Transfer Rules
+- transfer must be explicit and auditable
+- transfer must preserve continuity of workspace governance and resource control
+- a workspace must not be orphaned without valid controlling authority except in an explicitly restricted or remediation posture
+- products may not reinterpret owner semantics independently
+- owner status remains subject to platform governance, security, and commercial controls
+
+### Support / Admin Reassignment Cases
+Support/admin-controlled ownership reassignment may be needed when:
+- the current owner loses access
+- the current owner leaves the organization
+- abuse/security containment requires reassignment
+- enterprise governance rules require controlled takeover
+- prior owner state becomes invalid or unsafe
+
+Such actions must remain policy-bound, reason-coded, and auditable.
 
 ---
 
 ## Relationship Between Workspace and Product Access
 
-Workspace context influences product access but does not replace product entitlements or role evaluation.
+Workspace scope influences product access but is not the final access decision.
 
-### Product access within a workspace typically depends on:
+### Canonical Order of Access Evaluation
+1. authenticate account
+2. establish session
+3. resolve workspace or organization context where applicable
+4. evaluate membership and role
+5. evaluate entitlements/capability gates
+6. apply product-specific policy
+7. allow or deny capability
 
-1. canonical account identity
-2. valid session/auth state
-3. workspace membership
-4. role and permission rules
-5. workspace-level product enablement
-6. billing/entitlement status
-7. product-specific policy rules
-
-This layered model matters because a user may be authenticated successfully but still lack access to a workspace-scoped product feature if:
-- they are not a member of that workspace
-- the workspace has no entitlement for that product
-- the workspace role does not allow the action
-- billing or credit state does not support the feature
-
-Products must therefore interpret workspace context through platform rules rather than provider-specific or product-local shortcuts.
-
----
-
-## Workspace Billing Ownership
-
-The workspace model must support clear billing ownership.
-
-A workspace may be:
-
-- individually billed through one account acting as billing owner
-- workspace-billed through a shared commercial context
-- enterprise-billed through a future managed arrangement if supported later
-
-### Billing ownership implications
-
-The workspace model should be able to support:
-- workspace-scoped subscriptions
-- seat-based plans
-- shared Platform Credits balances where enabled
-- invoice visibility at workspace scope
-- usage attribution by workspace
-- product-level entitlements attached to workspace rather than one user
-
-### Key principle
-
-Billing ownership does not redefine canonical account identity. It defines who pays or what context holds the commercial obligation.
-
-This distinction is essential for platform coherence.
-
----
-
-## Workspace and Platform Credits Relationship
-
-Workspace context may be a holder of Platform Credits under platform policy.
-
-This means FUZE should support, where appropriate:
-
-- workspace-level credit balances
-- workspace-scoped credit spending
-- shared consumption of credits by authorized members
-- role-based restrictions on who may spend or manage workspace balances
-- reporting of workspace credit usage distinct from personal balances
-
-### Required principles
-
-- credits held by a workspace remain distinct from credits held personally by an account
-- movement between personal and workspace credit contexts, if allowed, must be explicit and auditable
-- products must know whether they are charging the user context or the workspace context
-- billing and spend records must preserve scope clarity
-
-This relationship is especially important for team-oriented products and future enterprise usage.
+### Rules
+- successful login does not prove workspace membership
+- successful login does not prove organization scope
+- successful login does not prove role, permission, or entitlement
+- workspace truth provides the operating scope in which downstream access evaluation happens
+- products must consume this layered model rather than treating provider identity, login success, or frontend scope hints as sufficient authority
 
 ---
 
@@ -346,265 +627,371 @@ This relationship is especially important for team-oriented products and future 
 
 A workspace may own resources distinct from personal account-owned resources.
 
-Examples may include:
-
+Examples include:
 - shared dashboards
 - shared product configurations
-- shared AI outputs where policy allows
-- team workflow objects
+- shared AI outputs where downstream policy allows
+- shared workflow objects
 - shared automation configurations
-- workspace credits balances
-- workspace subscriptions
-- shared project or operating resources
+- shared commercial or credits references
+- shared projects and operating artifacts
 
-### Canonical rule
-
-If a resource is workspace-scoped, its owner is the workspace context, not one member account, even if one member created it.
-
-This rule is important for portability, continuity, offboarding, and team operation.
+### Canonical Rules
+- if a resource is designated workspace-scoped, the workspace is the canonical owner
+- creator account identity may be preserved as provenance without replacing workspace ownership
+- offboarding, ownership transfer, and membership removal must not silently reassign workspace-owned resources to personal ownership
+- products must declare scope correctly when creating resources
+- ambiguous scope must be corrected explicitly and audibly rather than left hidden
 
 ---
 
 ## Organization Layer Semantics
 
-Where organization support is implemented distinctly from workspace support, organization should represent the broader entity boundary.
+Where a distinct organization model is implemented, organization represents a broader umbrella boundary above workspace.
 
-An organization may:
+### Organization May
 - contain one or more workspaces
-- define higher-level ownership or administration
-- serve as a reporting, billing, or policy umbrella
-- represent a company, protocol team, partner entity, or structured group identity
+- act as a reporting or administrative umbrella
+- attach to broader billing or policy relationships
+- represent a company, partner, protocol team, internal business unit, or structured group identity
 
-### Important distinction
-
-The organization is not automatically the same thing as the workspace.
-A workspace is the actionable operating environment.
-An organization is the broader umbrella entity.
-
-Early implementations may simplify this relationship, but downstream design must preserve the semantic distinction.
+### Organization Rules
+- organization is not automatically the same thing as workspace
+- organization does not replace workspace as the primary actionable operating environment
+- organization administration must not silently collapse per-workspace ownership and membership records unless a downstream spec explicitly governs such inheritance
+- workspace truth must remain explicit even when organization-level administration exists
 
 ---
 
-## Invitation and Join Model
+## Billing, Credits, and Commercial Attachment Considerations
 
-Workspaces must support controlled member admission.
+Workspace may be a holder or subject of commercial relationships under downstream policy.
 
-### Canonical invitation flow should support:
+### Workspace Must Support Structural Attachment For
+- workspace-scoped subscriptions
+- seat-based plans where supported
+- workspace-scoped credits or balances where supported
+- invoice visibility or usage attribution at workspace scope
+- product enablement attached to workspace rather than one account where policy allows
 
-- invite initiated by authorized actor
-- pending invite state
-- acceptance by target account or target provider-linked identity
-- role assignment on acceptance
-- invite expiry or invalidation where policy requires
-
-### Join principles
-
-- joining a workspace must not create a second canonical account if the actor already has one
-- invite acceptance must bind membership to the canonical account
-- invitation misuse or conflict must be auditable
-- products must not bypass workspace membership rules through local sharing shortcuts unless platform-approved
-
----
-
-## Workspace Security Model
-
-Workspace security is broader than account authentication.
-
-### Workspace security must consider:
-
-- who may invite members
-- who may remove members
-- who may assign roles
-- who may manage billing
-- who may manage shared balances
-- who may access product-specific shared resources
-- who may archive or close the workspace
-- what happens if the workspace owner is lost, restricted, or removed
-
-### Security principle
-
-Access to workspace scope must be governed through role-aware and membership-aware platform controls. Product-local assumptions are not sufficient.
+### Structural Rules
+- billing ownership does not redefine account identity
+- billing attachment does not replace authorization truth
+- workspace-held commercial value remains distinct from personal account-held value
+- movement between account and workspace commercial contexts, if allowed, must be explicit and auditable under downstream commerce rules
+- this document defines structural attachment only; downstream commerce specs define economic truth
 
 ---
 
-## Workspace Ownership Transfer
+## Permission / Access Considerations
 
-Ownership transfer is a sensitive action.
+This document does not define full authorization semantics, but it imposes mandatory constraints on downstream access design.
 
-### Ownership transfer rules
-
-- must be explicit
-- must be auditable
-- must require authorized initiator(s)
-- must preserve continuity of workspace access and billing control
-- must not orphan the workspace without a valid controlling authority
-
-### Special cases
-
-Support/admin-controlled ownership reassignment may be needed when:
-- the original owner loses access
-- the original owner leaves the organization
-- abuse/security review requires reassignment
-- enterprise control rules override individual owner control
-
-These flows must remain governance-aware and auditable.
+### Required Constraints
+- authorization must occur after scope resolution
+- membership is necessary input to many workspace actions but not sufficient by itself for final permission
+- workspace owner semantics must not be silently weakened by product-local shortcuts
+- restricted or suspended workspace state may constrain ordinary permissions
+- privileged admin/support actions that mutate workspace truth require stronger authorization and audit posture
+- active scope ambiguity must be resolved before mutating workspace-owned resources
 
 ---
 
-## Workspace Suspension, Restriction, and Closure
+## Entitlement Considerations
 
-Workspace state control is a platform responsibility.
+Workspace scope is one of the possible subjects for entitlement and capability gating.
 
-### Restriction or suspension may occur because of:
-
-- abuse or fraud concerns
-- billing failure
-- policy violations
-- security incidents
-- support review needs
-- governance-sensitive issues affecting shared resources
-
-### Closure or archive principles
-
-- closure must not erase canonical account identity
-- closure must preserve auditability and reporting continuity
-- closure must preserve or settle shared balances and billing obligations according to policy
-- archived or closed workspace resources must have clearly defined retention behavior
-
-Products must not invent incompatible workspace closure logic.
+### Rules
+- entitlement and capability truth remain downstream domains
+- workspace may be the subject against which product access is evaluated
+- workspace membership does not by itself imply commercial entitlement
+- a valid workspace member may still lack access to a feature because entitlement or capability policy denies it
+- entitlements attached to workspace must remain separate from account-attached entitlements when both exist
 
 ---
 
-## Minimum Data Model Requirements
+## API / Contract Implications
 
-At minimum, the workspace and organization layer must support:
+The platform should expose workspace and organization behavior through explicit boundaries.
 
-### Organization
-- organization_id
-- name or canonical label
+### Workspace / Organization APIs Should Support
+- organization creation and reads where applicable
+- workspace creation and reads
+- membership listing and membership mutation through approved flows
+- invitation initiation and acceptance continuation points
+- ownership transfer initiation and completion
+- active scope selection or resolution reads
+- lifecycle-state reads and approved mutation pathways
+- workspace-owned resource scope discovery metadata where appropriate
+
+### Identity APIs Should Not
+- own workspace truth, though they may return identity-linked workspace summaries as derived views
+
+### Session APIs Should Not
+- pretend session existence is equivalent to scope resolution
+
+### Authorization APIs Should Own
+- effective role and permission evaluation
+- scoped capability decisions
+- downstream policy enforcement once workspace context is known
+
+### API Rules
+- all mutation-capable endpoints must support correlation identifiers
+- idempotency is required where retries are plausible, especially for create, invite, accept, transfer, restrict, archive, and close actions
+- public-safe responses must avoid exposing unsafe details about membership existence where security or privacy policy requires
+- control-plane and admin APIs must enforce stronger authorization and richer audit metadata
+
+---
+
+## Event / Async Implications
+
+Workspace and organization behavior must emit durable domain events sufficient for downstream authorization, audit, reporting, and product coordination.
+
+Representative semantic events include:
+- `organization.created`
+- `organization.updated`
+- `workspace.created`
+- `workspace.lifecycle_changed`
+- `workspace.owner_changed`
+- `workspace.billing_attachment_changed`
+- `workspace.member_invited`
+- `workspace.member_joined`
+- `workspace.member_restricted`
+- `workspace.member_removed`
+- `workspace.member_left`
+- `workspace.archived`
+- `workspace.closed`
+
+### Event Rules
+- domain events must be emitted only after canonical state transitions commit
+- downstream consumers may react, but may not redefine workspace truth
+- retries must be replay-safe and idempotent
+- async delivery failure must not imply that canonical workspace mutation failed or did not occur
+- event consumers must preserve the distinction between structural workspace truth and downstream permission or commercial outcomes
+
+---
+
+## Data Model / Storage Implications
+
+At minimum, the platform should support the following durable semantic structures.
+
+### `organization`
+Representative semantic fields:
+- `organization_id`
+- canonical label or name
 - status
 - created_at
-- owner/admin references as needed
+- updated_at
+- organization-level admin references where applicable
+- lifecycle markers
 
-### Workspace
-- workspace_id
-- optional organization_id
-- owner reference
-- billing_owner reference or model
-- status
+### `workspace`
+Representative semantic fields:
+- `workspace_id`
+- optional `organization_id`
+- canonical label or name
+- lifecycle status
+- owner relationship reference
+- billing attachment reference or model
 - created_at
-- archived/closed fields where relevant
+- updated_at
+- archived/closed markers
+- restriction/suspension markers
 
-### Membership
-- membership_id
-- account_id
-- workspace_id
-- role(s)
-- membership_status
+### `workspace_membership`
+Representative semantic fields:
+- `membership_id`
+- `account_id`
+- `workspace_id`
+- membership status
+- role binding references
 - invited_at
-- joined_at
-- removed_at/left_at where relevant
+- accepted_at
+- activated_at
+- removed_at or left_at
+- provenance / correlation reference
+- review or restriction markers
 
-### Workspace Audit Events
-- workspace created
-- owner changed
-- billing-owner changed
-- member invited
-- member joined
-- member removed
-- workspace restricted/suspended
-- workspace archived/closed
+### `workspace_invitation`
+Representative semantic fields:
+- `invitation_id`
+- target workspace reference
+- inviter reference
+- invite target reference or contact artifact where allowed
+- invitation state
+- expiry
+- accepted_by_account reference where known
+- correlation reference
 
----
+### `workspace_audit_reference`
+Representative semantic fields:
+- action ID
+- workspace reference
+- actor reference
+- action type
+- reason code
+- policy reference where applicable
+- execution timestamp
+- resulting state reference
 
-## Read / Write Rights
-
-### Workspace Domain may:
-- create and mutate canonical workspace records
-- manage membership relationships
-- manage owner relationships
-- expose workspace-scoped read models
-- coordinate billing-owner and workspace-level lifecycle state
-
-### Product domains may:
-- read workspace context
-- attach product-specific workspace settings
-- create workspace-owned product resources
-- apply product-specific logic to workspace-scoped entitlements
-
-### Product domains may not:
-- redefine canonical workspace existence
-- silently create hidden workspace membership outside platform rules
-- redefine owner semantics
-- mutate platform workspace lifecycle state outside approved service contracts
-
-### Reporting domains may:
-- derive and present workspace metrics or organization summaries
-- join workspace context into reporting outputs
-
-Reporting domains may not redefine canonical workspace truth.
+### Data Rules
+- workspace and membership entities must remain canonical source-of-truth records
+- derived dashboards, analytics views, search indexes, and product caches must not become write owners
+- corrections should prefer explicit lineage and state transitions over hidden destructive rewrite
+- resource-scope ownership references must be durable enough to support offboarding, migration, audit, and entitlement evaluation
 
 ---
 
-## Integration Points
+## Security / Risk / Abuse Controls
 
-The workspace and organization layer integrates with:
+Workspace and organization are collaborative-scope security boundaries.
 
-- identity and account domain
-- auth and session domain
-- role and access control domain
-- billing and commerce domain
-- Platform Credits domain
-- wallet-aware participation domain where workspace-aware benefits exist
-- product domain services
-- audit log domain
-- reporting and transparency domains
-- control-plane and support operations
-
-All such integrations must treat workspace records as canonical for collaborative context.
+The platform must preserve:
+- stronger authorization for ownership transfer and privileged membership mutation
+- auditability for invites, removals, reassignment, archive, restriction, and closure
+- risk-aware restriction or suspension of workspace scope when abuse, security incidents, or policy violations require it
+- protection against using invite acceptance or shared-resource access as an identity-creation shortcut
+- controlled handling of owner-loss, owner-compromise, and billing-controller-loss cases
+- anti-shadow-scope behavior so products cannot silently bypass platform controls through local sharing constructs
 
 ---
 
-## Edge Cases and Failure Handling
+## Audit / Traceability Requirements
 
-### Account leaves all workspaces
-The account remains canonical and active as an individual identity unless separately restricted.
+FUZE must be able to determine:
 
-### Owner account suspended
-Workspace may require controlled reassignment, restricted mode, or support intervention according to policy.
+- when a workspace or organization was created
+- which account created it
+- who owned it over time
+- who joined, left, was removed, or was restricted
+- which resources were structurally workspace-owned
+- how billing attachment changed over time
+- why a workspace was restricted, suspended, archived, or closed
+- which support/admin actor executed privileged corrective action
+- whether a visible workspace summary is canonical or derived
 
-### Product resource created under wrong scope
-The system must support correction or explicit migration while preserving auditability. Scope ambiguity must not remain silent.
-
-### Billing owner removed from workspace
-Workspace billing control must be reassigned or the workspace restricted according to platform policy.
-
-### Invite accepted with wrong account
-The membership must attach to the canonical accepting account and support/admin tooling must handle correction if misbinding occurs.
-
-### Multi-workspace user confusion
-The platform must support clear active-context selection so users and products know which workspace scope is in effect.
-
-### Reporting mismatch
-Derived workspace reports do not override canonical workspace membership or ownership truth.
+Workspace and organization changes are high-impact because they affect collaborative access, shared resources, billing context, and audit continuity across products.
 
 ---
 
-## Open Items
+## Failure Handling / Edge Cases
 
-The following areas are intentionally refined downstream:
+### Account Belongs to No Workspace
+The account remains canonical and valid unless separately restricted. Workspace membership is not required for account existence.
 
-- exact organization-to-workspace hierarchy rules for enterprise mode
-- exact seat licensing semantics
-- exact shared-balance rules for each product
-- exact invite transport and invite token model
-- exact offboarding data-retention behavior by product resource type
-- exact support/admin procedures for ownership reassignment
+### Owner Loses Account Access
+Workspace may require controlled reassignment, recovery-aware containment, or temporary restriction until valid ownership control is restored.
 
-These do not weaken the canonical model established here.
+### Billing Owner Becomes Invalid
+Workspace may require reassignment or commercial restriction according to downstream commerce policy.
+
+### Membership Removed but Product Resources Remain
+Workspace-owned resources remain owned by the workspace. Provenance may record creator history without reassigning ownership.
+
+### Invite Accepted by Wrong Account
+The platform must preserve auditable correction/remediation pathways. Membership must ultimately bind to canonical account truth.
+
+### Multiple Possible Active Workspaces
+The platform must force explicit scope resolution before sensitive or scope-dependent actions.
+
+### Product Resource Created Under Wrong Scope
+The platform must support explicit correction or migration while preserving audit lineage.
+
+### Workspace Under Security Review
+Restricted or suspended workspace state may limit collaboration and mutation even if member accounts remain individually valid.
+
+### Organization Exists but Workspace Missing
+Organization does not replace workspace as actionable scope; downstream behavior must not assume organization alone is sufficient where workspace is required.
+
+### Reporting Mismatch
+Derived reports and analytics do not override canonical workspace, owner, or membership truth.
 
 ---
 
-## Closing Summary
+## Operational Considerations
 
-The FUZE workspace and organization layer defines the collaborative operating context of the platform. Accounts remain the canonical identity of actors, while organizations and workspaces provide the shared context in which members, balances, entitlements, product resources, and workflows operate. This distinction allows FUZE to support individual use, team use, SME use, and future enterprise use inside one coherent platform architecture. Products may extend workspace behavior, but they may not redefine the canonical workspace model. This structure is essential for making FUZE a real multi-product operating environment rather than a collection of disconnected user accounts.
+Operational systems should support:
+- clear control-plane workflows for owner reassignment, membership correction, and workspace lifecycle mutation
+- observability for invitation aging, join failures, repeated reassignment attempts, and orphan-risk conditions
+- correlation across identity, session, authorization, commerce, and workspace-domain actions
+- queue/retry behavior that preserves idempotent membership and lifecycle mutations
+- support tools that expose canonical workspace truth without bypassing mutation boundaries
+- runbooks for suspended-owner, lost-billing-controller, archived-workspace, and wrong-scope-correction cases
+
+The operational model must preserve the principle that workspace and organization changes are canonical platform mutations, not product-local edits.
+
+---
+
+## Migration / Compatibility / Supersession Considerations
+
+- migrations must not silently move workspace truth into product-local stores
+- early simplified models that blur organization and workspace may be preserved temporarily, but semantic distinction must remain future-safe and explicit
+- compatibility layers may proxy older collaboration constructs temporarily, but canonical workspace and membership ownership must remain platform-owned
+- older documents or implementations that imply login success equals workspace access, or that product-local sharing can replace membership truth, are superseded within this scope
+- resource-scope corrections and ownership migrations must preserve lineage and auditability
+
+---
+
+## Dependencies / Cross-Spec Links
+
+This specification depends on:
+
+- `REFINED_SYSTEM_SPEC_INDEX.md`
+- `DOCS_SPEC_INDEX.md`
+- `SYSTEM_SPEC_INDEX.md`
+- `API_SPEC_INDEX.md`
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `IDENTITY_AND_ACCOUNT_SPEC.md`
+- `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
+- `FUZE_ACCOUNT_ACCESS_AND_SESSION_THESIS_FINAL_SPEC.md`
+- `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
+- `FUZE_ACCOUNT_ACCESS_CONTINUITY_SPEC.md`
+- `FUZE_WORKSPACE_ACCESS_CONTROL_BASICS_THESIS_FINAL_SPEC.md`
+- `FUZE_ACCOUNT_RECOVERY_AND_CONFLICT_HANDLING_SPEC.md`
+- `WALLET_AWARE_USER_SPEC.md`
+- `AUTH_IDENTITY_API_SPEC.md`
+- `SESSION_AND_LINKED_LOGIN_API_SPEC.md`
+- `SECURITY_AND_RISK_CONTROL_SPEC.md`
+
+This specification directly governs or materially informs:
+
+- `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
+- `WORKSPACE_MEMBERSHIP_LIFECYCLE_SPEC.md`
+- `SCOPED_AUTHORIZATION_MODEL_SPEC.md`
+- `ACCESS_EVALUATION_AND_EFFECTIVE_PERMISSION_SPEC.md`
+- `ENTITLEMENT_AND_CAPABILITY_GATING_SPEC.md`
+- `WORKSPACE_ORGANIZATION_API_SPEC.md`
+- `ROLE_PERMISSION_ACCESS_API_SPEC.md`
+- `AUTH_IDENTITY_API_SPEC.md`
+- downstream commerce, credits, billing, audit, and product integration specifications
+
+---
+
+## Explicitly Deferred Items
+
+The following are intentionally deferred to adjacent or downstream specifications:
+
+- exact role catalog and permission bitmap
+- exact invite token transport and anti-abuse mechanics
+- exact seat-pricing formulas and billing algorithms
+- exact entitlement-evaluation algorithm
+- exact workspace-to-organization inheritance rules for future enterprise mode
+- exact support queue tooling and reviewer assignment logic
+- exact schema partitioning or service-split timing
+- exact product-specific resource lists and retention rules
+
+These do not weaken the canonical workspace and organization model established here.
+
+---
+
+## Final Normative Summary
+
+FUZE workspace and organization is the platform capability that defines collaborative operating scope across the ecosystem. The account remains the canonical identity of the actor. Organization is the broader umbrella boundary where implemented. Workspace is the canonical actionable operating environment in which members, shared resources, commercial attachments, and collaborative workflows exist.
+
+Workspace truth is platform-owned and must remain distinct from identity, authentication, sessions, authorization, entitlement, billing truth, wallet truth, and product-local UX. Authentication happens before scope resolution. Scope resolution happens before authorization and entitlement evaluation. Products may extend workspace behavior and create workspace-owned resources, but they may not invent separate canonical collaboration models or bypass workspace truth through local shortcuts.
+
+This document is the canonical FUZE rule set for collaborative scope, workspace ownership, membership, lifecycle, and organization structure.

@@ -1,51 +1,130 @@
 # ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC
 
+## Document Metadata
+
+- Document Name: `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
+- Document Type: Canonical refined system specification
+- Status: Active refined system spec
+- Governing Layer: Platform core / role, permission, and access control
+- Parent Registry: `REFINED_SYSTEM_SPEC_INDEX.md`
+- Primary Audience: Platform architecture, backend engineering, product engineering, security, support operations, audit, governance, API design, commerce/billing, operations
+- Primary Purpose: Define the canonical FUZE authorization model that turns authenticated canonical accounts operating in resolved scope into explicit, policy-bound allow/deny outcomes through durable role assignments, scoped permissions, bounded inheritance, restriction handling, and auditability without collapsing identity, workspace structure, entitlement, billing truth, product-local policy, or governance control into one ambiguous layer
+- Primary Upstream References:
+  - `REFINED_SYSTEM_SPEC_INDEX.md`
+  - `DOCS_SPEC_INDEX.md`
+  - `SYSTEM_SPEC_INDEX.md`
+  - `API_SPEC_INDEX.md`
+  - `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+  - `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+  - `PLATFORM_ARCHITECTURE_SPEC.md`
+  - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+  - `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+  - `IDENTITY_AND_ACCOUNT_SPEC.md`
+  - `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_THESIS_FINAL_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_CONTINUITY_SPEC.md`
+  - `FUZE_PROVIDER_RESOLUTION_AND_LINKING_SPEC.md`
+  - `FUZE_SESSION_LIFECYCLE_AND_SECURITY_SPEC.md`
+  - `FUZE_ACCOUNT_RECOVERY_AND_CONFLICT_HANDLING_SPEC.md`
+  - `WORKSPACE_AND_ORGANIZATION_SPEC.md`
+  - `FUZE_WORKSPACE_ACCESS_CONTROL_BASICS_THESIS_FINAL_SPEC.md`
+  - `WALLET_AWARE_USER_SPEC.md`
+  - `SECURITY_AND_RISK_CONTROL_SPEC.md`
+  - `AUTH_IDENTITY_API_SPEC.md`
+  - `SESSION_AND_LINKED_LOGIN_API_SPEC.md`
+- Primary Downstream Dependents:
+  - `WORKSPACE_MEMBERSHIP_LIFECYCLE_SPEC.md`
+  - `SCOPED_AUTHORIZATION_MODEL_SPEC.md`
+  - `ACCESS_EVALUATION_AND_EFFECTIVE_PERMISSION_SPEC.md`
+  - `ADMIN_ACCESS_CORRECTION_AND_CONTAINMENT_SPEC.md`
+  - `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md`
+  - `ENTITLEMENT_AND_CAPABILITY_GATING_SPEC.md`
+  - `WORKSPACE_ORGANIZATION_API_SPEC.md`
+  - `ROLE_PERMISSION_ACCESS_API_SPEC.md`
+  - `SECURITY_AND_RISK_CONTROL_SPEC.md`
+  - commerce/billing/credits specifications
+  - product integration specifications
+  - control-plane and governance workflow specifications
+
+---
+
 ## Purpose
 
-This document defines the canonical role, permission, and access control architecture of the FUZE platform. Its purpose is to establish how authority is assigned, resolved, constrained, and enforced across accounts, workspaces, products, platform services, governance-sensitive actions, and reporting surfaces.
+This specification defines the canonical FUZE role, permission, and access-control model.
 
-This specification is critical because FUZE is a multi-product platform ecosystem with shared identity, shared billing, shared credits, wallet-aware participation, workspace collaboration, product-specific operations, and governance-sensitive control paths. Without a disciplined access-control model, the platform would become operationally inconsistent, economically fragile, and difficult to trust.
+Its purpose is to make explicit:
+
+- how FUZE turns authenticated canonical account identity plus resolved operating scope into allowed or denied actions
+- how role assignment, permission mapping, scope resolution prerequisites, and policy checks interact
+- how account scope, workspace scope, product scope, platform-operational scope, and governance-sensitive scope remain distinct
+- how authorization must remain separated from identity, authentication, sessions, workspace structure, entitlement, billing truth, wallet-aware participation, and product-local UX
+- how sensitive internal actions, workspace control actions, product actions, commercial actions, and governance-aware control actions must be bounded and auditable
+- how products, APIs, internal services, and support tools may consume authorization truth without becoming owners of it
+
+This document exists because FUZE is a multi-product, multi-scope ecosystem. In such a platform, login success cannot be treated as authority, workspace presence cannot be treated as permission, billing participation cannot be treated as product control, and token-aware status cannot be treated as admin power. Authorization must therefore be explicit, layered, bounded, and platform-owned.
 
 ---
 
 ## Scope
 
-This specification covers:
+This specification governs:
 
 - the canonical access-control model for FUZE
-- the distinction between identity, membership, role, permission, and entitlement
-- account-level versus workspace-level authority
-- platform-wide roles versus product-scoped roles
-- action-level permission evaluation
-- billing and credits access control
-- wallet-aware and holder-aware access implications
-- admin, support, and control-plane privileges
-- governance-sensitive access boundaries
-- audit and failure-handling requirements for access control
+- the distinction among identity, membership, role, permission, access decision, and entitlement
+- authorization scopes and their relationships
+- canonical role categories and semantic baseline roles
+- permission domains and mapping direction
+- access-decision prerequisites and rule ordering
+- bounded inheritance and restriction behavior
+- internal operational and governance-sensitive access boundaries
+- audit, data-model, API, event, security, and operational implications of authorization truth
 
-This specification does not define the full details of session issuance, workspace lifecycle, or token snapshot logic. Those are refined in:
+This specification does not define:
 
-- `IDENTITY_AND_ACCOUNT_SPEC.md`
-- `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
-- `WORKSPACE_AND_ORGANIZATION_SPEC.md`
-- `WALLET_AWARE_USER_SPEC.md`
-- `PLATFORM_CREDITS_SPEC.md`
-- `GOVERNANCE_MODEL_SPEC.md`
+- canonical account identity semantics in full depth
+- authentication-method lifecycle or session lifecycle
+- full workspace/organization lifecycle semantics
+- exact membership invitation or onboarding mechanics
+- exact policy-engine representation or DSL
+- exact effective-permission evaluation algorithm by object type
+- exact entitlement or commercial eligibility algorithm
+- exact admin containment workflow implementation
+- exact product-specific role tables for every product
+
+Those are defined in adjacent or downstream specifications.
+
+---
+
+## Out of Scope
+
+This specification is explicitly out of scope for:
+
+- identity bootstrap and provider-resolution semantics
+- login, session issuance, refresh, or revocation semantics
+- workspace creation/closure structure in full depth
+- product-local UI-only visibility rules that do not represent canonical authorization
+- exact pricing, seat, billing, or credits algorithms
+- exact wallet verification mechanics
+- exact break-glass tooling implementation
+- exact query-language syntax for policy evaluation
 
 ---
 
 ## Design Goals
 
-The design goals of the FUZE role and access model are:
+The design goals of the FUZE role, permission, and access-control model are:
 
-1. to make authority explicit across platform, workspace, and product contexts
-2. to separate who the user is from what the user is allowed to do
-3. to support both individual and collaborative product usage
-4. to prevent products from inventing incompatible authorization logic for shared platform concerns
-5. to preserve strong controls around billing, credits, wallet links, and governance-sensitive operations
-6. to support future product expansion without weakening authorization clarity
-7. to make access decisions auditable and reviewable
-8. to keep permission evaluation consistent with the broader platform-first architecture
+1. make authority explicit across account, workspace, product, platform, and governance-sensitive contexts
+2. preserve strict separation between identity and authority
+3. preserve strict separation between collaborative scope and authority
+4. support both individual and collaborative platform usage
+5. support consistent authorization across shared products and shared services
+6. keep product innovation possible without allowing product-local shadow authorization truth
+7. preserve explicit control around billing, credits, recovery-sensitive actions, support operations, and governance-sensitive operations
+8. make access decisions auditable, reviewable, and explainable
+9. support least privilege and deny-by-default as durable platform posture
+10. remain future-safe for additional products, enterprise structures, and stricter governance controls
 
 ---
 
@@ -53,187 +132,352 @@ The design goals of the FUZE role and access model are:
 
 This specification is not intended to:
 
-- use token ownership as a substitute for platform authorization
-- collapse platform permissions into product feature toggles
-- treat session existence alone as sufficient authorization
-- make workspace ownership equivalent to unrestricted platform administration
-- define a full policy engine implementation language
-- provide uncontrolled “super admin” shortcuts that bypass audit and governance rules
-- replace product-specific fine-grained permissions where those are needed on top of platform rules
+- treat session existence as authorization success
+- treat workspace membership as sufficient permission by itself
+- treat entitlement as equivalent to authority
+- treat wallet ownership or token status as a substitute for authorization
+- make workspace owner equivalent to platform administrator
+- allow product-local “super admin” shortcuts for shared platform concerns
+- define every object-level permission for every product at this layer
+- collapse governance-sensitive operations into ordinary admin rights
 
 ---
 
-## Canonical Access Principle
+## Core Principles
 
-The primary access-control principle of FUZE is:
+### 1. Authentication Is Not Authorization Principle
+Authentication proves access to the canonical account. It does not prove workspace membership, scope authority, role assignment, permission grant, entitlement, or policy clearance.
 
-> access is granted by explicit role and permission evaluation against a canonical account operating in a defined context, not merely by authentication success, token ownership, or product-local assumption.
+### 2. Scope-Then-Authority Principle
+Authorization occurs only after the relevant operating scope has been resolved. Scope is not optional context; it is a prerequisite input.
 
-This means:
+### 3. Explicit Grant Principle
+Authority exists only where it has been explicitly granted through canonical role and permission structures or explicitly approved policy rules.
 
-- authentication proves access to the account
-- membership connects the account to a workspace context
-- roles define authority within a scope
-- permissions define allowed actions
-- product entitlements define whether a product or feature is commercially or operationally enabled
-- token-aware status may inform certain privileges, but it does not replace authorization
+### 4. Role-Manages / Permission-Enforces Principle
+Roles are the human-manageable bundle layer. Permissions are the enforceable action layer. Final enforcement must resolve to concrete permission decisions.
 
-This principle must be preserved across all products and platform services.
+### 5. Deny-by-Default Principle
+If authority is not clearly granted, the requested action must be denied.
+
+### 6. Least-Privilege Principle
+Roles and permissions must grant only the minimum authority needed for the intended operating responsibility.
+
+### 7. No Implicit Escalation Principle
+Membership, product usage, wallet status, billing participation, session continuity, or UI selection must not silently create new authority.
+
+### 8. Product-Consumption Principle
+Products consume canonical authorization decisions or canonical role/permission truth. Products do not become owners of shared authorization semantics.
+
+### 9. Restriction-Precedence Principle
+Restriction, suspension, risk, review, or account/workspace control state may override otherwise valid role grants.
+
+### 10. Governance-Separation Principle
+Governance-sensitive powers require stronger, separate control pathways. They must not be inherited casually from ordinary operational or workspace roles.
 
 ---
 
-## Core Concepts
+## Canonical Definitions
 
-### Account
-The canonical identity of the actor in FUZE.
-
-### Workspace Membership
-The relationship between an account and a workspace.
+### Authorization
+The platform process of determining whether a canonical account may perform a requested action in a defined scope under current policy and state.
 
 ### Role
-A named authority bundle assigned within a defined scope.
+A named bundle of authority assigned within a defined scope.
 
 ### Permission
-A specific allowed action, such as:
-- invite member
-- spend workspace credits
-- view billing history
-- edit product configuration
-- initiate payout reporting export
+A concrete action right or action class that can be evaluated and enforced.
 
 ### Scope
-The context in which a role or permission applies. Common scopes include:
-- account scope
-- workspace scope
-- product scope
-- platform-admin scope
-- governance-sensitive scope
-
-### Entitlement
-A commercial or product-access state determining whether the account or workspace is eligible to use a product, feature, or service.
+The domain context in which a role or permission applies, such as account, workspace, product, operational, or governance-sensitive scope.
 
 ### Access Decision
-The result of evaluating identity, session, membership, role, permission, entitlement, and policy constraints for a requested action.
+The output of evaluating identity, session validity, scope, membership, role assignment, permission mapping, entitlement inputs where relevant, object state, restriction state, and policy constraints.
 
----
-
-## Canonical Access Model
-
-FUZE uses a layered access model.
-
-At minimum, every meaningful access decision should be understood as a function of:
-
-1. authenticated account identity
-2. active session validity
-3. selected or resolved workspace context where applicable
-4. membership state in that workspace where applicable
-5. assigned role(s)
-6. relevant permission(s)
-7. product entitlement or billing state where applicable
-8. additional policy checks for sensitive or governance-aware actions
-
-This layered model is important because no one factor is sufficient by itself.
-
-Examples:
-- a valid session is not enough to spend workspace credits
-- a workspace membership is not enough to manage billing
-- token ownership is not enough to perform admin actions
-- product access is not enough to change platform-wide configuration
-
-The access model must therefore remain multi-dimensional.
-
----
-
-## Distinction Between Role, Permission, and Entitlement
-
-FUZE must preserve three separate concepts:
-
-### Role
-Defines structural authority in a scope.
-
-Examples:
-- workspace owner
-- workspace admin
-- workspace member
-- product operator
-- billing manager
-- support operator
-- platform admin
-
-### Permission
-Defines the precise action allowed.
-
-Examples:
-- `workspace.invite_member`
-- `workspace.remove_member`
-- `billing.view_invoice`
-- `credits.spend_workspace`
-- `product.qtb.manage_signals`
-- `admin.restrict_account`
+### Membership
+The structural relationship between a canonical account and a workspace. Membership is not itself final authority.
 
 ### Entitlement
-Defines whether the account or workspace is commercially or operationally eligible to use the relevant product or feature.
+A commercial or operational eligibility state that may be required in addition to permission before capability use is allowed.
 
-Examples:
-- QTB access enabled
-- workspace has Botmad plan
-- feature unlocked by credits
-- premium AI tier active
+### Effective Permission
+The resolved action-level authorization outcome after roles, permissions, restrictions, entitlement inputs, object conditions, and policy are evaluated.
 
-A user may have permission to configure a feature but lack entitlement to use it until billing conditions are satisfied.
+### Restriction
+A state that suppresses ordinary authority even where prior grants exist.
+
+### Governance-Sensitive Action
+An action that requires stronger control, approval, or policy than ordinary operational administration.
+
+---
+
+## Architectural Position in the Spec Hierarchy
+
+This document sits below:
+
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `IDENTITY_AND_ACCOUNT_SPEC.md`
+- `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
+- `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
+- `WORKSPACE_AND_ORGANIZATION_SPEC.md`
+
+and above:
+
+- `WORKSPACE_MEMBERSHIP_LIFECYCLE_SPEC.md`
+- `SCOPED_AUTHORIZATION_MODEL_SPEC.md`
+- `ACCESS_EVALUATION_AND_EFFECTIVE_PERMISSION_SPEC.md`
+- `ADMIN_ACCESS_CORRECTION_AND_CONTAINMENT_SPEC.md`
+- `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md`
+- `ENTITLEMENT_AND_CAPABILITY_GATING_SPEC.md`
+- `ROLE_PERMISSION_ACCESS_API_SPEC.md`
+
+This document owns the canonical authorization structure and baseline rule set. It does not absorb the deeper downstream ownership of membership lifecycle, evaluation internals, object-level effective permission logic, admin containment, or commercial eligibility logic.
+
+---
+
+## System Boundaries
+
+This document governs only the following platform-owned boundaries:
+
+- canonical role semantics
+- canonical permission semantics
+- authorization scope semantics
+- baseline role categories and bounded inheritance posture
+- canonical distinction between authorization and adjacent domains
+- minimum access-decision ordering
+- restriction and deny semantics
+- auditability expectations for access mutations and sensitive access decisions
+- structural data-model direction for role and permission truth
+
+It does not govern:
+
+- identity bootstrap
+- session lifecycle
+- workspace existence and ownership structure in full depth
+- exact product-specific permission tables
+- exact per-object policy expressions
+- pricing and commercial truth
+- wallet or token verification truth
+- governance workflow mechanics in full depth
+
+---
+
+## Adjacent Boundaries
+
+### Identity Domain
+Owns canonical account identity. Authorization consumes identity truth but does not define it.
+
+### Auth / Session Domain
+Owns authentication and session validity. Authorization depends on session validity but does not own it.
+
+### Workspace / Organization Domain
+Owns workspace existence, ownership relationships, lifecycle, and membership structure. Authorization consumes resolved scope and membership truth but does not replace them.
+
+### Membership Lifecycle Domain
+Owns invitation, activation, restriction, removal, and membership-state transitions. This specification assumes that membership state is canonical input.
+
+### Scoped Authorization Model Domain
+Owns the deeper structural model for how authorization binds to resolved scopes and possibly nested or object-level context.
+
+### Effective Permission Domain
+Owns detailed action-level decision logic, object conditions, and final policy-resolution semantics beyond the canonical baseline established here.
+
+### Entitlement / Capability Gating Domain
+Owns commercial and operational eligibility gating. Authorization may still deny a capability even when role/permission is valid if entitlement is absent.
+
+### Security / Risk Domain
+Owns elevated risk, abuse, review, and emergency restriction controls that can override ordinary authority.
+
+### Governance / Control-Plane Domain
+Owns stronger approval, dual-control, or governance workflows for governance-sensitive actions.
+
+### Product Domains
+May define product-local roles and object-level rules on top of platform truth, but may not replace shared authorization semantics.
+
+---
+
+## Roles / Actors / Entities
+
+### End User
+A canonical account acting on its own behalf or within a workspace/product scope.
+
+### Workspace Member
+A canonical account with a membership relationship in a workspace.
+
+### Workspace Owner
+The highest ordinary workspace-control role, bounded by platform policy and non-inheritance into platform/governance powers.
+
+### Workspace Administrator
+An elevated workspace role for operational administration inside workspace boundaries.
+
+### Workspace Billing Manager
+A role for workspace commercial and billing-related actions subject to downstream policy.
+
+### Workspace Operator
+A role for shared operational and workflow actions.
+
+### Workspace Viewer
+A read-oriented role where limited observation is permitted.
+
+### Product Operator / Product Manager / Product Editor
+Product-scoped roles used inside one product domain under resolved account/workspace scope.
+
+### Support Operator
+Internal role for bounded support and corrective action workflows.
+
+### Finance Operator
+Internal role for billing/credits/commercial corrective workflows.
+
+### Risk Reviewer
+Internal role for abuse, fraud, and restriction review.
+
+### Platform Administrator
+Internal role for broad operational administration, still bounded by policy.
+
+### Governance-Aware Actor
+A role or approval actor permitted to participate in governance-sensitive workflows.
+
+---
+
+## Ownership Model
+
+### Authorization Domain Owns
+- canonical role definitions at the platform layer
+- canonical permission naming direction at the platform layer
+- role-to-permission baseline mapping structures
+- scope applicability semantics
+- inheritance constraints
+- access-decision baseline ordering
+- restriction and deny semantics at the authorization layer
+- canonical authorization audit references in coordination with audit domain
+
+### Authorization Domain May
+- expose canonical role catalogs
+- expose permission catalogs and mapping summaries
+- resolve baseline grants for downstream evaluation
+- publish domain events after canonical access mutations
+- coordinate with downstream policy/effective-permission engines
+
+### Authorization Domain Must Not
+- redefine account identity
+- redefine workspace or membership truth
+- redefine entitlement truth
+- define billing or credits ledger truth
+- define wallet-link truth
+- bypass security/risk overrides
+- allow products to become canonical owners of shared authorization
+
+### Product Domains May
+- consume canonical role/permission truth
+- define product-local roles and permissions within approved namespaces
+- add object-level checks within product boundaries
+- surface user-visible explanations of access state
+
+### Product Domains Must Not
+- define hidden shared platform roles
+- bypass workspace or platform authorization for shared concerns
+- treat entitlement as complete authorization
+- grant platform-level admin power through product-local roles
+- treat token status as admin or workspace-control authority
+
+---
+
+## Authority / Decision Model
+
+Authorization is a layered decision system.
+
+### Identity/Auth Layer Provides
+- canonical account identity
+- valid session/runtime presence
+- risk and recovery-related restrictions where applicable
+
+### Workspace Layer Provides
+- resolved collaborative scope
+- membership presence and status
+- workspace lifecycle state
+
+### Authorization Layer Decides
+- which role grants apply in the resolved scope
+- which permissions are potentially granted
+- whether inheritance is valid
+- whether restriction rules suppress ordinary grants
+- whether the requested action is permitted structurally
+
+### Entitlement / Capability Layer Decides
+- whether the commercially or operationally required capability is enabled
+
+### Security / Governance Layers May Override
+- whether the action must be denied, restricted, escalated, or routed for review
+
+This layered model is mandatory. No single layer may be treated as sufficient for all access decisions.
 
 ---
 
 ## Scope Model
 
-Roles and permissions in FUZE must always be tied to a scope.
+Roles and permissions in FUZE must always be tied to explicit scope. Scope must never be implicit.
 
 ### 1. Account Scope
-Permissions tied directly to the user’s own account.
+Authority tied to the user’s own canonical account.
 
-Examples:
+Representative examples:
 - update own profile
 - manage own linked logins
 - view own receipts
-- link own wallet
+- link own wallet where allowed
+- view own audit history where policy allows
 
 ### 2. Workspace Scope
-Permissions tied to a collaborative context.
+Authority tied to collaborative scope.
 
-Examples:
-- invite workspace member
-- manage workspace billing
-- spend workspace credits
-- configure shared product resources
+Representative examples:
+- invite member
+- remove member
+- assign workspace role
+- manage shared settings
+- spend workspace credits where separately allowed
+- manage workspace billing surface where separately allowed
 
 ### 3. Product Scope
-Permissions tied to product-specific functions within account or workspace context.
+Authority tied to a product capability within an account or workspace context.
 
-Examples:
+Representative examples:
 - manage QTB watchlists
-- approve Botmad workflow
-- edit HerHelp generated app
+- operate Botmad workflows
+- edit HerHelp-generated assets
+- manage AIE content
 - manage ZAGA utility configuration
 
-### 4. Platform Admin Scope
-Permissions tied to platform-wide operational control.
+### 4. Platform Operational Scope
+Authority tied to internal platform operations.
 
-Examples:
+Representative examples:
 - restrict account
+- suspend workspace
 - review abuse case
-- correct billing state
-- rotate provider configuration under policy
+- execute support correction
+- inspect system operations dashboards
 
 ### 5. Governance-Sensitive Scope
-Permissions tied to actions that require stronger control, explicit policy, or coordination with governance-aware control paths.
+Authority tied to actions requiring stronger control-plane or governance-aware control.
 
-Examples:
-- approve high-impact credits adjustment path
-- change payout-cycle operational status
-- alter contract registry mapping
-- execute reserve-related off-chain control action
+Representative examples:
+- initiate payout-cycle operational transition
+- approve high-impact credits control path
+- update public registry interpretation under policy
+- perform reserve-related operational coordination
+- trigger emergency control posture
 
-Scope must never be implicit.
+### Scope Rules
+- scope must be resolved before authorization
+- scope selection does not create authority
+- the same actor may hold different roles in different scopes
+- higher-risk scopes require stronger control and may use separate approval flows
+- cross-scope assumptions are disallowed unless explicitly defined
 
 ---
 
@@ -242,18 +486,19 @@ Scope must never be implicit.
 FUZE must support role categories across multiple levels.
 
 ### Account-Level Roles
-Roles associated with the account’s authority over itself.
+These govern self-service and account-bound actions.
 
-Examples:
-- account owner (implicit self-authority)
-- self-service actor
-- restricted account state
-- support-reviewed account state
+Representative categories:
+- account self-service
+- restricted account posture
+- support-reviewed account posture
+
+These are not substitutes for workspace or platform roles.
 
 ### Workspace-Level Roles
-Roles associated with collaborative environments.
+These govern collaborative operation.
 
-Minimum recommended roles:
+Minimum semantic baseline:
 - workspace owner
 - workspace admin
 - workspace billing manager
@@ -262,43 +507,42 @@ Minimum recommended roles:
 - workspace viewer
 
 ### Product-Level Roles
-Roles that extend workspace or account authority inside one product domain.
+These extend platform/workspace structure inside a product.
 
-Examples:
-- QTB operator
-- AIMM operations manager
-- ZAGA utility manager
-- AIE editor
-- HerHelp app manager
-- Botmad workflow manager
+Representative categories:
+- product operator
+- product manager
+- product editor
+- product reviewer
+- product viewer
+
+All product roles must remain namespaced and product-bounded.
 
 ### Platform Operational Roles
-Roles for internal platform operations.
+These govern internal operational access.
 
-Examples:
+Minimum semantic baseline:
 - support operator
 - finance operator
 - risk reviewer
-- platform admin
 - reporting operator
+- platform admin
 
 ### Governance-Aware Roles
-Roles used for sensitive control pathways.
+These govern stronger control paths.
 
-Examples:
+Representative categories:
 - governance approver
 - control-plane reviewer
 - payout-cycle operator
-- registry maintainer under policy
-- emergency operations operator
+- registry maintainer
+- emergency operations actor
 
-Not every installation needs every role at first launch, but the semantic categories must exist.
+Not every deployment requires every exact role at launch, but the semantic categories must remain expressible.
 
 ---
 
-## Workspace-Level Role Semantics
-
-At minimum, the workspace layer should support the following semantic roles.
+## Baseline Role Semantics
 
 ### Workspace Owner
 Highest ordinary workspace authority.
@@ -306,444 +550,634 @@ Highest ordinary workspace authority.
 May typically:
 - manage membership
 - manage workspace settings
-- manage workspace billing context
-- assign roles subject to platform limits
-- archive or close workspace if permitted
+- assign ordinary workspace roles subject to policy
 - manage shared workspace resources
+- initiate archive or closure flows where policy allows
 
-May not automatically:
+Must not automatically:
 - become platform admin
-- bypass governance-sensitive controls
-- override product-specific safety rules without policy support
+- receive governance-sensitive authority
+- bypass entitlement, billing, or product-safety rules
+- bypass security/risk controls
 
 ### Workspace Admin
 Operational administrator inside the workspace.
 
 May typically:
 - invite members
-- manage many workspace settings
-- manage product access within workspace rules
+- manage many settings
+- administer product access within workspace rules
 - view usage and reporting where allowed
 
-May not automatically:
-- transfer ownership unless explicitly allowed
-- perform all billing-sensitive or governance-sensitive actions
+Must not automatically:
+- transfer ownership unless separately allowed
+- perform every billing-sensitive action
+- perform governance-sensitive actions
 
-### Billing Manager
-Commercial authority for workspace billing.
+### Workspace Billing Manager
+Commercial role tied to workspace billing and commercial surfaces.
 
 May typically:
-- view invoices
-- manage subscriptions
+- view billing summary
+- view invoices and receipts
+- manage subscriptions where supported
 - manage payment methods where supported
-- view credit balances
-- approve certain spending actions
+- view credits usage where policy allows
+
+Must not automatically:
+- become workspace owner
+- gain product or governance authority unrelated to billing
 
 ### Workspace Operator
-Operational role for managing shared workflows and product functions.
+Operational role for shared workflows and product operations.
 
 ### Workspace Member
-Normal active participant with product usage access according to entitlements and product configuration.
+Normal active participant whose authority remains bounded by workspace role, product permissions, and entitlements.
 
 ### Workspace Viewer
-Read-only or limited access participant where appropriate.
+Read-only or limited-observation role.
 
-These are canonical semantic roles. Exact permission mapping is defined by platform policy and downstream specs.
+### Internal Operational Roles
+Support, finance, risk, reporting, and platform admin roles are bounded internal roles and must remain explicitly permission-scoped.
 
----
-
-## Product-Level Role Semantics
-
-Products may define additional roles, but only on top of the canonical platform model.
-
-### Product role principles
-
-- product roles must resolve from an authenticated account and, where relevant, a valid workspace membership
-- product roles may extend but not replace workspace/platform roles
-- product roles must not bypass billing, credits, or governance constraints
-- product roles must remain namespaced to the product domain
-
-### Examples
-
-#### QTB
-- signal manager
-- strategy viewer
-- alert operator
-
-#### AIMM
-- market-ops manager
-- liquidity observer
-- execution reviewer
-
-#### ZAGA
-- utility manager
-- campaign operator
-- token-ops editor
-
-#### AIE
-- intelligence editor
-- event curator
-- workspace viewer
-
-#### HerHelp
-- app builder
-- form manager
-- business workflow operator
-
-#### Botmad
-- workflow designer
-- task reviewer
-- execution monitor
-
-Product roles should be implemented only where product complexity justifies them.
+### Governance-Aware Roles
+These are never implied by workspace status, product ownership, or ordinary admin convenience.
 
 ---
 
-## Access Decision Flow
+## Permission Model
 
-The canonical access decision flow in FUZE should be:
+Permissions are the enforceable action layer. FUZE should prefer durable, explicit, namespaced permission naming.
 
-1. resolve authenticated account from session
-2. verify session is still valid
-3. resolve requested scope (account / workspace / product / admin / governance-sensitive)
-4. resolve workspace membership if workspace context exists
-5. verify workspace and membership are active
-6. resolve assigned roles in the relevant scope
-7. check required permission(s)
-8. check required entitlement or billing state
-9. apply policy and restriction checks
-10. return allow, deny, or escalate/review-required result
+### Permission Design Rules
+- permission names should be durable and semantically clear
+- permissions should be namespaced by domain
+- permissions should describe actions, not vague status
+- permissions should remain separate from role names
+- permissions should be bindable to defined scopes
+- permissions should support policy evolution without semantic drift
 
-This flow should be explicit in implementation, even if optimized internally.
+### Representative Permission Domains
+
+#### Identity / Account Permissions
+Examples:
+- `account.profile.update_self`
+- `account.linked_login.manage_self`
+- `account.audit.view_self`
+- `account.recovery.initiate_self`
+
+#### Workspace Permissions
+Examples:
+- `workspace.member.invite`
+- `workspace.member.remove`
+- `workspace.role.assign`
+- `workspace.settings.manage`
+- `workspace.archive.initiate`
+- `workspace.owner.transfer`
+
+#### Billing / Commerce / Credits Permissions
+Examples:
+- `billing.invoice.view`
+- `billing.subscription.manage`
+- `billing.payment_method.manage`
+- `credits.balance.view`
+- `credits.workspace.spend`
+- `credits.adjustment.issue_internal`
+
+#### Product Permissions
+Examples:
+- `product.qtb.signals.manage`
+- `product.botmad.workflow.approve`
+- `product.herhelp.app.manage`
+- `product.aie.content.edit`
+- `product.zaga.utility.manage`
+
+#### Reporting Permissions
+Examples:
+- `report.internal.view`
+- `report.export.execute`
+- `report.transparency_inputs.view`
+- `report.payout_ledger.view`
+
+#### Platform Operational Permissions
+Examples:
+- `admin.account.restrict`
+- `admin.workspace.suspend`
+- `admin.support_correction.execute`
+- `admin.system_dashboard.view`
+
+#### Governance-Sensitive Permissions
+Examples:
+- `governance.payout_cycle.transition`
+- `governance.control_plane.change_approve`
+- `governance.registry.mapping_update`
+- `governance.reserve_coordination.execute`
+
+These examples are semantic direction, not frozen final tables.
 
 ---
 
-## Minimum Permission Domains
+## Access Decision Model
 
-The permission model should at minimum support the following permission domains.
+The canonical FUZE access-decision flow must remain explicit even if optimized internally.
 
-### Identity and Account Permissions
-Examples:
-- manage linked login methods
-- update self profile
-- initiate account recovery
-- view own audit history where allowed
+1. resolve canonical account from valid session
+2. verify session and account state still permit access evaluation
+3. resolve requested scope
+4. resolve workspace membership where workspace context exists
+5. verify scope state and membership state are active enough for the action
+6. resolve assigned roles within the relevant scope
+7. derive candidate permissions from role assignment and bounded inheritance
+8. check whether required permission is granted
+9. check relevant entitlement or commercial gating if the capability requires it
+10. apply object-state, restriction, security, and policy checks
+11. return `allow`, `deny`, or `escalate/review_required`
 
-### Workspace Permissions
-Examples:
-- invite member
-- remove member
-- assign role
-- view workspace usage
-- archive workspace
-- transfer workspace ownership
+### Access Model Rules
+- authentication success is necessary but not sufficient
+- valid session is necessary but not sufficient
+- workspace membership is necessary for many workspace actions but not sufficient
+- entitlement is necessary for some capabilities but not sufficient if permission is absent
+- policy or restriction may deny an action even when ordinary role/permission appears to allow it
+- review-required is a valid first-class outcome for sensitive actions
 
-### Billing and Credits Permissions
-Examples:
-- view invoices
-- manage billing plan
-- view workspace credits balance
-- spend workspace credits
-- issue support credit adjustment (internal role only)
-- view payment history
+---
 
-### Product Permissions
-Examples:
-- create product resource
-- edit product resource
-- run product workflow
-- manage shared product settings
-- approve product-level automation
+## Distinction Between Role, Permission, and Entitlement
 
-### Reporting Permissions
-Examples:
-- view internal report
-- export report
-- view transparency report inputs
-- access payout ledger views
+FUZE must preserve the following distinctions:
 
-### Platform Admin Permissions
-Examples:
-- restrict account
-- suspend workspace
-- review abuse case
-- execute support correction
-- view system-wide operational dashboards
+### Role
+Defines structural authority bundle in a scope.
 
-### Governance-Sensitive Permissions
-Examples:
-- initiate payout-cycle operational transition
-- approve control-plane change
-- perform reserve-related off-chain coordination
-- update registry data under policy control
+### Permission
+Defines the precise action allowed.
+
+### Entitlement
+Defines whether the account or workspace is commercially or operationally eligible to use a product or feature.
+
+### Required Separation Rules
+- a role is not an entitlement
+- an entitlement is not a permission
+- a permission is not a product plan
+- a workspace owner is not automatically a billing-approved actor for every commercial action
+- a paid plan does not automatically grant all high-risk actions to all members
+
+This separation is essential to avoiding authorization drift.
 
 ---
 
 ## Permission Inheritance and Resolution
 
-FUZE should support explicit permission inheritance, but it must remain bounded.
+FUZE may support inheritance, but inheritance must be bounded and explicit.
 
-### Recommended inheritance principles
-
-- higher roles may include lower-role permissions within the same scope
-- workspace roles may grant product access only where product policy allows
-- product roles may refine capabilities inside a product but may not enlarge platform authority automatically
-- platform operational roles do not automatically grant governance-sensitive permissions
-- governance-sensitive permissions should not be inherited casually from ordinary admin roles
+### Required Inheritance Rules
+- higher roles may include lower-role permissions within the same scope only where explicitly mapped
+- workspace roles may expose product access only where product policy allows
+- product roles may refine capability inside the product but may not enlarge platform authority automatically
+- platform operational roles do not automatically inherit governance-sensitive powers
+- governance-sensitive permissions must not be inherited casually from workspace or ordinary admin roles
+- inheritance must be deterministic and auditable
 
 ### Example
-
 A workspace owner may inherit:
 - workspace admin permissions
-- member permissions
-- viewer permissions
+- workspace member permissions
+- workspace viewer permissions
 
-But a workspace owner should not automatically inherit:
+A workspace owner must not automatically inherit:
 - support operator privileges
-- platform finance correction privileges
-- payout-cycle admin privileges
-- governance registry modification privileges
+- finance remediation privileges
+- governance registry-modification privileges
+- payout-cycle control privileges
 
-Inheritance must be intentional, not assumed.
+### Direct Overrides
+Direct permission overrides should remain rare, explicit, visible, and auditable. The platform should prefer stable role-based grants for ordinary behavior.
 
 ---
 
-## Restriction and Deny Model
+## Restriction, Deny, and Escalation Model
 
-Access control must support explicit deny or restriction outcomes.
+Authorization must support explicit `deny`, `restricted`, and `review-required` outcomes.
 
-### Deny scenarios include:
+### Representative Deny Scenarios
 - no valid session
 - missing membership
 - missing permission
-- inactive workspace
+- inactive or unavailable scope
 - insufficient entitlement
-- account restricted or suspended
-- workspace restricted or suspended
+- restricted or suspended account
+- restricted or suspended workspace
 - policy-blocked sensitive action
+- governance-sensitive action attempted through ordinary role
 
-### Restriction behavior
+### Restriction Rules
+- restricted actors or scopes may remain visible and auditable
+- restrictions suppress ordinary action rights until reinstatement or review completion
+- restriction state outranks stale cached grants
 
-A restricted actor may:
-- still exist in the system
-- still appear in audit history
-- still be readable for support and reporting
-- lose normal action rights until reinstatement or review completion
+### Escalation Rules
+An access decision may return review-required when:
+- policy requires higher approval
+- the action is governance-sensitive
+- security/risk signals elevate the request
+- admin correction or containment workflow is required
+- entitlement or object-state ambiguity requires explicit handling
 
-A deny result must not be treated as an implementation inconvenience. It is a required platform state.
-
----
-
-## Billing and Credits Access Control
-
-Billing and credits are especially sensitive domains and require explicit controls.
-
-### Typical workspace-facing permissions
-
-- view billing summary
-- view invoices and receipts
-- manage subscription plan
-- add or manage payment method where supported
-- view credits balance
-- approve workspace credits spending for sensitive or high-value actions
-- access usage and spend history
-
-### Internal-only permissions
-
-- issue corrective credits adjustment
-- reverse balance under policy
-- review payment anomalies
-- flag fraud or abuse risk
-- perform finance-side remediation
-
-Products must not redefine billing or credits authority locally. They must rely on platform-controlled permission domains.
+Deny is not an implementation inconvenience. It is a core platform state.
 
 ---
 
-## Wallet-Aware and Holder-Aware Access Implications
+## Billing, Credits, and Commercial Access Considerations
 
-Wallet-aware context may influence user experience or eligibility, but it must not replace authorization.
+Billing and credits are especially sensitive authorization domains.
 
-### Correct usage examples
+### Required Rules
+- products must not redefine billing or credits authority locally
+- billing-visible and billing-mutating actions must be separately permissioned
+- spending authority and viewing authority should be distinguishable
+- internal corrective finance actions must remain internal-only permissions
+- commercial attachment does not automatically imply broad workspace admin power
+- commercial entitlement evaluation remains downstream, but authorization must provide the bounded actor permission layer
 
-- showing holder rank
-- enabling a holder-only feature if platform policy says so
-- determining payout eligibility context through wallet linkage and snapshot logic
-
-### Incorrect usage examples
-
-- granting workspace admin privileges because a wallet holds tokens
-- bypassing billing controls because a wallet is linked
-- granting support/admin access based on token ownership
-- treating wallet possession as sufficient proof of product authority
-
-Token-aware context is a participation dimension, not a substitute for the platform permission model.
+Billing and credits are a shared trust surface and therefore require platform-controlled authorization.
 
 ---
 
-## Admin and Support Access Model
+## Wallet-Aware and Holder-Aware Access Considerations
+
+Wallet-aware context may influence visibility, eligibility, or experience, but it must not replace authorization.
+
+### Allowed Patterns
+- show holder-aware UI
+- enable holder-gated features where entitlement/policy allows
+- use wallet linkage as one eligibility input for payout or participation logic
+
+### Disallowed Patterns
+- grant workspace admin because a wallet holds tokens
+- bypass billing or credits controls because a wallet is linked
+- grant support or platform admin privileges based on token ownership
+- treat token possession as sufficient authority for shared platform actions
+
+Wallet-aware participation is adjacent to authorization, not a replacement for it.
+
+---
+
+## Internal Operational Access Model
 
 FUZE must define a bounded internal operational access model.
 
-### Minimum internal operational roles may include:
-
+### Minimum Internal Role Families
 - support operator
 - finance operator
 - abuse/risk reviewer
 - reporting operator
 - platform admin
 
-### Rules for internal roles
-
-- each role must be scoped and permission-bounded
-- internal roles must be auditable
-- support operators should not automatically receive finance or governance-sensitive permissions
-- platform admin should remain bounded by policy and control-plane rules
-- sensitive internal actions must generate audit events and, where necessary, require dual control or approval
-
-Operational convenience must not replace structured access control.
+### Internal Access Rules
+- each role must be permission-bounded
+- support roles must not automatically gain finance or governance-sensitive powers
+- platform admin remains bounded by policy, audit, and control-plane restrictions
+- privileged internal actions require durable audit records
+- stronger control or dual approval may be required for certain action classes
+- operational convenience must not outrank authorization structure
 
 ---
 
 ## Governance-Sensitive Access Model
 
-Certain actions require stricter control than normal admin permissions.
+Certain actions require stronger control than ordinary admin rights.
 
-### Governance-sensitive actions may include:
-
-- payout-cycle control changes
+### Governance-Sensitive Action Classes May Include
+- payout-cycle control transitions
 - reserve-related off-chain operational actions
-- registry changes affecting public contract or wallet interpretation
-- policy-changing credits control paths
+- public registry changes affecting contract or wallet interpretation
+- high-impact credits control paths
 - emergency-control triggers
-- changes linked to multisig/timelock-governed execution paths
+- actions linked to multisig/timelock-governed execution paths
 
-### Governance-sensitive access rules
+### Required Rules
+- governance-sensitive actions must be explicitly classified
+- such actions must not be granted through ordinary workspace roles
+- such actions must not be assumed from product ownership
+- such actions should route through governance-aware or control-plane workflows
+- such actions should support pending/approved/rejected semantics where appropriate
+- such actions must be auditable and policy-referenced
 
-- must be explicitly classified
-- must not be granted through ordinary workspace roles
-- must not be assumed from product ownership
-- should be routed through control-plane and governance-aware workflows
-- should support pending/approved/rejected states where appropriate
-- must be auditable
-
-This distinction is essential to FUZE’s trust model.
-
----
-
-## Audit Requirements
-
-Access-control events must be auditable.
-
-At minimum, audit events should exist for:
-
-- role assignment
-- role removal
-- membership change affecting access
-- billing-authority change
-- workspace ownership change
-- permission-sensitive action denials where policy requires logging
-- internal support/admin actions
-- governance-sensitive access requests or approvals
-- account or workspace restriction actions
-
-Audit is not optional because authority changes are part of the trust surface of the platform.
+This separation is required for FUZE’s long-term trust model.
 
 ---
 
-## Minimum Data Model Requirements
+## Permission / Access Considerations
 
-At minimum, the access-control system must support:
+This document governs authorization structure, not all membership or scope lifecycle details.
 
-### Role Assignment
-- subject account ID
+### Mandatory Constraints
+- authorization must execute after scope resolution
+- active workspace context is required before mutating workspace-owned resources
+- current scope selector is runtime context only and must not create authority
+- self-escalation must be blocked
+- owner continuity safeguards must exist for owner-removal or ownership-transfer actions
+- object-level checks may further narrow ordinary role grants
+- cached permission views are non-canonical for sensitive actions
+
+---
+
+## Entitlement Considerations
+
+Entitlement is an adjacent but separate domain.
+
+### Required Rules
+- workspace or account may be the subject of entitlement
+- valid permission does not guarantee entitlement
+- valid entitlement does not guarantee permission
+- entitlement checks occur after scope resolution and in coordination with permission evaluation
+- product surfaces must not present entitlement as equivalent to authorization
+
+This document establishes the structural separation; downstream entitlement specs define detailed gating behavior.
+
+---
+
+## API / Contract Implications
+
+The platform should expose authorization through explicit domain boundaries.
+
+### Authorization APIs Should Own
+- role catalog reads
+- permission catalog reads
+- role assignment and revocation within approved scope
+- access-evaluation requests
+- effective access summaries where appropriate
+- admin-safe access mutation pathways
+- audit-friendly access mutation results
+
+### Identity APIs Should Not
+- own role or permission truth, even if they expose derived summaries
+
+### Session APIs Should Not
+- pretend session presence is equivalent to authority
+
+### Workspace APIs Should Not
+- redefine permission logic, though they may expose structural membership and owner data consumed by authorization
+
+### API Rules
+- all mutation-capable endpoints must support correlation identifiers
+- idempotency is required where retries are plausible, especially for role assignment, role removal, owner-transfer-related authority updates, restriction changes, and admin corrections
+- control-plane/admin APIs require stronger authorization and richer audit metadata
+- review-required results must be first-class contract outcomes where sensitive actions require escalation
+
+---
+
+## Event / Async Implications
+
+Authorization and access mutations must emit durable events sufficient for audit and downstream coordination.
+
+Representative semantic events include:
+- `authz.role_assigned`
+- `authz.role_revoked`
+- `authz.permission_mapping_changed`
+- `authz.scope_restriction_changed`
+- `authz.access_denied_logged`
+- `authz.owner_transfer_authority_changed`
+- `authz.admin_override_requested`
+- `authz.admin_override_completed`
+- `authz.governance_action_requested`
+- `authz.governance_action_approved`
+- `authz.governance_action_rejected`
+
+### Event Rules
+- events must be emitted only after canonical state transitions commit
+- async delivery failure must not redefine canonical authorization truth
+- consumers may react but may not become owners of shared authorization semantics
+- retries must be replay-safe and idempotent
+- event semantics must preserve distinction between structural role changes and transient evaluation outcomes
+
+---
+
+## Data Model / Storage Implications
+
+At minimum, the platform should support the following durable semantic structures.
+
+### `role_assignment`
+Representative semantic fields:
+- `assignment_id`
+- `subject_account_id`
 - role name
 - scope type
-- scope ID
+- scope identifier
 - assigned_by
 - assigned_at
-- expires_at or removal state where applicable
+- expires_at where applicable
+- status / removal marker
+- correlation reference
 
-### Membership/Access State
-- account ID
-- workspace ID
-- membership status
-- role references
-
-### Permission Mapping
+### `role_definition`
+Representative semantic fields:
 - role name
-- permission name(s)
 - scope applicability
-- policy version or config reference where applicable
+- semantic category
+- inheritance references
+- status
+- policy version reference
 
-### Access Audit Record
+### `permission_mapping`
+Representative semantic fields:
+- role name
+- permission name
+- scope applicability
+- mapping status
+- policy/config version
+- effective date markers where applicable
+
+### `access_restriction`
+Representative semantic fields:
+- subject reference
+- scope reference
+- restriction type
+- reason code
+- policy reference
+- applied_by
+- applied_at
+- cleared_at where applicable
+
+### `access_audit_reference`
+Representative semantic fields:
+- action ID
 - actor
 - target
-- action
 - scope
+- requested action
 - result
+- reason/policy context
 - timestamp
-- reason or policy context where applicable
+- correlation reference
+
+### Data Rules
+- role and permission truth must remain durable canonical entities or controlled configuration with durable versioning
+- derived dashboards, caches, analytics views, and product summaries must not become write owners
+- corrections should prefer explicit lineage and terminal transitions over hidden destructive rewrite
+- object-level effective permission caches are advisory only for sensitive actions
 
 ---
 
-## Integration Points
+## Security / Risk / Abuse Controls
 
-The role, permission, and access-control system integrates with:
+Authorization is a security boundary.
 
-- identity and account domain
-- auth/session domain
-- workspace and organization domain
-- billing and credits domains
-- wallet-aware participation domain
-- product domain services
-- control-plane and governance services
-- audit log service
-- reporting and transparency services
+The platform must preserve:
+- deny-by-default posture
+- anti-self-escalation safeguards
+- explicit restriction precedence
+- stronger control for high-sensitivity mutations
+- bounded internal operational access
+- separated governance-sensitive control paths
+- auditability for access mutation and privileged actions
+- resistance to stale-cache authorization mistakes for sensitive actions
+- product inability to bypass canonical access controls through local assumptions
 
-Each integration must treat the access-control domain as canonical for authorization logic.
-
----
-
-## Edge Cases and Failure Handling
-
-### User authenticated but no workspace selected
-The system must deny workspace-scoped actions until a valid workspace context is resolved.
-
-### User has workspace membership but product not enabled
-Access to that product feature must be denied until entitlement exists.
-
-### Role removed while session remains active
-Subsequent authorization checks must reflect the updated role state. Session validity does not override changed authority.
-
-### Workspace owner removed or suspended
-Controlled reassignment, restriction, or review workflow must occur. Ownership cannot remain logically orphaned.
-
-### Product caches old permission state
-Cached state is non-canonical. Fresh authorization checks must prevail for sensitive actions.
-
-### Internal admin attempts governance-sensitive action without proper scope
-The action must be denied or routed into the governance-aware control path.
-
-### Holder rank implies feature access but role missing
-Feature may be visible or conditionally eligible, but actual action must still satisfy authorization rules.
+Weak authorization structure would directly undermine account safety, workspace safety, billing controls, credits integrity, product trust, and governance trust.
 
 ---
 
-## Open Items
+## Audit / Traceability Requirements
 
-The following items are intentionally refined in downstream or implementation specifications:
+FUZE must be able to determine:
 
-- exact policy language or access engine representation
+- who assigned or removed a role
+- which scope a grant applied to
+- which policy or version defined the permission mapping
+- why an access mutation occurred
+- when a restriction overrode ordinary access
+- why a sensitive action was denied or routed to review
+- which internal operator executed privileged correction
+- whether a visible role/permission summary is canonical or derived
+- how owner, membership, billing, or workspace changes affected authority over time
+
+Authority changes are part of the platform trust surface and must be reconstructable.
+
+---
+
+## Failure Handling / Edge Cases
+
+### User Authenticated but No Workspace Selected
+Workspace-scoped actions must be denied until valid workspace context is resolved.
+
+### User Has Membership but Product Not Enabled
+Product action must be denied until entitlement exists.
+
+### Role Removed While Session Remains Active
+Subsequent authorization checks must reflect updated role state. Session validity does not preserve old authority.
+
+### Workspace Owner Removed or Suspended
+Controlled reassignment, restriction, or review must occur. Ownership may not remain logically orphaned.
+
+### Product Cache Holds Stale Permission State
+Fresh canonical authorization checks must prevail for sensitive actions.
+
+### Internal Admin Attempts Governance-Sensitive Action Without Proper Scope
+The action must be denied or routed into governance-aware control flow.
+
+### Holder Rank Suggests Feature Visibility but Role Missing
+Feature may be visible or appear eligible, but the action must still satisfy authorization.
+
+### Entitlement Exists but Permission Missing
+Access remains denied.
+
+### Permission Exists but Scope State Restricted
+Access remains denied or escalated according to policy.
+
+### Admin Correction Needed After Bad Role Grant
+The platform must preserve explicit corrective lineage rather than silently rewriting history.
+
+---
+
+## Operational Considerations
+
+Operational systems should support:
+- safe role-assignment and revocation workflows
+- observability for repeated denies, escalation volume, and stale-cache risk
+- clear control-plane tooling for privileged corrective actions
+- correlation across identity, session, workspace, authorization, commerce, and audit actions
+- replay-safe mutation handling for grants and revocations
+- support runbooks that reference policy without bypassing canonical mutation boundaries
+- reporting on ownerless-risk conditions, self-escalation attempts, and governance-sensitive request volumes
+
+Authorization changes are canonical platform mutations, not product-local convenience updates.
+
+---
+
+## Migration / Compatibility / Supersession Considerations
+
+- migrations must not silently move shared authorization ownership into product-local systems
+- compatibility layers may preserve older product roles temporarily, but canonical scope and authorization rules must remain platform-owned
+- role naming cleanup should prefer durable namespaces and reduced aliasing
+- older implementations or documents that imply login success equals authority, workspace selection equals permission, entitlement equals permission, or token ownership equals admin power are superseded within this scope
+- inheritance models may evolve, but bounded inheritance and governance separation must remain intact
+
+---
+
+## Dependencies / Cross-Spec Links
+
+This specification depends on:
+
+- `REFINED_SYSTEM_SPEC_INDEX.md`
+- `DOCS_SPEC_INDEX.md`
+- `SYSTEM_SPEC_INDEX.md`
+- `API_SPEC_INDEX.md`
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `IDENTITY_AND_ACCOUNT_SPEC.md`
+- `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
+- `FUZE_ACCOUNT_ACCESS_AND_SESSION_THESIS_FINAL_SPEC.md`
+- `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
+- `FUZE_ACCOUNT_ACCESS_CONTINUITY_SPEC.md`
+- `FUZE_PROVIDER_RESOLUTION_AND_LINKING_SPEC.md`
+- `FUZE_SESSION_LIFECYCLE_AND_SECURITY_SPEC.md`
+- `FUZE_ACCOUNT_RECOVERY_AND_CONFLICT_HANDLING_SPEC.md`
+- `WORKSPACE_AND_ORGANIZATION_SPEC.md`
+- `FUZE_WORKSPACE_ACCESS_CONTROL_BASICS_THESIS_FINAL_SPEC.md`
+- `WALLET_AWARE_USER_SPEC.md`
+- `SECURITY_AND_RISK_CONTROL_SPEC.md`
+- `AUTH_IDENTITY_API_SPEC.md`
+- `SESSION_AND_LINKED_LOGIN_API_SPEC.md`
+
+This specification directly governs or materially informs:
+
+- `WORKSPACE_MEMBERSHIP_LIFECYCLE_SPEC.md`
+- `SCOPED_AUTHORIZATION_MODEL_SPEC.md`
+- `ACCESS_EVALUATION_AND_EFFECTIVE_PERMISSION_SPEC.md`
+- `ADMIN_ACCESS_CORRECTION_AND_CONTAINMENT_SPEC.md`
+- `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md`
+- `ENTITLEMENT_AND_CAPABILITY_GATING_SPEC.md`
+- `ROLE_PERMISSION_ACCESS_API_SPEC.md`
+- `WORKSPACE_ORGANIZATION_API_SPEC.md`
+- commerce/billing/credits specs
+- product integration specifications
+- control-plane and governance workflow specifications
+
+---
+
+## Explicitly Deferred Items
+
+The following are intentionally deferred to adjacent or downstream specifications:
+
+- exact policy engine language and evaluation DSL
+- exact object-level effective permission algorithm
 - exact role-to-permission tables by product
-- exact seat-based permission interactions
-- exact approval workflow for governance-sensitive off-chain actions
-- exact just-in-time elevation or break-glass admin procedures if any
+- exact seat-based authority interactions
+- exact admin containment and break-glass workflow design
+- exact governance approval routing
+- exact UI explanation model for deny/review outcomes
 
-These do not weaken the canonical access model established here.
+These do not weaken the canonical authorization model established here.
 
 ---
 
-## Closing Summary
+## Final Normative Summary
 
-FUZE uses a layered access-control model in which authentication identifies the canonical account, workspace membership establishes collaborative context, roles define authority, permissions define allowable actions, and entitlements define product or feature eligibility. This model is necessary because FUZE combines individual use, team collaboration, shared billing, Platform Credits, product-specific operations, and governance-sensitive actions inside one ecosystem. Products may extend this model, but they may not replace it. Clear role, permission, and access boundaries are therefore essential to FUZE’s platform coherence, operational integrity, and long-term trust model.
+FUZE uses a layered authorization model in which authentication identifies the canonical account, workspace or other scope resolution establishes where the actor is operating, roles provide the bounded structural authority model, permissions provide the enforceable action model, entitlements provide adjacent eligibility inputs, and security/governance controls may further constrain the final outcome. Login success is not authority. Workspace presence is not permission. Entitlement is not permission. Wallet-aware status is not admin power. Product-local policy is not shared platform truth.
+
+Authorization must therefore remain explicit, scope-aware, permission-enforced, deny-by-default, least-privilege, auditable, and platform-owned. Products may extend the model inside their own domains, but they may not replace it. This document is the canonical FUZE rule set for role, permission, and access control.
