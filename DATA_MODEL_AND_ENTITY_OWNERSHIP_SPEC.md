@@ -1,118 +1,126 @@
-# DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC
+# FUZE Data Model and Entity Ownership Specification
 
 ## Document Metadata
-
-- Document Name: `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
-- Document Type: Canonical refined system specification
-- Status: Active refined system spec
-- Governing Layer: Platform constitution / data model / entity ownership
-- Parent Registry: `REFINED_SYSTEM_SPEC_INDEX.md`
-- Primary Audience: Platform architecture, backend engineering, product engineering, data engineering, API design, security, audit, operations, governance, reporting
-- Primary Purpose: Define the canonical entity-ownership architecture and data-model discipline for FUZE, including which entity families are canonical, which are derived, how lifecycle and mutation authority are assigned, how cross-domain references must work, and how correction, reconciliation, and migration must preserve ownership clarity
-- Primary Upstream References:
+- **Document Name:** `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- **Document Type:** Canonical refined system specification
+- **Status:** Active refined system spec
+- **Version:** 1.0
+- **Effective Date:** 2026-04-21
+- **Last Updated:** 2026-04-21
+- **Reviewed On:** 2026-04-21
+- **Document Owner:** FUZE Platform Architecture (canonical owner); named individual owner not explicitly specified in the retrieved governing materials
+- **Approval Authority:** Not explicitly specified in the retrieved governing materials; constitutional approval authority remains governed by `REFINED_SYSTEM_SPEC_INDEX.md` and the active FUZE approval workflow
+- **Review Cadence:** Not explicitly specified in the retrieved governing materials; SHOULD be reviewed whenever entity families, truth boundaries, lifecycle ownership, economic rails, chain commitments, or cross-domain persistence rules materially change
+- **Governing Layer:** Platform constitution / data model / entity ownership
+- **Parent Registry:** `REFINED_SYSTEM_SPEC_INDEX.md`
+- **Primary Audience:** Platform architecture, backend engineering, product engineering, data engineering, API design, contracts engineering, security, audit, operations, governance, finance systems, reporting, implementation-contract authors
+- **Primary Purpose:** Define the canonical entity-ownership architecture and data-model discipline for FUZE, including entity-family ownership, truth-location rules, lifecycle and mutation authority, cross-domain reference rules, and the persistence, API, event, audit, reconciliation, and migration guardrails that downstream specifications and implementations MUST preserve
+- **Primary Upstream References:**
+  - `REFINED_SYSTEM_SPEC_INDEX.md`
+  - `DOCS_SPEC_INDEX.md`
+  - `SYSTEM_SPEC_INDEX.md`
+  - `API_SPEC_INDEX.md`
   - `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
   - `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
   - `PLATFORM_ARCHITECTURE_SPEC.md`
   - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
-  - `SYSTEM_SPEC_INDEX.md`
-  - `API_SPEC_INDEX.md`
-  - `DOCS_SPEC_INDEX.md`
   - `FUZE_ACCOUNT_ACCESS_AND_SESSION_THESIS_FINAL_SPEC.md`
   - `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
   - `FUZE_WORKSPACE_ACCESS_CONTROL_BASICS_THESIS_FINAL_SPEC.md`
-- Primary Downstream Dependents:
+- **Primary Downstream Dependents:**
   - `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
   - `IDENTITY_AND_ACCOUNT_SPEC.md`
   - `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
+  - `WALLET_AWARE_USER_SPEC.md`
   - `WORKSPACE_AND_ORGANIZATION_SPEC.md`
   - `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
-  - `WALLET_AWARE_USER_SPEC.md`
   - `PLATFORM_CREDITS_SPEC.md`
   - `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md`
   - `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`
+  - `PAYMENT_RAILS_INTEGRATION_SPEC.md`
+  - `ENTITLEMENT_AND_CAPABILITY_GATING_SPEC.md`
   - `PAYOUT_LEDGER_SPEC.md`
   - `API_ARCHITECTURE_SPEC.md`
   - `PUBLIC_API_SPEC.md`
   - `INTERNAL_SERVICE_API_SPEC.md`
+  - `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
   - `AUDIT_LOG_AND_ACTIVITY_SPEC.md`
   - product integration specifications
+- **Supersedes:** Earlier or weaker FUZE entity-ownership interpretations that permit soft co-ownership, storage-driven truth drift, direct cross-domain mutation, reporting-owned business truth, or conflation of platform, product, execution, provider, and on-chain records
+- **Superseded By:** None currently defined
+- **Related Decision Records:** Not explicitly linked in the retrieved governing materials
+- **Canonical Status Note:** This document is the canonical entity and persistence interpretation layer beneath the top-level boundary, overview, architecture, and domain-ownership specifications. It is normative unless an explicitly higher constitutional source overrides it.
+- **Implementation Status:** Normative architecture and implementation-contract source; downstream schemas, APIs, events, workflows, ledgers, reports, indexes, runbooks, and migrations MUST align
+- **Approval Status:** Draft refined canonical specification pending explicit approval workflow
+- **Change Summary:** Consolidated the active refined interpretation for FUZE entity ownership and data-model discipline; normalized metadata; clarified entity families, truth classes, lifecycle ownership, policy-derived canonical outputs, projection rules, correction lineage, reconciliation posture, and downstream implementation guardrails
 
----
+## Title
+FUZE Data Model and Entity Ownership Specification
 
 ## Purpose
-
 This specification defines the canonical data model and entity ownership architecture of the FUZE ecosystem.
 
-Its purpose is to establish how durable truth is modeled across the FUZE platform, which domain owns which entity family, where canonical state resides, how lifecycle ownership is assigned, how derived entities differ from canonical entities, and how entity-level discipline must be preserved across products, reporting, workflows, APIs, on-chain systems, and external integrations.
+Its purpose is to make explicit:
+- which entity families are canonical in FUZE
+- which domain canonically owns each entity family
+- where authoritative truth resides for those entities
+- how lifecycle ownership and mutation authority are assigned
+- how platform, product, on-chain, policy-derived, execution, and reporting entities differ
+- how cross-domain references MUST preserve ownership clarity
+- how APIs, events, workflows, ledgers, caches, indexes, reports, and exports MUST behave relative to canonical entity owners
+- how correction, supersession, reconciliation, and migration MUST preserve trust and traceability
 
-This document is intentionally foundational and implementation-usable. It is the entity-level refinement of the FUZE boundary, architecture, and domain-ownership model. It exists to prevent duplicated truth, accidental co-ownership, ambiguous lifecycle control, and silent mutation through derived or convenience stores.
-
----
+This document is intentionally foundational and implementation-usable. It is the entity-layer refinement of the FUZE boundary, overview, architecture, and major-domain ownership model. It exists to prevent duplicate truth, accidental co-ownership, entity drift, storage-driven reinterpretation, and hidden mutation through derived systems. fileciteturn14file0 fileciteturn14file1 fileciteturn14file2
 
 ## Scope
-
 This specification governs:
-
 - the canonical entity-ownership philosophy of FUZE
-- the distinction between platform entities, product entities, on-chain entities, policy-derived canonical entities, execution entities, and derived/reporting entities
-- the source-of-truth rules for major canonical entity families
+- the distinction between canonical entities, policy-derived canonical entities, execution entities, and derived/reporting entities
+- the source-of-truth rules for major FUZE entity families
 - lifecycle ownership and mutation authority for canonical entities
 - cross-domain reference rules and identifier discipline
-- the treatment of projections, caches, ledgers, exports, indexes, and reporting artifacts
-- the data-model implications of platform/product/on-chain/external boundaries
+- the treatment of projections, caches, ledgers, indexes, exports, and reporting artifacts
+- the entity-level implications of platform, product, on-chain, reporting, control-plane, and external boundaries
 - correction, supersession, reconciliation, and migration discipline at the entity layer
-- the implications of entity ownership for APIs, events, audit, and operational remediation
+- the implications of entity ownership for APIs, events, workers, audit, security, and operational remediation
 
 This specification does not define:
-
 - every database table or full schema field list
-- every contract storage layout
-- every event payload
+- every contract storage layout or ABI
+- every event payload or queue topic
 - exact physical database topology
 - exact service decomposition or repository module boundaries
-- exact archival/retention policy by entity
+- exact archival or retention schedules for every entity type
 - exact foreign-key strategy across every service boundary
 
-Those belong in downstream specifications.
-
----
+Those belong in downstream specifications, provided those specifications remain consistent with this document. fileciteturn14file0
 
 ## Out of Scope
-
 This specification is explicitly out of scope for:
-
 - low-level persistence engine choices
-- narrow product-UI shape
-- exact queue technology
-- exact graph/search/index implementation details
+- narrow product-UI shapes
+- exact graph, search, and indexing implementation details
+- exact queue, broker, or worker runtime technology choices
 - exact contract ABI detail
-- endpoint-by-endpoint API schemas
-- human team ownership and staffing
+- endpoint-by-endpoint API schema detail
 - environment-specific deployment decisions
-
----
+- human staffing or org-chart structure
 
 ## Design Goals
-
-The design goals of the FUZE data model and entity ownership architecture are:
-
-1. Ensure every materially important fact has one canonical owner.
-2. Prevent the same business fact from being silently authored in multiple places.
-3. Distinguish canonical write models from derived read, cache, reporting, search, and analytics models.
-4. Preserve platform-first shared reuse without flattening product-specific truth.
-5. Make lifecycle, support, reconciliation, audit, and governance review easier through explicit entity lineage.
-6. Preserve strong separations among off-chain truth, on-chain truth, external truth, and policy-derived truth.
-7. Support multi-product expansion without forcing repeated re-litigation of entity ownership.
-8. Keep APIs, workflows, workers, and reporting aligned with entity ownership rather than convenience duplication.
-9. Support correction and supersession without destroying trust-sensitive history.
-10. Make future migrations and domain splits possible without loss of authority clarity.
-
----
+The design goals of the FUZE data model and entity ownership architecture are to:
+1. ensure every materially important fact has one canonical owner
+2. prevent the same business fact from being silently authored in multiple places
+3. distinguish canonical write models from derived read, cache, reporting, search, analytics, and publication models
+4. preserve platform-first shared reuse without flattening product-specific truth
+5. make lifecycle, support, reconciliation, audit, and governance review easier through explicit entity lineage
+6. preserve strong separations among off-chain truth, on-chain truth, external truth, execution truth, and policy-derived truth
+7. support multi-product expansion without repeated re-litigation of entity ownership
+8. keep APIs, workflows, workers, and reporting aligned with entity ownership rather than convenience duplication
+9. support correction and supersession without destroying trust-sensitive history
+10. make future migrations and domain splits possible without loss of ownership clarity
 
 ## Non-Goals
-
 This specification is not intended to:
-
 - force all entities into one monolithic schema
 - collapse product-domain truth into generic platform abstractions when that weakens product value
 - treat every derived model as ephemeral if the platform formally depends on it as a canonical pipeline output
@@ -121,690 +129,388 @@ This specification is not intended to:
 - define exact physical storage implementation for every entity family
 - imply that dashboards, reports, AI summaries, caches, or exports own the facts they display
 
----
-
 ## Core Principles
-
 ### 1. One Material Fact, One Canonical Owner
-Every materially important fact in the FUZE ecosystem must have one canonical owner.
+Every materially important fact in the FUZE ecosystem MUST have one canonical owner. fileciteturn14file0 fileciteturn14file2
 
 ### 2. Storage Convenience Never Overrides Ownership
-An entity may be copied, cached, indexed, summarized, or joined in many places, but it may not be silently re-authored in many places.
+An entity MAY be copied, cached, indexed, summarized, joined, exported, or published in many places, but it MUST NOT be silently re-authored in many places. fileciteturn14file0
 
 ### 3. Entity Ownership Is Lifecycle Ownership
-Canonical ownership includes existence, canonical fields, valid transitions, correction pathway, closure rules, and archival responsibility.
+Canonical ownership includes entity existence, canonical fields, valid state transitions, correction pathways, closure rules, archival posture, and reconciliation responsibilities. fileciteturn14file0
 
 ### 4. Derived Does Not Necessarily Mean Disposable
-A derived entity may still be canonical for its own domain if it is the authoritative output of a formal pipeline governed by the platform.
+A derived entity MAY still be canonical for its own bounded domain if it is the authoritative output of a formal pipeline governed by FUZE. fileciteturn14file0
 
 ### 5. Append-Oriented Correction Beats Silent Rewrite
-Trust-sensitive domains should prefer correction lineage, reversals, adjustments, or superseding records over silent destructive rewrites.
+Trust-sensitive domains SHOULD prefer adjustment, reversal, correction lineage, or superseding records over destructive overwrites. fileciteturn14file0
 
 ### 6. Cross-Domain References Must Preserve Ownership
-Products and adjacent domains should reference canonical entities rather than copy and re-own them.
+Products and adjacent domains SHOULD reference canonical entities rather than copy and re-own them. fileciteturn14file0
 
 ### 7. On-Chain and Off-Chain Entity Models Must Stay Distinct
-Contract-native entities and off-chain platform entities may be related, but they must not be collapsed into one ambiguous entity model.
+Contract-native entities and off-chain platform entities MAY be related, but they MUST NOT be collapsed into one ambiguous entity model. fileciteturn14file0 fileciteturn14file2
 
 ### 8. Reporting Artifacts Are Usually Downstream
-Reports, dashboards, exports, search indexes, and public views are usually derived artifacts, not source truth.
-
----
+Reports, dashboards, indexes, exports, analytics facts, AI summaries, and public read models are usually derived artifacts, not source truth. fileciteturn14file0 fileciteturn14file1
 
 ## Canonical Definitions
-
 ### Canonical Entity
-The primary entity record or record family authoritative for a fact, including canonical fields, valid transitions, mutation acceptance, and lifecycle truth.
+The primary entity record or record family authoritative for a fact, including canonical fields, valid transitions, mutation acceptance, and lifecycle truth. fileciteturn14file0
 
 ### Derived Entity
-A computed, copied, summarized, indexed, cached, exported, or publication-oriented representation created from canonical truth.
+A computed, copied, summarized, indexed, cached, exported, or publication-oriented representation created from canonical truth. fileciteturn14file0
 
 ### Projection / Read Model
-A query-optimized or interface-optimized representation built for product UX, reporting, search, dashboards, or operational views. It does not own the underlying fact.
+A query-optimized or interface-optimized representation built for product UX, reporting, search, dashboards, analytics, or operational views. It does not own the underlying fact. fileciteturn14file0
 
 ### Ledger Entity
-An append-oriented entity that records event or economic mutation history. A ledger may be canonical for historical mutation lineage without being the only canonical representation of current state.
+An append-oriented entity that records mutation lineage or economic history. A ledger MAY be canonical for historical mutation lineage without being the only canonical representation of current state. fileciteturn14file0
 
 ### Reference Entity
-A pointer or relationship artifact used to connect domains without transferring ownership of the underlying truth.
+A pointer or relationship artifact used to connect domains without transferring ownership of the underlying truth. fileciteturn14file0
 
 ### External Truth
-Truth originating outside the platform, such as a provider-originated payment outcome, wallet-client state, or raw external runtime behavior.
+Truth originating outside the platform, such as provider-originated payment outcomes, wallet-client state, or raw provider runtime behavior. fileciteturn14file0L161-L168
 
 ### Policy-Derived Canonical Entity
-An entity derived from one or more canonical truths under an approved policy or pipeline and treated as the authoritative output for a bounded platform concern.
+An entity derived from one or more canonical truths under approved policy or pipeline logic and treated as the authoritative output for a bounded platform concern. fileciteturn14file0
 
 ### Execution Entity
-An entity that tracks job status, retry state, processing attempts, or workflow progression. Execution entities own execution lineage, not necessarily the business meaning of the work.
+An entity that tracks job status, retry state, processing attempts, callback handling, or workflow progression. Execution entities own execution lineage, not automatically the business meaning of the work. fileciteturn14file0
 
 ### Superseding / Corrective Entity
-An append-oriented correction or replacement record that preserves prior history rather than silently erasing it.
+An append-oriented correction or replacement record that preserves prior history rather than silently erasing it. fileciteturn14file0
 
 ### Entity Family
-A coherent class of related canonical or derived entities, such as accounts, workspaces, credits mutations, payout cycles, or transparency reports.
+A coherent class of related canonical or derived entities, such as accounts, workspaces, credits mutations, payout cycles, public registry entries, or transparency reports. fileciteturn14file0
 
----
+## Truth Class Taxonomy
+This specification MUST preserve the following truth classes wherever relevant:
+1. **Semantic truth** — what an entity means and which domain owns that meaning
+2. **Policy truth** — which rules govern creation, mutation, correction, and interpretation
+3. **Runtime truth** — what is happening during execution now
+4. **Ledger / storage truth** — the durable authoritative record used by the owner domain
+5. **Provider-input truth** — raw external signals before normalization
+6. **Implementation-adapter truth** — verification, normalization, translation, and boundary logic
+7. **Execution truth** — jobs, retries, submissions, callback handling, and progression lineage
+8. **Projection / reporting truth** — dashboards, analytics, registry artifacts, exports, search indexes, and reports
+9. **Presentation truth** — UX composition and explanatory renderings
+
+These truth classes MUST NOT be collapsed into one undifferentiated ownership model. fileciteturn14file1L184-L193 fileciteturn14file2L143-L151
 
 ## Architectural Position in the Spec Hierarchy
-
 This document sits below:
-
 - `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
 - `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
 - `PLATFORM_ARCHITECTURE_SPEC.md`
 - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
 
 and above:
-
 - domain-specific entity and lifecycle specs
 - API architecture and internal/public API specs
-- ledger, billing, payout, audit, registry, and reporting specs
+- ledger, billing, payout, audit, registry, reporting, and transparency specs
 - product integration specs
 - on-chain/off-chain responsibility refinements
 
-This document does not override the system boundary model. It operationalizes that model at the durable entity and persistence-discipline layer.
-
----
-
-## Ownership Layers in FUZE
-
-FUZE must distinguish among the following ownership layers.
-
-### 1. Platform Canonical Entities
-Core shared platform entities such as accounts, linked logins, sessions, workspaces, memberships, roles, wallet links, payment records, credits entities, subscriptions, entitlements, and governance records.
-
-### 2. Product-Domain Canonical Entities
-Product-specific truth entities owned by product domains such as QTB, AIMM, ZAGA, AIE, HerHelp, Botmad, and future products.
-
-### 3. On-Chain Canonical Entities
-Contract-native or chain-native truths such as FUZE token balances on Ethereum, Base credits commitment state where applicable, Base payout execution truth, and reserve/vault state.
-
-### 4. Policy-Derived Canonical Entities
-Authoritative platform outputs derived from canonical inputs under governed policy, such as eligibility datasets, holder-rank classifications, and payout entitlement inputs.
-
-### 5. Execution Entities
-Workflow-run, job, retry, orchestration, provider-processing, or chain-submission records that own execution lineage but not necessarily the business meaning of the underlying domain object.
-
-### 6. Derived and Reporting Entities
-Transparency reports, payout ledgers, dashboards, search indexes, exports, analytics facts, and UI projections that do not own the underlying business or contract fact they display.
-
-These layers may reference one another, but they must not silently replace one another.
-
----
-
-## Entity Ownership Rules by Truth Type
-
-### Identity Truth
-Owned by the platform identity and account domain.
-
-### Linked Login and Session Truth
-Owned by the auth/session/linked-login domain.
-
-### Workspace Truth
-Owned by the workspace and organization domain.
-
-### Authorization Grant Truth
-Owned by the role, permission, and access-control domain.
-
-### Wallet-Link Truth
-Owned by the wallet-aware user / wallet-link domain.
-
-### External Payment Verification Truth
-Owned by the payment integration and normalization domain after verification and normalization.
-
-### Platform Credits Mutation Truth
-Owned by the credits ledger and settlement domain.
-
-### Platform Credits Current Balance Truth
-Owned by the credits domain’s formally maintained current balance projection if such a projection is designated canonical by the credits domain.
-
-### Subscription Truth
-Owned by the subscriptions and usage-billing domain.
-
-### Entitlement Truth
-Owned by the entitlement / subscriptions domain.
-
-### Product Object Truth
-Owned by the relevant product domain.
-
-### Ethereum Holder Truth
-Owned by Ethereum contract state for FUZE token balances.
-
-### Base Credits Commitment Truth
-Owned by the Base contract layer where credits are formally committed on-chain.
-
-### Eligibility Truth
-Owned by the snapshot and eligibility pipeline as a policy-derived canonical dataset.
-
-### Payout Preparation Truth
-Owned by the payout-preparation / payout domain for off-chain business-cycle state.
-
-### Payout Execution Truth
-Owned by Base payout contract state for funded cycle execution and claim behavior.
-
-### Treasury and Reserve Structural Truth
-Owned by reserve/vault contracts and governance-controlled treasury records, with distinct ownership for business decision records versus execution records.
-
-### Governance Action Truth
-Owned by governance action records plus contract-level control state where applicable.
-
-### Reporting Artifact Truth
-Owned by the reporting domain as an artifact, but not for the underlying business or chain facts summarized.
-
----
-
-## Canonical Platform Entity Families
-
-The following entity families should be treated as canonical platform entities.
-
-### Account
-Represents the persistent FUZE user identity.
-
-Canonical owner:
-- Identity and account domain
-
-Core facts owned:
-- `account_id`
-- lifecycle status
-- canonical identity references
-- security posture references
-- linkage root to auth methods
-- closure/restriction state
-
-### LinkedLoginMethod
-Represents a provider or credential linkage tied to an account.
-
-Canonical owner:
-- Auth / session / linked-login domain
-
-### Session
-Represents active or historical authentication session truth.
-
-Canonical owner:
-- Auth / session domain
-
-### AccountSecurityState
-Represents account-level security posture and restriction-relevant identity security state.
-
-Canonical owner:
-- Identity/auth security domain as refined downstream
-
-### Workspace
-Represents an organization or collaborative operating context.
-
-Canonical owner:
-- Workspace and organization domain
-
-### WorkspaceMembership
-Represents account participation within a workspace.
-
-Canonical owner:
-- Workspace domain
-
-### WorkspaceRoleAssignment / AccessGrant
-Represents access authority in platform or workspace scope.
-
-Canonical owner:
-- Role / permission / access-control domain
-
-### WorkspaceBillingOwner
-Represents billing ownership assignment for a workspace.
-
-Canonical owner:
-- Billing / workspace-linked commercial domain as refined downstream
-
-### WalletLink
-Represents linkage between a wallet and a platform account.
-
-Canonical owner:
-- Wallet-aware participation domain
-
-### WalletVerificationRecord
-Represents proof or lineage of wallet-link verification.
-
-Canonical owner:
-- Wallet-aware participation domain
-
-### HolderRankRecord
-Represents platform-owned holder classification derived from wallet links, token state, and policy logic.
-
-Canonical owner:
-- Wallet-aware participation / rank domain
-
-### ParticipationContextRecord
-Represents wallet-aware participation context consumed by products or platform logic.
-
-Canonical owner:
-- Wallet-aware participation domain
-
-### PaymentRecord
-Represents the normalized platform record of an external payment or purchase event.
-
-Canonical owner:
-- Payment rails integration / normalization domain
-
-### CreditsOwnerScope
-Represents the owning scope for credits, whether account-bound, workspace-bound, or other approved scope.
-
-Canonical owner:
-- Platform credits domain
-
-### CreditsMutationRecord
-Represents append-oriented credits mutation truth.
-
-Canonical owner:
-- Credits ledger / settlement domain
-
-### CreditsBalanceProjection
-Represents the current balance projection derived from credits mutation history and adjustments.
-
-Canonical owner:
-- Platform credits domain when formally maintained as canonical current-state output
-
-### Subscription
-Represents recurring commercial agreement state for an account or workspace.
-
-Canonical owner:
-- Subscriptions and usage-billing domain
-
-### Entitlement
-Represents current access rights or service entitlements resulting from billing and policy.
-
-Canonical owner:
-- Entitlement / subscriptions domain
-
-### Invoice
-Represents invoice artifact truth for a commercial event.
-
-Canonical owner:
-- Invoicing domain
-
-### Receipt
-Represents receipt artifact truth for a commercial event.
-
-Canonical owner:
-- Invoicing and receipts domain
-
-### RefundRecord / ReversalRecord / AdjustmentRecord
-Represents commercial correction lineage.
-
-Canonical owner:
-- Refund / reversal / adjustment domain as refined downstream
-
-### AuditEvent
-Represents immutable audit lineage for material actions.
-
-Canonical owner:
-- Audit log and activity domain
-
-### ActivityEvent
-Represents user/admin/system activity where downstream specs distinguish it from immutable audit lineage.
-
-Canonical owner:
-- Audit log and activity domain or related activity domain as refined downstream
-
-### SupportInterventionRecord
-Represents a bounded support or operator intervention artifact linked to correction lineage.
-
-Canonical owner:
-- Support/control domain under downstream refinement
-
-### RegistryEntry
-Represents public contract or wallet registry truth as a publication artifact.
-
-Canonical owner:
-- Public contract and wallet registry domain
-
-### TransparencyReportArtifact
-Represents a canonical published report artifact.
-
-Canonical owner:
-- Transparency reporting domain
-
----
-
-## Product-Domain Canonical Entities
-
-Products in FUZE retain canonical ownership over their own product-domain objects.
-
-This is necessary because shared platform layers create leverage, but products still need product-specific durable truth.
-
-Examples include:
-
-### QTB Product Entities
-Possible canonical entities:
-- analysis request
-- signal package
-- strategy workspace artifact
-- alert definition
-- report object
-
-Canonical owner:
-- QTB product integration domain
-
-### AIMM Product Entities
-Possible canonical entities:
-- liquidity strategy object
-- market-operation configuration
-- execution recommendation object
-- monitoring state object
-
-Canonical owner:
-- AIMM product integration domain
-
-### ZAGA Product Entities
-Possible canonical entities:
-- utility program definition
-- campaign configuration
-- token utility module
-- project-side utility policy object
-
-Canonical owner:
-- ZAGA product integration domain
-
-### AIE Product Entities
-Possible canonical entities:
-- event profile
-- discovery item
-- recommendation object
-- participation context item
-
-Canonical owner:
-- AIE product integration domain
-
-### HerHelp Product Entities
-Possible canonical entities:
-- sheet connection definition
-- app generation project
-- page definition
-- generated business workflow asset
-- form mapping object
-
-Canonical owner:
-- HerHelp product integration domain
-
-### Botmad Product Entities
-Possible canonical entities:
-- workflow scan result
-- execution suggestion
-- approved automation instruction
-- task-run artifact
-- desktop workflow model
-
-Canonical owner:
-- Botmad product integration domain
-
-### Product-Domain Principle
-Products own product truth, but they should depend on platform-owned entities for:
-- identity
-- workspace context
-- wallet-link and participation context
-- payments
-- credits
-- subscriptions and entitlements
-- audit infrastructure
-- control/governance restriction context where relevant
-
-Products may cache or denormalize platform data for local use, but those copies remain non-canonical.
-
----
-
-## On-Chain Canonical Entities
-
-FUZE must recognize on-chain canonical entities whose truth originates from contracts rather than mutable off-chain records.
-
-### FUZE Token Balance
-Canonical owner:
-- Ethereum token contract state
-
-Important note:
-- off-chain holder tables, rank views, analytics tables, and dashboards are derived from this truth
-
-### Reserve / Vault Contract State
-Canonical owner:
-- respective reserve, vesting, or vault contract
-
-Examples:
-- Foundation Vault state
-- Treasury Reserve Vault state
-- Team Vesting Vault state
-- Advisor Vesting Vault state
-- Holder Incentives Vault state
-- Ecosystem Partnership Vault state
-- Liquidity Operations Vault state
-- Transparency / Stability Vault state
-
-### Base Credits Contract / Commitment State
-Canonical owner:
-- Base credits execution layer where applicable
-
-Important note:
-- off-chain accounting, payment normalization, and balance projections may reconcile to this state, but do not replace it
-
-### Base Payout Contract State
-Canonical owner:
-- payout execution contract on Base
-
-Core facts owned:
-- funded cycle execution state
-- claim-open state
-- claim-completion state
-- contract balance state for funded cycles
-
-### Governance-Control Contract State
-Canonical owner:
-- multisig, timelock, or control contracts where applicable
-
-Important note:
-- internal governance records and reports contextualize these truths, but contract state remains canonical for execution posture
-
-On-chain domains own only the truths explicitly committed to contract design.
-
----
-
-## Policy-Derived Canonical Entities
-
-Some entities are canonical within the platform even though they are derived from other canonical truths under approved policy.
-
-These must be modeled as policy-derived canonical entities rather than treated as casual temporary files.
-
-### EligibilityDataset
-Derived from:
-- Ethereum FUZE balances
-- snapshot reference
-- exclusion and treatment policy
-
-Canonical owner:
-- Snapshot and eligibility pipeline domain
-
-Why canonical:
-- for a given cycle, it becomes the authoritative eligibility basis used by downstream payout logic
-
-### HolderRankClassification
-Derived from:
-- wallet links
-- token holdings
-- policy-defined rank logic
-
-Canonical owner:
-- wallet-aware participation / rank domain
-
-Why canonical:
-- products may consume it, but must not invent competing rank truth locally
-
-### PayoutEntitlementInput
-Derived from:
-- eligibility dataset
-- payout cycle rules
-- approved adjustments or exclusions where allowed
-
-Canonical owner:
-- payout-preparation domain
-
-Why canonical:
-- payout execution depends on it even though it is not raw chain truth
-
-### Important Principle
-A derived entity can still be canonical for its own bounded domain if it is the authoritative output of a formal pipeline. Derived does not automatically mean disposable.
-
----
-
-## Execution Entities
-
-FUZE must explicitly distinguish execution entities from business entities.
-
-Examples:
-- workflow run
-- job record
-- retry record
-- provider callback processing record
-- chain submission record
-- reconciliation run record
-- notification dispatch attempt
-- AI execution task lineage record
-
-Execution entities are canonical for execution lineage, not automatically for business meaning.
-
-Rules:
-- execution state may explain how work progressed
-- execution state may authorize retry or compensation logic within the execution domain
-- execution state does not replace business-domain canonical state
-- a successful execution record is not automatically identical to business success unless the owning business domain formally commits the resulting state transition
-
----
-
-## Derived, Read, and Reporting Entities
-
-FUZE should treat many common entities as explicitly derived rather than canonical.
-
-### Dashboard Aggregates
-Examples:
-- workspace usage summaries
-- credits summary cards
-- holder overview cards
-- treasury summary widgets
-
-These are derived read models, not source truth.
-
-### Transparency Reports
-Examples:
-- transparency report artifacts
-- investor/community reports
-- platform progress summaries
-
-These are canonical as published report artifacts, but not canonical for the underlying economics or contract truths they summarize.
-
-### Payout Ledger Entries
-The payout ledger may be canonical as a structured reporting or ledger artifact for cycle records, but it is not the canonical owner of:
-- Ethereum holder truth
-- raw eligibility processing
-- Base payout contract execution truth
-
-It is a linked derived cycle record unless a downstream spec elevates a narrower subset of fields.
-
-### Search Indexes
-Searchable projections of product, workspace, support, or reporting data are derived artifacts only.
-
-### Exports
-CSV, PDF, spreadsheet, statement, or external export files are derived artifacts.
-
-### Cache Entries
-Runtime caches and client-side caches do not own truth.
-
-### Derived-Entity Principle
-If an entity can be rebuilt from canonical truth and exists primarily for speed, visibility, publication, or convenience, it should be treated as derived unless explicitly designated as canonical for a narrow bounded purpose.
-
----
-
-## Mutation Authority Rules
-
-FUZE must apply strict mutation authority rules.
-
+This document does not override the top-level boundary model. It operationalizes that model at the durable entity and persistence-discipline layer. fileciteturn14file0 fileciteturn14file1
+
+## System Boundaries
+The entity model MUST be interpreted across the following ownership layers:
+1. **Platform Canonical Entities** — reusable shared platform entities such as accounts, sessions, workspaces, roles, wallet links, payment records, credits entities, subscriptions, entitlements, audit records, and governance-linked control artifacts
+2. **Product-Domain Canonical Entities** — product-specific truth entities owned by product domains such as QTB, AIMM, ZAGA, AIE, HerHelp, Botmad, and future products
+3. **On-Chain Canonical Entities** — contract-native truths such as token balances, credits commitments where committed on-chain, funded payout execution state, reserve/vault state, and contract-governance control state
+4. **Policy-Derived Canonical Entities** — authoritative outputs derived under governed policy, such as eligibility datasets, holder-rank classifications, and payout entitlement inputs
+5. **Execution Entities** — workflow runs, jobs, retries, provider-processing records, chain-submission records, reconciliation runs, and dispatch attempts
+6. **Derived and Reporting Entities** — dashboards, indexes, exports, reporting artifacts, public registry views, analytics facts, and UI projections
+
+These layers MAY reference one another, but they MUST NOT silently replace one another. fileciteturn14file0
+
+## Adjacent Boundaries
+This specification interacts with adjacent files as follows:
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md` governs top-level ownership, truth-family ownership, and mutation-owner interpretation
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md` governs the ecosystem framing and top-level layer interpretation
+- `PLATFORM_ARCHITECTURE_SPEC.md` governs plane separation and runtime interaction posture
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md` assigns canonical owners to the major domains represented here
+- `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md` refines chain-adjacent and off-chain responsibility splits
+- product-boundary specs refine how products consume shared entities without redefining them
+- identity/account/session and workspace/access-control foundation documents refine access-related entity families listed here
+
+This document defines the entity and persistence interpretation that those documents must preserve. It does not absorb all of their narrower detail. fileciteturn14file0 fileciteturn14file1 fileciteturn14file2
+
+## Conflict Resolution Rules
+When materials, systems, or records disagree, the following rules apply:
+1. the active refined registry and higher constitutional materials win over narrower documents
+2. `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md` wins on top-level truth-family ownership and mutation-owner interpretation
+3. `DOMAIN_OWNERSHIP_MATRIX_SPEC.md` wins on major-domain owner assignment and default rights semantics
+4. this document wins on entity-family ownership, lifecycle interpretation, canonical-versus-derived status, and persistence-discipline rules
+5. canonical owner entities win over reports, dashboards, caches, indexes, exports, queues, AI explanations, or public publication artifacts
+6. on-chain committed truth wins only for categories explicitly committed on-chain; broader off-chain business meaning remains off-chain unless explicitly committed
+7. raw provider input NEVER wins by itself; verified and normalized owner-controlled consequences win
+8. governance or control-plane approval MAY authorize, constrain, or block change, but the resulting business state MUST still be written through the correct owner-domain entity path
+9. when ambiguity remains, FUZE MUST choose the more conservative architecture-consistent interpretation and escalate the ambiguity into downstream refinement or decision recording
+
+## Default Decision Rules
+When ambiguity exists and no narrower approved exception is available, FUZE MUST default to the following:
+1. cross-product reusable entity families default to platform ownership
+2. product-local objects default to product ownership only if they do not redefine a shared primitive
+3. financial, credits, payout, reserve, entitlement, registry, and governance-sensitive entities default to platform or on-chain ownership according to the relevant economic and chain-boundary specs, never to dashboards or product-local convenience stores
+4. provider callbacks default to external input status until owner-controlled normalization succeeds
+5. projections, reports, dashboards, search indexes, exports, and AI summaries default to derived-state status
+6. queues, jobs, schedulers, callback processors, and worker state default to execution-state status
+7. control-plane actions default to policy restriction or enablement state, not ordinary business-domain ownership state
+8. if no explicit owner can be named for an entity family, the design is incomplete and MUST NOT be treated as production-grade
+
+## Roles / Actors / Entities
+### Human Actors
+- end users
+- workspace members and owners
+- product operators
+- support and remediation operators
+- security reviewers
+- finance and treasury reviewers
+- governance and approval actors
+- public, partner, community, and investor readers of approved trust surfaces
+
+### System Actors
+- platform domain services
+- product domain services
+- authorization and entitlement evaluators
+- workflow and worker systems
+- provider adapters and normalization systems
+- chain-adjacent services
+- reporting, registry, and publication systems
+- control-plane systems
+
+### Core Entity Families Influenced by This Specification
+- identity and account entities
+- linked login and session entities
+- workspace, membership, and access entities
+- wallet-link and participation-context entities
+- billing, payment normalization, credits, subscription, entitlement, and payout entities
+- product-local entities
+- on-chain state references and chain-submission artifacts
+- reporting, registry, transparency, and analytics artifacts
+- audit and control-plane lineage artifacts
+
+## Ownership Model
+The FUZE data model is domain-first and owner-explicit.
+
+Every canonical entity family MUST define:
+- canonical owner domain
+- canonical truth location
+- mutation authority boundary
+- lifecycle owner
+- allowed non-owner rights
+- correction and supersession rules
+- reporting and projection status
+- reconciliation posture where cross-domain truth may diverge temporarily
+
+Entity families MAY interact heavily, but they MUST NOT be treated as co-owning the same business meaning without a formally defined narrower exception. fileciteturn14file0 fileciteturn14file1
+
+## Authority / Decision Model
+### Canonical Authority
+The canonical owner decides:
+- valid state transitions
+- canonical fields and invariants
+- what downstream APIs and events must preserve
+- what forms of correction, reversal, supersession, or reconciliation are allowed
+- which derived artifacts are permitted
+
+### Governance / Control Authority
+Control domains MAY:
+- approve or deny sensitive actions
+- apply restrictions, rollouts, remediations, emergency controls, and policy-based holds
+- require reason codes, operator lineage, and trace identifiers
+
+Control authority does not transfer canonical ownership of the underlying entity family. fileciteturn14file1 fileciteturn14file2
+
+### Execution Authority
+Execution systems MAY coordinate work, but they do not become the owner of the business meaning of the entities they process. fileciteturn14file0
+
+## State Model
+Each entity family MUST distinguish among:
+- canonical state owned by the domain
+- policy state constraining the entity lifecycle
+- execution state used to process work involving the entity
+- derived state used for reporting, publication, search, analytics, or presentation
+- provider-input state used as external input before normalization
+
+A downstream implementation MUST NOT silently collapse these state classes. fileciteturn14file1
+
+## Lifecycle / Workflow Model
+At the entity-reference level, FUZE entity lifecycles follow this general pattern:
+1. a canonical owner creates the entity or accepts its creation through an owner-controlled contract
+2. if external signals are involved, provider input remains external until verification and normalization succeed
+3. if deferred work is required, execution entities track progression without becoming the owner of business truth
+4. owner-controlled state transitions emit owner-governed events or lineage artifacts
+5. derived domains MAY publish reporting, registry, search, or analytics outputs from canonical sources
+6. control-plane actions MAY constrain, block, or remediate the lifecycle but do not replace canonical ownership
+7. correction, supersession, reconciliation, and archival semantics remain owned by the canonical domain
+
+## Invariants
+1. every material FUZE entity family MUST have one canonical owner
+2. non-owners MUST NOT mutate canonical truth except through an owner-controlled contract
+3. products MUST NOT create alternate identity, session, workspace, authorization, entitlement, credits, payout, registry, or governance primitives
+4. provider-originated raw state MUST NOT directly become canonical FUZE business truth
+5. reporting and publication outputs MUST remain downstream to canonical sources unless explicitly elevated by a narrower specification
+6. chain truth MUST remain explicit and narrow to what is committed on-chain
+7. execution systems MUST NOT silently acquire long-lived business ownership
+8. governance-sensitive overrides MUST be explicit, bounded, reason-coded, and auditable
+9. cached or denormalized copies MUST remain refreshable from canonical truth
+10. lag or reconciliation gaps in derived state MUST be visible rather than hidden
+
+## Functional Rules
 ### Rule 1: Only Canonical Owners May Author Canonical Fact Changes
-Examples:
-- only the identity domain may mutate account lifecycle state
-- only the workspace domain may mutate workspace membership truth
-- only the credits mutation pipeline may author credits ledger mutations
-- only product domains may mutate product-domain core objects
-- only the snapshot/eligibility pipeline may publish a canonical eligibility dataset for a cycle
+Only the canonical owner or an explicitly delegated owner-controlled component MAY accept writes that change canonical entity state. fileciteturn14file0
 
 ### Rule 2: Derived Systems May Not Silently Mutate Owned Truth
-Examples:
-- analytics systems may not “fix” subscription state
-- reporting pipelines may not redefine payout cycle status
-- product dashboards may not overwrite credits truth
-- search indexes may not act as hidden write owners
+Analytics systems, dashboards, search indexes, reports, exports, AI summaries, and publication systems MUST NOT redefine upstream entity state. fileciteturn14file0
 
 ### Rule 3: Cross-Domain Writes Require Explicit APIs, Commands, or Events
-No domain should mutate another domain’s canonical store through private direct-write behavior except through intentionally defined integration boundaries owned or approved by the canonical domain.
+No domain should mutate another domain’s canonical entity store through private direct-write behavior except through intentionally defined integration boundaries owned or approved by the canonical domain. fileciteturn14file0
 
 ### Rule 4: Manual Intervention Must Preserve Ownership Clarity
-Support, admin, or remediation overrides must operate through the owning domain’s correction pathway, not by bypassing ownership with undocumented direct data edits.
+Support, admin, or remediation actions MUST operate through the owning domain’s correction pathway, not by bypassing ownership with undocumented direct edits. Such actions MUST be reason-coded and auditable. fileciteturn14file0
 
 ### Rule 5: Control Authorization Does Not Transfer Entity Ownership
-A governance or control-plane approval may authorize a change, but the owning domain must still write the resulting canonical state or correction lineage.
+A governance or control-plane approval MAY authorize a change, but the owning domain MUST still write the resulting canonical state or correction lineage. fileciteturn14file0
 
 ### Rule 6: External Signals Must Be Normalized Before Entity Mutation
-Provider or chain-adjacent inputs may influence internal entities only after verification, normalization, and owner-controlled transition logic.
+Provider or chain-adjacent inputs MAY influence internal entities only after verification, normalization, and owner-controlled transition logic. fileciteturn14file0 fileciteturn14file2
 
----
+### Rule 7: Cross-Domain References Are Preferred Over Copy-and-Reown
+A product or adjacent domain SHOULD reference canonical entities by stable identifiers rather than copy full objects and assume local ownership. fileciteturn14file0
 
-## Entity Lifecycle Ownership
+### Rule 8: Correction Lineage Must Remain Visible
+Trust-sensitive entity families MUST preserve original-versus-corrective linkage via superseding IDs, adjustment records, reversal records, correction reason codes, or equivalent lineage primitives. fileciteturn14file0
 
-Every canonical entity family must have a defined lifecycle owner.
+## Permission / Access Considerations
+Domain ownership and authorization are related but separate.
+- identity does not imply authorization ownership
+- workspace scope does not imply permission-truth ownership
+- product capability does not imply product ownership of shared platform entities
+- admin capability does not imply unrestricted cross-domain mutation rights
 
-Lifecycle ownership includes:
-- creation
-- mutation
-- correction
-- closure or completion
-- supersession if applicable
-- archival posture
-- reconciliation linkage where applicable
+Downstream access-control specifications MUST preserve entity ownership boundaries when granting operational permissions. fileciteturn14file2L271-L279
 
-### Example Lifecycle Structure
+## Entitlement Considerations
+Entitlement is a distinct domain concern. Product capability exposure MAY depend on entitlement, but entitlement truth MUST remain separately owned from identity, authorization, billing, product-local runtime decisions, and UI toggles. fileciteturn14file1L299-L309
 
-#### Account
-- created by identity domain
-- linked to auth methods by auth domain
-- referenced by products
-- may be restricted or closed by control logic through owner-approved pathways
-- lifecycle remains platform-owned
+## Canonical Platform Entity Families
+The following entity families SHOULD be treated as canonical platform entities unless a narrower downstream specification formally constrains a sub-family:
 
-#### Workspace
-- created by workspace domain
-- memberships mutated by workspace/access-control logic
-- billing linked by billing domain
-- products consume workspace context
-- lifecycle remains workspace-domain-owned
+### Identity and Access Family
+- `Account` — owned by the identity and account domain
+- `LinkedLoginMethod` — owned by the auth/session/linked-login domain
+- `Session` — owned by the auth/session domain
+- `AccountSecurityState` — owned by the identity/auth security domain under downstream refinement
+- `Workspace` — owned by the workspace and organization domain
+- `WorkspaceMembership` — owned by the workspace domain
+- `WorkspaceRoleAssignment` / `AccessGrant` — owned by the role/permission/access-control domain
+- `WorkspaceBillingOwner` — owned by the workspace-linked commercial domain under downstream refinement
 
-#### CreditsMutationRecord
-- created by payment verification or spend/reversal flows
-- appended by credits ledger domain
-- referenced by balance projections and reports
-- lifecycle remains credits-domain-owned
+### Wallet and Participation Family
+- `WalletLink` — owned by the wallet-aware participation domain
+- `WalletVerificationRecord` — owned by the wallet-aware participation domain
+- `HolderRankRecord` / `HolderRankClassification` — owned by the wallet-aware participation and rank domain
+- `ParticipationContextRecord` — owned by the wallet-aware participation domain
 
-#### PayoutCycle
-- initiated by payout-preparation / governance flow
-- funded via treasury/payout interaction
-- executed on Base
-- reported via payout ledger and transparency systems
-- lifecycle truth is segmented:
-  - cycle business record owned by payout domain
-  - execution truth owned by contract state
-  - reporting artifact owned by reporting/ledger domain
+### Commerce and Entitlement Family
+- `PaymentRecord` — owned by payment rails integration and normalization
+- `CreditsOwnerScope` — owned by the platform credits domain
+- `CreditsMutationRecord` — owned by the credits ledger and settlement domain
+- `CreditsBalanceProjection` — owned by the platform credits domain when formally maintained as canonical current-state output
+- `Subscription` — owned by the subscriptions and usage-billing domain
+- `Entitlement` — owned by the entitlement/subscriptions domain
+- `Invoice` — owned by the invoicing domain
+- `Receipt` — owned by the invoicing and receipts domain
+- `RefundRecord` / `ReversalRecord` / `AdjustmentRecord` — owned by the refund/reversal/adjustment domain
 
-### Lifecycle Principle
-A clear owner must exist for creation, mutation, correction, closure, and archival logic for every canonical entity family.
+### Audit and Trust-Surface Family
+- `AuditEvent` — owned by the audit log and activity domain
+- `ActivityEvent` — owned by the audit log and activity domain or a narrower activity domain if later refined
+- `SupportInterventionRecord` — owned by support/control under downstream refinement
+- `RegistryEntry` — owned by the public contract and wallet registry domain as a publication artifact
+- `TransparencyReportArtifact` — owned by the transparency reporting domain as a published artifact
 
----
+These assignments align with the active entity draft and the higher-order ownership matrix. fileciteturn14file0
+
+## Product-Domain Canonical Entities
+Products in FUZE retain canonical ownership over their own product-domain objects. Shared platform layers create leverage, but products still need product-specific durable truth.
+
+Illustrative product-owned entity families include:
+- QTB: analysis requests, signal packages, strategy workspace artifacts, alert definitions, report objects
+- AIMM: liquidity strategy objects, market-operation configurations, execution recommendation objects, monitoring state objects
+- ZAGA: utility program definitions, campaign configurations, token utility modules, project-side utility policy objects
+- AIE: event profiles, discovery items, recommendation objects, participation context items
+- HerHelp: sheet connection definitions, app-generation projects, page definitions, generated business-workflow assets, form-mapping objects
+- Botmad: workflow scan results, execution suggestions, approved automation instructions, task-run artifacts, desktop workflow models
+
+Products own product truth, but they MUST consume platform-owned entities for identity, workspace context, wallet-link and participation context, payments, credits, subscriptions, entitlements, audit infrastructure, and control/governance restriction context where relevant. Product-local copies of platform truth remain non-canonical. fileciteturn14file0
+
+## On-Chain Canonical Entities
+FUZE MUST recognize on-chain canonical entities whose truth originates from contracts rather than mutable off-chain records.
+
+### Canonical On-Chain Families
+- `FUZE Token Balance` — owned by Ethereum token contract state
+- reserve and vault contract state — owned by the respective reserve, vesting, or vault contracts
+- `Base Credits Commitment State` — owned by the Base credits execution layer where applicable
+- `Base Payout Contract State` — owned by the payout execution contract on Base
+- contract-governance control state — owned by multisig, timelock, or related control contracts where applicable
+
+Off-chain holder tables, rank views, accounting tables, payout reports, and dashboards are derived from these truths and MUST NOT replace them. On-chain domains own only the truths explicitly committed to contract design. fileciteturn14file0 fileciteturn14file2L167-L175
+
+## Policy-Derived Canonical Entities
+Some entities are canonical within the platform even though they are derived from other canonical truths under approved policy.
+
+### Canonical Policy-Derived Families
+- `EligibilityDataset` — derived from token balances, snapshot references, and exclusion/treatment policy; owned by the snapshot and eligibility pipeline domain
+- `HolderRankClassification` — derived from wallet links, token holdings, and rank policy; owned by the wallet-aware participation/rank domain
+- `PayoutEntitlementInput` — derived from eligibility datasets, payout-cycle rules, and approved adjustments or exclusions; owned by the payout-preparation domain
+
+A derived entity MAY still be canonical for its bounded concern if FUZE formally depends on it as the authoritative output of a governed pipeline. fileciteturn14file0
+
+## Execution Entities
+FUZE MUST explicitly distinguish execution entities from business entities.
+
+Illustrative execution families include:
+- workflow runs
+- job records
+- retry records
+- provider callback processing records
+- chain submission records
+- reconciliation run records
+- notification dispatch attempts
+- AI execution task lineage records
+
+Execution entities are canonical for execution lineage, not automatically for business meaning. A successful execution record is not identical to business success unless the owning business domain formally commits the resulting state transition. fileciteturn14file0
+
+## Data Model / Storage Implications
+This specification requires downstream data-model and persistence specifications to preserve owner boundaries.
+
+At minimum:
+- entity ownership MUST align with domain ownership
+- cached copies, indexes, dashboards, registries, and analytics stores are derived unless explicitly elevated
+- on-chain and off-chain records MUST remain distinguishable
+- wallet-link records remain platform-owned mapping state, not token-balance truth
+- reporting and publication stores MUST preserve source traceability
+- schema migrations MUST preserve ownership continuity when domains move, split, or consolidate
+- current-state projections MAY be canonical only when the owning domain explicitly designates them as authoritative for that bounded state concern
+- append-oriented ledgers remain canonical for mutation history even where a current-state projection is separately canonical
+
+## Read Model / Projection / Reporting Rules
+1. dashboards, summaries, reports, exports, search indexes, AI explanations, and public registry artifacts are downstream derived artifacts by default
+2. a derived artifact MAY be canonical only for its own bounded publication or reporting domain, not for the upstream business fact it summarizes
+3. read models MAY denormalize for performance, but they MUST preserve source references sufficient for reconciliation and audit
+4. projections MUST NOT silently accept writes that bypass the canonical owner
+5. lag, reconciliation gaps, and stale projections MUST be visible rather than hidden
+6. a product-local cache MUST be refreshable from the canonical owner and MUST NOT act as the hidden write authority
 
 ## Cross-Domain Reference Rules
+Cross-domain integration in FUZE SHOULD prefer reference-based composition over ownership confusion.
 
-Cross-domain integration in FUZE should prefer reference-based composition over ownership confusion.
-
-### Preferred Pattern
-A product or adjacent domain entity should store references such as:
+Preferred references include:
 - `account_id`
 - `workspace_id`
 - `wallet_link_id`
@@ -813,479 +519,247 @@ A product or adjacent domain entity should store references such as:
 - `payout_cycle_id`
 - `eligibility_dataset_id`
 
-rather than copying and re-owning the full underlying object.
-
-### Why This Matters
-Reference-driven integration:
-- reduces inconsistency
-- improves reconciliation
-- preserves product independence
-- improves supportability
-- makes migration and correction safer
-- preserves platform-wide lineage
-
-### Rules
-- references must point to canonical entities or approved canonical artifacts
-- local copies must be explicitly marked as cached, denormalized, projected, or exported
-- denormalized fields should be refreshable from canonical truth
-- identity-like attributes should not be re-authored locally unless explicitly product-specific
-- references must not imply mutation rights over the referenced entity
-
----
+Rules:
+- references MUST point to canonical entities or approved canonical artifacts
+- local copies MUST be explicitly marked as cached, denormalized, projected, or exported
+- denormalized fields SHOULD be refreshable from canonical truth
+- identity-like attributes MUST NOT be re-authored locally unless explicitly product-specific
+- references MUST NOT imply mutation rights over the referenced entity
 
 ## Canonical IDs and Global Entity Identity
+FUZE SHOULD use stable identifiers across entity domains where practical.
 
-FUZE should use stable identifiers across entity domains where practical.
+Principles:
+- every canonical entity SHOULD have a stable primary identifier
+- cross-domain references SHOULD use canonical IDs
+- public-facing IDs and internal IDs MAY differ where security or UX requires it, but mapping MUST remain controlled
+- identifiers SHOULD survive projection, reporting, export, and audit contexts where long-term traceability matters
 
-### Principles
-- every canonical entity should have a stable primary identifier
-- cross-domain references should use canonical IDs
-- public-facing IDs and internal IDs may differ where security or UX requires it, but mapping must remain controlled
-- identifiers should survive projection, reporting, export, and audit contexts where long-term traceability matters
+The same conceptual subject MAY have multiple related IDs across layers, such as `account_id`, linked wallet address, payout claimant address, workspace membership ID, and credits owner-scope ID. These are not duplicates if they refer to different entity concepts. The data model MUST preserve conceptual clarity rather than forcing one identifier to represent unrelated things. fileciteturn14file0
 
-### Important Note
-The same conceptual subject may have multiple related IDs across layers, for example:
-- `account_id`
-- linked `wallet_address`
-- payout claimant address
-- workspace membership ID
-- credits owner scope ID
-
-These are not duplicates if they refer to different entity concepts. The data model must preserve conceptual clarity rather than forcing one identifier to represent unrelated things.
-
----
-
-## Entity Ownership for Economic Records
-
+## Economic Entity Ownership Rules
 Economic records require especially strong ownership clarity.
 
-### PaymentEvent / PaymentRecord
-Canonical owner:
-- payment rails integration domain after provider verification and normalization
+### Canonical Families and Owners
+- `PaymentRecord` / `PaymentEvent` — payment integration and normalization domain after verification
+- `CreditsMutation` — credits ledger and settlement domain
+- `CurrentCreditsBalanceProjection` — platform credits domain projection when explicitly maintained as canonical current-state output
+- `SubscriptionState` — subscriptions and usage-billing domain
+- `Invoice` / `Receipt` — invoicing and receipts domains
+- `RefundRecord` / `ReversalRecord` / `AdjustmentRecord` — refund, reversal, and adjustment domain
+- `DistributableProfitDeterminationRecord` — treasury/accounting policy domain
+- `PayoutCycleBusinessRecord` — profit participation and payout domain
 
-### CreditsMutation
-Canonical owner:
-- credits ledger / settlement domain
+Economic state MUST never be left to inference from scattered product events alone. Product-local balance copies are derived only. fileciteturn14file0
 
-### CurrentCreditsBalanceProjection
-Canonical owner:
-- credits domain projection over mutation truth where formally maintained as canonical current state
+## Governance and Treasury Entity Ownership Rules
+Governance and treasury domains also require explicit separation between business records and contract execution state.
 
-Important note:
-- append ledger is canonical for mutation history
-- current balance projection may be canonical for current balance state if explicitly maintained by the credits domain
-- product-local balance copies are derived only
+### Canonical Families and Owners
+- `GovernanceActionRecord` — governance domain
+- `TreasuryActionRecord` — treasury control domain
+- `VaultActionRecord` — vault action policy and treasury execution domain
+- `FoundationPolicyTreatmentRecord` — foundation governance domain
+- multisig/timelock execution references — contract state for execution truth; governance records for contextual business truth
+- `TransparencyReportArtifact` — transparency reporting domain
+- `PublicRegistryEntry` — public contract and wallet registry domain
 
-### SubscriptionState
-Canonical owner:
-- subscriptions and usage-billing domain
+Governance truth often spans business decision records plus contract execution records. FUZE MUST model both explicitly rather than assuming one replaces the other. fileciteturn14file0
 
-### Invoice / Receipt Artifact
-Canonical owner:
-- invoicing domain / receipts domain as refined downstream
+## API / Contract Implications
+This entity model requires downstream API specifications to make ownership explicit.
 
-### Refund / Reversal / Adjustment Record
-Canonical owner:
-- refund, reversal, and adjustment domain
+At minimum:
+- every mutation-capable API MUST identify the owning entity family and domain
+- write APIs MUST route to the owning domain only
+- read APIs MAY aggregate across domains but MUST preserve source-of-truth semantics
+- non-owners MUST request mutation through owner-controlled commands rather than convenience endpoints
+- provider callbacks MUST terminate in verification and normalization boundaries before affecting canonical truth
+- chain-adjacent interfaces MUST distinguish contract truth from off-chain orchestration truth
+- idempotency obligations MUST be assigned to the owner boundary or an explicitly delegated owner-controlled component
 
-### DistributableProfitDeterminationRecord
-Canonical owner:
-- treasury/accounting policy domain
-
-### PayoutCycleBusinessRecord
-Canonical owner:
-- profit participation / payout domain
-
-### Principle
-Economic state must never be left to inference from scattered product events alone.
-
----
-
-## Entity Ownership for Governance and Treasury Records
-
-### GovernanceActionRecord
-Canonical owner:
-- governance domain
-
-### TreasuryActionRecord
-Canonical owner:
-- treasury control domain
-
-### VaultActionRecord
-Canonical owner:
-- vault action policy / treasury execution domain
-
-### FoundationPolicyTreatmentRecord
-Canonical owner:
-- foundation governance domain
-
-### Multisig / Timelock Execution Reference
-Canonical owner:
-- on-chain control state for execution truth
-- governance records for contextual business truth
-
-### TransparencyReportArtifact
-Canonical owner:
-- transparency reporting domain
-
-### PublicRegistryEntry
-Canonical owner:
-- public contract and wallet registry domain
-
-### Principle
-Governance truth often spans business decision records plus contract execution records. FUZE must model both explicitly rather than assuming one replaces the other.
-
----
-
-## Canonical vs Derived State in APIs
-
-APIs must preserve ownership clarity.
-
-### Canonical Write APIs
-These should route to the owning domain only.
-
-Examples:
-- create workspace
-- link wallet
-- issue credits after verified payment
-- create subscription
-- approve treasury action through the proper domain pathway
-- publish payout cycle business record
-
-### Derived Read APIs
-These may aggregate across domains.
-
-Examples:
-- dashboard summary
-- workspace billing overview
-- holder privilege summary
-- payout cycle overview
-- reserve architecture summary
-
-### API Principle
-A read API may compose truth from many canonical owners, but a write API should only mutate through the rightful owner. This keeps service topology aligned with entity architecture.
-
----
+A downstream API specification that cannot answer “which entity family is canonical here, who owns it, and what happens when values disagree” is incomplete. fileciteturn14file0
 
 ## Event / Async Implications
+This entity model requires downstream event and workflow designs to preserve ownership.
 
-Entity ownership must also govern event and async design.
-
-Rules:
-- owner domains or explicitly delegated owner-controlled components should publish canonical events
-- execution-plane records remain execution state unless the owning domain explicitly elevates a result
-- retries must not create duplicate business outcomes
-- provider callbacks and chain event ingestion must resolve through normalized, idempotent owner-controlled transitions
-- derived pipelines must tolerate lag without overwriting canonical truth
-- AI-generated proposals must not become canonical entities without owner-domain validation and acceptance
-
----
-
-## Audit, Correction, and Supersession Rules
-
-Entity ownership must define how corrections happen.
-
-### Principle
-Canonical truth should not be silently overwritten in trust-sensitive domains where append-oriented correction is more appropriate.
-
-### Examples
-- credits errors should create adjustment or reversal records
-- payout-cycle reporting errors should create correction lineage
-- governance mistakes should produce superseding governance records where possible
-- registry entry corrections should remain visible
-- support interventions should preserve original and corrective linkage
-
-### Ownership Implication
-Only the owning domain should author corrective or superseding records for its entities, though governance or support pathways may authorize them.
-
----
-
-## Reconciliation Model Across Entity Owners
-
-FUZE should support reconciliation across owner domains without weakening owner clarity.
-
-Important reconciliation pairs include:
-
-- external payment events ↔ payment records ↔ credits issuance
-- credits ledger ↔ current balance projections ↔ product consumption charges
-- Ethereum holder state ↔ eligibility dataset ↔ payout entitlement input
-- treasury authorization ↔ payout funding ↔ payout ledger artifact
-- workspace billing ownership ↔ subscription state ↔ invoice/receipt artifacts
-- governance action record ↔ multisig/timelock contract execution
-
-### Reconciliation Principle
-Reconciliation links truths across owners. It does not erase the fact that ownership remains distinct.
-
----
-
-## Data Model Boundaries for New Products
-
-When FUZE adds a new product, the following ownership rules apply by default.
-
-### The New Product Must Reuse Platform-Owned Entities For:
-- accounts
-- linked login and session context
-- workspaces
-- memberships and roles
-- wallet links and holder context
-- payment and credits context
-- subscriptions and entitlements
-- audit infrastructure
-- control/governance restriction context where relevant
-
-### The New Product May Own Its Own Canonical Entities For:
-- product objects
-- product workflows
-- product outputs
-- product-specific settings
-- domain-specific AI artifacts
-- product-side operational history
-
-### Expansion Principle
-New products should expand the platform by adding product truth, not by recreating platform truth.
-
----
-
-## Minimum Canonical Entity Families
-
-At minimum, FUZE should recognize the following canonical entity families.
-
-### Platform Identity Family
-- Account
-- LinkedLoginMethod
-- Session
-- AccountSecurityState
-
-### Workspace Family
-- Workspace
-- WorkspaceMembership
-- WorkspaceRoleAssignment
-- WorkspaceBillingOwner
-
-### Wallet / Participation Family
-- WalletLink
-- WalletVerificationRecord
-- HolderRankRecord
-- ParticipationContextRecord
-
-### Commerce Family
-- PaymentRecord
-- CreditsOwnerScope
-- CreditsMutationRecord
-- CreditsBalanceProjection
-- Subscription
-- Entitlement
-- Invoice
-- Receipt
-- RefundRecord
-- ReversalRecord
-- AdjustmentRecord
-
-### Product Family
-- product-specific domain entities by product
-- ProductUsageRecord where product-owned
-- ProductOutputArtifact
-
-### Governance / Treasury Family
-- GovernanceAction
-- TreasuryAction
-- VaultAction
-- FoundationPolicyRecord
-- RegistryEntry
-- TransparencyReportArtifact
-
-### Profit Participation Family
-- SnapshotReference
-- EligibilityDataset
-- PayoutEntitlementInput
-- PayoutCycle
-- PayoutLedgerRecord
-
-### Audit / Execution Family
-- AuditEvent
-- ActivityEvent
-- IncidentLinkedEvent
-- SupportInterventionRecord
-- WorkflowRun
-- JobRecord
-- ProviderProcessingRecord
-- ChainSubmissionRecord
-
-These families create the minimum platform-wide ownership vocabulary for implementation.
-
----
-
-## Minimum Conceptual Ownership Metadata
-
-At minimum, the data model and entity ownership architecture should recognize the following conceptual metadata where applicable:
-
-### Ownership Metadata
-- `entity_type`
-- `canonical_owner_domain`
-- `ownership_layer`
-- `mutation_authority_reference`
-- `lifecycle_owner_reference`
-
-### Reference Metadata
-- `entity_id`
-- `source_entity_id`
-- `derived_from_reference`
-- `correlation_id`
-- `supersedes_entity_id`
-
-### Visibility and Control Metadata
-- `visibility_class`
-- `scope_type`
-- `scope_id`
-- `policy_reference`
-- `audit_lineage_reference`
-
-### Integrity Metadata
-- `is_canonical`
-- `is_derived`
-- `projection_type`
-- `reconciliation_reference`
-- `correction_reason_code`
-
-These are conceptual requirements, not a mandate that every entity store every field physically.
-
----
-
-## Data Model / Storage Implications
-
-This specification imposes the following storage-discipline rules:
-
-1. entity ownership must align with domain ownership
-2. canonical transactional stores must remain distinguishable from derived stores
-3. execution entities must remain distinguishable from business-domain entities
-4. provider raw input and normalized internal outcomes must remain distinguishable
-5. chain-derived records and off-chain policy records must remain distinguishable
-6. reporting/publication stores must preserve source traceability
-7. caches, search indexes, analytics stores, and dashboards must not become accidental write owners
-8. schema migrations must preserve ownership continuity when domains move, split, or consolidate
-
----
-
-## Permission / Access Considerations
-
-This file does not replace access-control specs, but it imposes the following entity-layer rules:
-
-- ownership does not imply universal read access
-- product admin capability is not platform control-plane authority
-- workspace scope is not itself authorization truth
-- authorization is not identical to entitlement
-- privileged operators must still use owner-correct pathways for trust-sensitive entity changes
-- governance-sensitive actions require explicit elevated pathways even when the initiating actor is already authenticated for ordinary work
-
----
+At minimum:
+- owner domains or explicitly delegated owner-controlled components MUST publish canonical events
+- execution-plane records remain execution lineage unless the owning domain explicitly elevates a result
+- retries MUST NOT create duplicate business outcomes
+- provider callbacks and chain-event ingestion MUST resolve through normalized, idempotent owner-controlled transitions
+- derived pipelines MUST tolerate lag without overwriting canonical truth
+- trace identifiers SHOULD connect owner decisions, execution progression, and publication outputs
 
 ## Security / Risk / Abuse Controls
+This specification is also a security and abuse-prevention document.
 
-This entity-ownership model is a security control.
+If entity ownership is not explicit:
+- products may overreach into platform state
+- reports may redefine business truth
+- chain truth may be shadowed by stale caches or projections
+- provider signals may mutate balances or entitlements incorrectly
+- execution systems may silently become business owners
+- governance-sensitive domains may be controlled through ordinary runtime paths
 
-If entity ownership is unclear:
-- products can overreach into platform state
-- dashboards and reports can redefine business truth
-- chain truth can be shadowed by stale projections
-- provider signals can mutate balances or entitlements incorrectly
-- execution systems can silently become business owners
-- governance-sensitive changes can occur without proper lineage
+All downstream security, abuse-prevention, monitoring, and incident specifications MUST preserve this entity-ownership model. fileciteturn14file1 fileciteturn14file2
 
-All downstream security, abuse-prevention, monitoring, and incident specs must preserve this entity model.
+## Boundary Violation Detection / Non-Canonical Patterns
+The following are non-canonical and forbidden unless a higher approved specification explicitly allows a bounded exception:
+- product-local identity roots
+- product-local session truth
+- product-local cross-product authorization truth
+- product-local credits, payout, registry, or reserve primitives
+- reporting or dashboard stores used as systems of record for upstream facts
+- provider callbacks directly mutating billing, entitlement, credits, or other business truth without normalization
+- worker or queue state treated as the owner of long-lived business meaning
+- control-plane convenience endpoints bypassing owner validation and audit requirements
+- chain-indexer data treated as broader off-chain policy truth without owner-controlled interpretation
+- hidden local copies of canonical entities that accept writes outside the owner domain
 
----
+## Audit / Traceability Requirements
+FUZE MUST be able to determine:
+- which domain owns an entity family
+- which boundary accepted a mutation
+- which component executed a step
+- whether a visible output is canonical, policy-derived, execution, derived, or presentational
+- how provider signals were verified and normalized
+- how off-chain decisions related to on-chain execution where relevant
+- which approvals, restrictions, overrides, policy version, reason code, operator identity, and trace identifier applied where relevant
+- which corrective or superseding entities altered prior interpretation without erasing history
 
 ## Failure Handling / Edge Cases
-
 ### Cached Product Copy of Platform State
-A cached product copy is non-canonical and must reconcile to the platform owner.
+A cached product copy is non-canonical and MUST reconcile to the platform owner.
 
 ### Reporting Mismatch With Chain Events
-The chain domain remains canonical for chain-owned truth. Reporting must reconcile or mark lag.
+The chain domain remains canonical for chain-owned truth. Reporting systems MUST reconcile, disclose lag, or mark uncertainty.
 
 ### Provider Outage During Payment or Purchase Flow
-External provider failure must not be treated as canonical commercial completion until verification and normalization are complete.
+External provider failure MUST NOT be treated as canonical commercial completion until verification and normalization complete.
 
 ### Product Invents Product-Local Credits
-This violates the ownership model unless formally approved as a non-canonical restricted sub-ledger under the Platform Credits domain.
+This violates the entity model unless a narrower approved specification explicitly establishes a bounded non-canonical sub-ledger governed by the platform credits domain.
 
-### Wallet-Aware Rank Differs From Latest Chain State
-Ethereum token truth remains canonical for balance state. Holder rank may lag temporarily but must reconcile.
+### Wallet-Aware Tier Differs From Latest Chain State
+The token domain remains canonical for token-balance truth. Wallet-aware participation context MAY lag temporarily but MUST reconcile.
 
 ### Worker or Workflow Starts Holding Long-Lived Business Meaning
-The owning business domain must absorb the canonical state, or the model must be explicitly refactored. Execution systems may not quietly become the owner.
+The owning business domain MUST absorb the canonical state, or the architecture MUST be refactored explicitly. Execution systems MAY NOT quietly become the owner.
 
 ### Derived Investor or Community Report Computes a Metric Incorrectly
-The report artifact is wrong, but it does not alter canonical platform or on-chain truth.
+The report artifact is wrong, but it does not alter canonical platform or chain truth.
 
 ### Governance Approval Is Granted
-Approval authorizes a sensitive action path but does not transfer ownership of the resulting business state.
+Approval authorizes or constrains a sensitive action path but does not transfer ownership of the resulting business state.
 
----
+## Operational Considerations
+- runbooks SHOULD identify entity-family owners for every major mutation-capable surface
+- incident response SHOULD classify impact by affected canonical owner and truth class
+- remediation pathways MUST preserve owner-controlled correction semantics
+- degraded mode MUST prefer explicit holds, read-only posture, or marked uncertainty over ambiguous mutation
+- observability SHOULD tag logs, traces, jobs, and events with entity-family and owner identifiers where feasible
 
 ## Migration / Compatibility / Supersession Considerations
+- migrations MUST NOT silently transfer ownership from one entity family or domain to another without an explicit specification change
+- compatibility layers MAY preserve older integrations temporarily, but they MUST NOT preserve shadow ownership as the long-term model
+- if a product-local capability becomes cross-product and foundational, it SHOULD be considered for elevation into a platform-owned entity family
+- if older materials imply looser entity-ownership rules, this refined specification supersedes them within its scope
+- any domain split, merge, entity-family deprecation, or schema reshaping MUST preserve traceability for prior canonical records and clear supersession lineage
 
-- migrations must not silently transfer ownership from one domain to another without explicit specification change
-- compatibility layers may preserve older integrations temporarily, but must preserve canonical ownership semantics
-- renamed or split entity families must document continuity of authority, lifecycle ownership, and event ownership
-- deprecated caches, reports, shadow tables, or exports must not remain relied upon as hidden truth
-- if older files or implementations contain looser entity-ownership assumptions, this refined specification supersedes them within its scope
+## Implementation-Contract Guardrails
+Downstream implementation contracts MUST preserve all of the following:
+- one explicit canonical owner per material entity family
+- explicit mutation boundaries and idempotency posture
+- explicit distinction among canonical, execution, policy-derived, provider-input, derived, and presentation state
+- explicit source references in projections, publication artifacts, and exports
+- explicit tie-break rules when provider, chain, cache, report, and owner state disagree
+- explicit audit lineage for corrections, overrides, and governance-sensitive actions
+- explicit reason codes for non-routine corrective or operator-driven changes where trust-sensitive state is affected
+- explicit lifecycle ownership for creation, mutation, correction, closure, and archival posture
+- explicit visibility into lag, pending reconciliation, or projection staleness where those affect interpretation
 
----
+Downstream implementations MUST NOT optimize away ownership clarity for convenience.
+
+## Downstream Execution Staging
+This document SHOULD be consumed by downstream authors in the following order:
+1. on-chain/off-chain responsibility and product-boundary refinements
+2. identity, session, workspace, wallet-aware, credits, billing, payout, entitlement, audit, and governance entity-domain specifications
+3. public/internal API and event specifications
+4. workflow, job, reporting, security, monitoring, and migration specifications
+5. product-integration and control-plane implementation documents
+
+## Required Downstream Specs / Contract Layers
+This specification materially informs:
+- `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
+- `IDENTITY_AND_ACCOUNT_SPEC.md`
+- `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
+- `WALLET_AWARE_USER_SPEC.md`
+- `WORKSPACE_AND_ORGANIZATION_SPEC.md`
+- `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
+- `PLATFORM_CREDITS_SPEC.md`
+- `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md`
+- `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`
+- `PAYMENT_RAILS_INTEGRATION_SPEC.md`
+- `ENTITLEMENT_AND_CAPABILITY_GATING_SPEC.md`
+- `PAYOUT_LEDGER_SPEC.md`
+- `API_ARCHITECTURE_SPEC.md`
+- `PUBLIC_API_SPEC.md`
+- `INTERNAL_SERVICE_API_SPEC.md`
+- `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+- `AUDIT_LOG_AND_ACTIVITY_SPEC.md`
+- product integration specifications
+
+## Canonical Examples / Anti-Examples
+### Canonical Examples
+- a `CreditsMutationRecord` is appended only through the credits owner domain and then consumed by balance projections and reports
+- a product stores `workspace_id` and `account_id` references instead of re-owning workspace or account truth
+- an eligibility pipeline produces a cycle-specific `EligibilityDataset` that becomes canonical for that cycle’s payout eligibility basis
+- a payout cycle preserves separate business record, contract execution record, and reporting artifact records with explicit linkage
+
+### Anti-Examples
+- a product dashboard overwrites entitlement state because it detected a UI inconsistency
+- a search index accepts hidden writes that alter source entity status
+- a provider callback directly increments credits balance without owner-controlled normalization
+- a chain indexer table is treated as the owner of broader off-chain payout-policy meaning
+- a worker retry record becomes the hidden source of business truth for a failed commercial flow
 
 ## Dependencies / Cross-Spec Links
-
-This specification depends on:
-
+This document depends most directly on:
 - `REFINED_SYSTEM_SPEC_INDEX.md`
-- `DOCS_SPEC_INDEX.md`
-- `SYSTEM_SPEC_INDEX.md`
-- `API_SPEC_INDEX.md`
 - `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
 - `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
 - `PLATFORM_ARCHITECTURE_SPEC.md`
 - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
-- identity/account/auth/session foundation docs
-- workspace/access-control foundation docs
-
-This specification directly governs or materially informs:
-
-- `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
-- `IDENTITY_AND_ACCOUNT_SPEC.md`
-- `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
-- `WORKSPACE_AND_ORGANIZATION_SPEC.md`
-- `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
-- `WALLET_AWARE_USER_SPEC.md`
-- `PLATFORM_CREDITS_SPEC.md`
-- `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md`
-- `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`
-- `PAYOUT_LEDGER_SPEC.md`
-- `AUDIT_LOG_AND_ACTIVITY_SPEC.md`
-- `API_ARCHITECTURE_SPEC.md`
-- `PUBLIC_API_SPEC.md`
-- `INTERNAL_SERVICE_API_SPEC.md`
-- event, workflow, monitoring, reporting, and product integration specs
-
----
+- `FUZE_ACCOUNT_ACCESS_AND_SESSION_THESIS_FINAL_SPEC.md`
+- `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
+- `FUZE_WORKSPACE_ACCESS_CONTROL_BASICS_THESIS_FINAL_SPEC.md`
 
 ## Explicitly Deferred Items
-
-The following are intentionally deferred to downstream specifications:
-
-- exact canonical schema by entity family
-- exact persistence topology across services and databases
-- exact event-sourcing boundaries where adopted
-- exact cross-service reference and foreign-key strategy
-- exact archival and retention policy by entity type
-- exact physical projection strategy for reporting/search/caching
-- exact data migration model when entity ownership evolves
-
-These do not weaken the canonical data model and entity ownership architecture established here.
-
----
+The following items are intentionally deferred to downstream specifications:
+- detailed relational, document, or event-schema design
+- full contract storage layout and ABI details
+- exact queue topics, retry backoff rules, and orchestration step graphs
+- product-specific lifecycle details for individual products
+- detailed archival and retention posture per entity family
+- exact reason-code vocabularies and policy-version field schemas
 
 ## Final Normative Summary
+FUZE MUST model every materially important entity family with one explicit canonical owner, one explicit mutation boundary, one explicit lifecycle owner, and one explicit interpretation of whether the entity is canonical, policy-derived canonical, execution, derived, or presentational. Products MAY add product truth but MUST NOT recreate shared platform primitives. On-chain truth MUST remain explicit and narrow. Provider input MUST be normalized before it affects canonical entities. Reports, dashboards, indexes, exports, and AI summaries remain downstream by default. Corrections, reversals, and supersession MUST preserve lineage. Downstream implementation contracts MUST preserve ownership clarity even under degraded runtime conditions.
 
-The FUZE data model and entity ownership architecture defines how durable truth is structured across a multi-product, multi-layer, transparency-first platform ecosystem. Every materially important fact must have one canonical owner. Platform entities, product entities, on-chain entities, policy-derived canonical entities, execution entities, and derived/reporting artifacts must remain conceptually distinct even when they interact heavily.
-
-Products, workflows, reports, ledgers, dashboards, caches, and chain-integrated services may reference or derive from canonical truth, but they may not silently compete with it. Correction must preserve lineage. Reconciliation must preserve owner clarity. Cross-domain integration must prefer references over re-ownership. If a future design cannot clearly state who owns an entity, where its canonical state resides, who may mutate it, and how corrections occur, that design is incomplete and must escalate before implementation.
+## Quality Gate Checklist
+- [x] Canonical owner is explicit for every material truth family
+- [x] Mutation boundaries are explicit
+- [x] Adjacent boundaries are explicit
+- [x] Truth classes are explicit
+- [x] Conflict-resolution rules are explicit
+- [x] Default decision rules are explicit
+- [x] Non-canonical patterns are called out clearly
+- [x] Operator and admin override paths are bounded and audited
+- [x] Read-model, cache, reporting, and projection rules are explicit
+- [x] On-chain versus off-chain responsibilities are explicit where relevant
+- [x] Failure and degraded-mode behaviors are explicit
+- [x] Downstream implementation guardrails are explicit
+- [x] Dependencies and downstream impacts are explicit
+- [x] Non-goals and deferred items are explicit
+- [x] The document is strong enough that backend, API, data, runtime, and reporting teams can implement without inventing contradictory semantics

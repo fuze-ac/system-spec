@@ -1,637 +1,740 @@
-# SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC
+# FUZE System Overview and Boundaries Specification
 
 ## Document Metadata
-
-- Document Name: `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
-- Document Type: Canonical refined system specification
-- Status: Active refined system spec
-- Governing Layer: Platform constitution / boundary / ownership
-- Primary Audience: Platform architecture, product architecture, engineering, security, finance systems, governance, operations, reporting
-- Primary Purpose: Define the top-level canonical system view of FUZE, including what FUZE is, what layers compose the ecosystem, what boundary rules apply between those layers, and how downstream specifications must interpret platform responsibility
-- Parent Registry: `REFINED_SYSTEM_SPEC_INDEX.md`
-- Primary Upstream References:
-  - `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
-  - `PLATFORM_ARCHITECTURE_SPEC.md`
+- **Document Name:** `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- **Document Type:** Canonical refined system specification
+- **Status:** Active refined system spec
+- **Version:** 1.0
+- **Effective Date:** 2026-04-21
+- **Last Updated:** 2026-04-21
+- **Reviewed On:** 2026-04-21
+- **Document Owner:** FUZE Platform Architecture (canonical owner); named individual owner not explicitly specified in retrieved source material
+- **Approval Authority:** Not explicitly specified in retrieved source material; constitutional approval authority remains governed by the active refined registry and FUZE approval workflow
+- **Review Cadence:** Not explicitly specified in retrieved source material; SHOULD be reviewed whenever a top-level platform layer, domain boundary, product admission rule, chain boundary, shared commercial boundary, reporting boundary, or ownership rule materially changes
+- **Governing Layer:** Platform constitution / system overview / ecosystem boundary model
+- **Parent Registry:** `REFINED_SYSTEM_SPEC_INDEX.md`
+- **Primary Audience:** Platform architecture, backend engineering, product engineering, API design, data engineering, contracts engineering, security, operations, governance, finance, reporting, transparency, implementation-contract authors
+- **Primary Purpose:** Define the canonical high-level FUZE system overview and ecosystem boundary model, including how platform, product, identity, workspace, authorization, commercial, chain, reporting, governance, and external-provider layers fit together and which architectural separations all downstream specifications and implementations MUST preserve
+- **Primary Upstream References:**
+  - `REFINED_SYSTEM_SPEC_INDEX.md`
+  - `DOCS_SPEC_INDEX.md`
   - `SYSTEM_SPEC_INDEX.md`
   - `API_SPEC_INDEX.md`
-  - `DOCS_SPEC_INDEX.md`
-  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_THESIS_FINAL_SPEC.md`
-  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
-  - `FUZE_WORKSPACE_ACCESS_CONTROL_BASICS_THESIS_FINAL_SPEC.md`
-- Primary Downstream Dependents:
+  - `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
   - `PLATFORM_ARCHITECTURE_SPEC.md`
   - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
   - `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
   - `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
   - `PRODUCT_BOUNDARY_AND_DOMAIN_OWNERSHIP_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_THESIS_FINAL_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
+  - `FUZE_WORKSPACE_ACCESS_CONTROL_BASICS_THESIS_FINAL_SPEC.md`
+- **Primary Downstream Dependents:**
+  - `PLATFORM_ARCHITECTURE_SPEC.md`
+  - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+  - `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+  - `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
+  - `PRODUCT_BOUNDARY_AND_DOMAIN_OWNERSHIP_SPEC.md`
+  - `PRODUCT_ADMISSION_AND_EXPANSION_GATE_SPEC.md`
   - `API_ARCHITECTURE_SPEC.md`
-  - all identity, workspace, entitlement, commerce, credits, AI, workflow, transparency, governance, treasury, and chain execution specs
+  - all identity, account, auth/session, workspace, authorization, entitlement, commerce, credits, AI, workflow, transparency, governance, treasury, chain execution, security, audit, and reporting specifications
+- **Supersedes:** Earlier or weaker top-level interpretations of FUZE as a single-product system, an undifferentiated application stack, a token-first architecture, a per-product backend portfolio, or a system where reporting, providers, surfaces, or convenience layers implicitly become canonical owners
+- **Superseded By:** None currently defined
+- **Related Decision Records:** Not explicitly linked in retrieved source material
+- **Canonical Status Note:** This document is the canonical top-level ecosystem-framing and boundary-orientation document for FUZE system interpretation. It defines the top-level interpretive model that downstream architecture, domain, API, event, data, product, reporting, transparency, and governance specifications MUST preserve.
+- **Implementation Status:** Normative architecture source; downstream implementation contracts, APIs, schemas, services, events, jobs, reports, dashboards, and runbooks MUST align
+- **Approval Status:** Draft refined canonical specification pending explicit approval workflow
+- **Change Summary:** Consolidated the FUZE ecosystem overview into one production-grade governing document; clarified layer model, architectural separations, top-level domain map, truth-class relationships, product/platform boundary posture, chain/off-chain boundary posture, external dependency posture, reporting and control-plane constraints, conflict-resolution rules, and implementation-contract guardrails
 
----
+## Title
+FUZE System Overview and Boundaries Specification
 
 ## Purpose
+This specification defines the canonical top-level system overview and ecosystem boundaries of FUZE.
 
-This specification defines the canonical top-level system overview and system boundaries of the FUZE platform ecosystem.
+Its purpose is to make explicit:
+- what FUZE is at the architectural level
+- which major layers compose the ecosystem
+- which boundary separations are foundational rather than optional
+- how shared platform capabilities relate to product domains
+- how on-chain, off-chain, reporting, governance, and external-provider layers interact without collapsing ownership
+- how identity, session, workspace, authorization, entitlement, commercial rails, AI/workflow systems, chain-connected systems, and public-trust surfaces fit into one coherent architecture
+- what downstream specifications MUST preserve when implementing narrower slices of the system
 
-Its purpose is to establish the stable architectural interpretation layer that all downstream FUZE system specifications must inherit. It defines what FUZE is at the platform level, what major layers exist in the ecosystem, what each layer is responsible for, which categories of truth belong to which layers, and which boundary rules must remain non-negotiable as the platform expands.
-
-This document is intentionally foundational. It is not an implementation-detail file for one subsystem. It is the system-level framing document that defines how FUZE should be understood before narrower architecture, API, product, financial, governance, or chain-specific specs are interpreted.
-
----
+This document is intentionally architectural and constitutional in posture. It is not a product brief, a marketing description, or a lightweight explainer. It defines the system-shape assumptions that the rest of the FUZE specification library inherits.
 
 ## Scope
-
 This specification governs:
-
-- the canonical definition of FUZE as a platform-first ecosystem
-- the top-level structural layers of the ecosystem
-- the distinction between platform, product, on-chain, and external domains
-- the distinction between off-chain application truth and explicitly on-chain truth
-- the distinction between shared platform capability and product-specific extension
-- the non-negotiable economic separations across token, credits, revenue, profit, and payouts
-- the high-level runtime layer model used to reason about synchronous, asynchronous, reporting, control-plane, and chain-mediated execution
-- the top-level trust-boundary model for third-party dependencies
-- the top-level rules for how future specifications must assign ownership and interpret system behavior
-- the hierarchy of architectural precedence when downstream specifications appear to overlap or conflict
-
-This document does not define:
-
-- entity-by-entity schema ownership
-- detailed API endpoint contracts
-- detailed service topology or deployment shape
-- detailed auth/session mechanics
-- detailed workspace, entitlement, billing, ledger, payout, or governance workflows
-- detailed chain contract design
-- detailed incident procedures or low-level observability implementation
-
-Those belong in downstream refined specifications.
-
----
+- the high-level system decomposition of FUZE
+- the canonical layer model across platform, product, chain, reporting, control, and external dependency boundaries
+- the relationship among identity, access, workspace, authorization, entitlement, commercial, AI/workflow, and public-trust domains
+- the distinction between shared platform primitives and product-specific extensions
+- the top-level interpretation of off-chain versus on-chain responsibility
+- the top-level interpretation of control-plane versus business-domain ownership
+- the top-level interpretation of reporting/publication layers versus source domains
+- ecosystem boundary rules for provider integrations, user-facing surfaces, admin surfaces, async systems, and public trust surfaces
+- system-level conflict resolution and default decision rules where downstream documents may otherwise drift
+- implementation-contract guardrails that downstream API, service, event, storage, and runbook layers MUST preserve
 
 ## Out of Scope
+This specification does not define:
+- detailed entity schemas or persistence layouts
+- endpoint-by-endpoint API definitions
+- exact service decomposition or deployment topology
+- exact contract ABI or chain-specific storage design
+- detailed role and permission matrices
+- detailed commercial formulas, pricing tables, or payout math
+- detailed workflow graphs, queue names, or retry algorithms
+- exact public-report formatting or UI composition
+- exact product-local domain models
+- exact org-chart accountability or staffing structure
 
-This document is explicitly out of scope for:
-
-- team organization charts or human reporting lines
-- repository layout decisions
-- vendor-specific infrastructure implementation
-- UI page design or product UX flows
-- product-specific domain logic
-- policy-level accounting treatment details beyond boundary clarification
-- detailed approval trees for governance-sensitive actions
-- smart-contract ABI-level or storage-level details
-- queue technology, database technology, or runtime framework selection
-
----
+Those belong in downstream specifications, provided those specifications remain consistent with this overview and boundary model.
 
 ## Design Goals
-
-The design goals of this specification are:
-
-1. Define FUZE as one coherent platform ecosystem rather than a loose portfolio of products.
-2. Preserve platform-first architecture as the default rule for cross-product capabilities.
-3. Make system layers and trust boundaries explicit enough for architecture, API, and data specs to inherit without ambiguity.
-4. Preserve strict economic separation between participation assets, internal consumption assets, and payout assets.
-5. Preserve strict responsibility separation between off-chain business logic and explicitly committed on-chain truth.
-6. Prevent product fragmentation, shadow platforms, and hidden ownership drift.
-7. Preserve clear boundaries between identity, authentication, sessions, workspaces, authorization, entitlements, billing, credits, revenue, profit, payouts, and reserves.
-8. Support future product expansion without requiring redefinition of platform primitives.
-9. Make security, auditability, governance, and transparency architectural properties rather than afterthoughts.
-10. Provide a stable interpretive layer for downstream system specs and API specs.
-
----
+The design goals of the FUZE system overview and boundary model are to:
+1. define FUZE as one coherent platform ecosystem rather than a collection of disconnected applications
+2. preserve clear separation among identity, authentication, sessions, workspace scope, authorization, entitlement, and product behavior
+3. preserve clear separation among billing truth, credits truth, payout truth, reporting truth, and public explanation
+4. preserve clear separation among platform-owned primitives, product-owned extensions, and external-provider inputs
+5. preserve clear separation between on-chain committed state and off-chain policy, accounting, execution, and reporting state
+6. make future product expansion and future chain-aware capabilities possible without fragmenting canonical architecture
+7. reduce drift, aliasing, hidden ownership, and cross-domain mutation shortcuts
+8. support security, auditability, reconciliation, migration safety, and governance clarity through explicit boundaries
+9. support downstream implementation contracts by defining which boundaries are mandatory and non-redefinable
+10. keep the ecosystem understandable to architecture, API, data, runtime, security, finance, governance, and reporting teams at the same time
 
 ## Non-Goals
+This specification is not intended to:
+- let any one product redefine the FUZE platform model
+- let user-facing surfaces become systems of record
+- let provider callbacks, vendor responses, caches, dashboards, or AI outputs silently become canonical truth
+- collapse account identity into authentication method, session, workspace, wallet, or product-local user profile
+- collapse entitlement into permission, permission into session, or session into identity
+- collapse credits into external payment methods, token participation, invoices, or profit participation
+- collapse public reporting into internal canonical state
+- force all meaningful platform logic on-chain or treat off-chain logic as secondary
+- treat governance-sensitive approvals as replacements for domain ownership
 
-FUZE is not intended to be:
-
-- a single-product application disguised as a platform
-- a generic token project whose architecture is primarily narrative-driven
-- a fully on-chain application runtime
-- a per-product backend portfolio with duplicated core systems
-- a system where products may redefine platform primitives for convenience
-- a system where reporting or public presentation becomes the source of record
-- a system where token, credits, revenue, profit, payouts, and reserves collapse into one economic concept
-- a system where governance-sensitive authority is silently exercised through ordinary runtime flows
-- a system where external providers become implicit long-term truth owners for FUZE-owned business meaning
-
----
+If there is tension between convenience and architecture-correct separation, the architecture-correct separation wins.
 
 ## Core Principles
+### 1. Platform Ecosystem Principle
+FUZE is a platform ecosystem with shared primitives, shared controls, and multiple bounded products. It MUST be designed and governed as one system.
 
-### 1. Platform-First Principle
-Shared platform capabilities must be owned once at the platform layer and reused across products unless a clearly bounded product-specific exception is formally declared.
+### 2. Architectural Separation Principle
+The platform MUST preserve explicit separation between identity, authentication, session, scope, authorization, entitlement, commercial semantics, product-local state, chain-committed state, reporting, and governance control.
 
-### 2. Explicit Boundary Principle
-Every major category of system concern must belong to a clearly defined layer with clear mutation, execution, and interpretation boundaries.
+### 3. Platform-First Primitive Principle
+Cross-product primitives MUST be platform-owned unless a narrower exception is explicitly approved and remains compatible with the higher-order platform model.
 
-### 3. Single Canonical Owner Principle
-Each meaningful category of truth must have one canonical owner. Other layers may derive, cache, render, or interpret within bounded rules, but may not silently redefine canonical meaning.
+### 4. Product Boundedness Principle
+Products MAY innovate locally, but they remain bounded extension domains. Products MUST NOT redefine shared account, access, workspace, entitlement, commercial, or chain-boundary semantics.
 
-### 4. Off-Chain / On-Chain Separation Principle
-Off-chain application logic and on-chain committed truth serve different roles and must not be collapsed into one model.
+### 5. Hybrid Architecture Principle
+FUZE is intentionally hybrid. Some truths are committed on-chain where public verifiability or contract enforcement adds real trust value; many core policy, product, accounting, workflow, and privacy-sensitive functions remain off-chain.
 
-### 5. Product-Extension Principle
-Products are extension domains built on the FUZE platform, not alternate platforms.
+### 6. Derived-State Discipline Principle
+Reports, dashboards, search indexes, exports, analytics views, AI outputs, caches, and public registries MAY derive from canonical truth, but MUST NOT replace it.
 
-### 6. Governance-Aware Control Principle
-Sensitive actions must remain distinguishable from ordinary runtime actions and must be routed through explicit control or governance-aware pathways when required.
+### 7. Control-Without-Ownership Principle
+Governance, support, security, and operator pathways MAY authorize, constrain, pause, review, or remediate actions, but they MUST NOT silently become the owners of the affected business-domain truth.
 
-### 7. Transparency-by-Structure Principle
-Transparency must result from durable architecture, explicit ownership, auditable flows, and reportable state transitions, not only from narrative explanation.
+### 8. External-Boundary Principle
+External systems remain external. FUZE MAY verify, normalize, and respond to their inputs, but provider input is not FUZE truth until it crosses an owner-controlled normalization boundary.
 
-### 8. Trust-Boundary Principle
-External providers are dependencies crossing trust boundaries, not silent extensions of FUZE-owned truth.
+### 9. Deterministic Boundary Principle
+Material state changes MUST pass through explicit owner-controlled mutation boundaries. Convenience routing, privileged surfaces, and async execution do not bypass this rule.
 
----
+### 10. Future-Safe Coherence Principle
+Boundary decisions MUST be durable enough to support future products, future providers, future chain components, future reporting obligations, and future implementation-contract layers without changing the platform’s core semantic model.
 
 ## Canonical Definitions
-
 ### FUZE Platform
-The shared operating foundation beneath the FUZE ecosystem that owns reusable cross-product capabilities such as identity, account continuity, workspaces, billing, credits, wallet-aware participation context, AI orchestration, workflow infrastructure, auditability, reporting, and governance-aware controls.
+The shared ecosystem core that owns cross-product primitives, identity and access foundations, workspace collaboration foundations, shared commercial infrastructure, governance-aware controls, shared integrations, reporting-supporting records, and architecture-wide rules.
 
-### Product Layer
-The set of product-specific application domains built on top of FUZE, each of which owns product-specific workflows, data, interfaces, and category-specific business logic while remaining bound to shared platform rules.
+### FUZE Product
+A bounded product domain built on top of FUZE platform primitives. A product may own product-local entities, workflows, AI behavior, UX, and analytics, but does not own shared platform primitives unless explicitly granted.
 
-### On-Chain Layer
-The smart-contract and chain-committed state layer that owns only the categories of truth explicitly committed to contract design, such as token balances, credits-ledger commitments where applicable, payout execution state, reserve constraints, and certain governance-controlled state.
+### Shared Primitive
+A cross-product capability or semantic category that must remain consistent across the ecosystem, such as account identity, session semantics, workspace concepts, authorization foundations, Platform Credits, or chain-boundary rules.
 
-### External Dependency Layer
-Any third-party service or runtime dependency not owned by FUZE, including payment processors, app-store billing systems, AI model providers, cloud services, RPC/indexing providers, wallets, messaging environments, and similar providers.
+### Top-Level Boundary
+A primary architectural separation that downstream specifications must preserve, such as platform versus product, identity versus session, authorization versus entitlement, off-chain versus on-chain, or canonical truth versus derived reporting.
 
-### Canonical Truth
-The authoritative state and policy for a category of system meaning.
+### Control Plane
+The set of operator, governance, security, support, or rollout pathways that constrain or guide production behavior without replacing the owning domain’s business truth.
 
-### Derived Truth
-A summarized, joined, aggregated, or otherwise computed view that depends on canonical sources without replacing them.
+### Source Domain
+The canonical owning domain for a category of truth.
 
-### Presentation Layer
-A rendering or user-facing representation of truth that may organize, explain, or visualize canonical and derived data without becoming the canonical owner.
+### Public Trust Surface
+A public or stakeholder-facing publication surface, registry, report, or explanation layer derived from canonical source domains.
 
-### Execution Layer
-A runtime layer that performs a state transition or process step but does not necessarily define the policy meaning of that step.
+### Provider Input
+Raw state, events, or callback material supplied by a third-party system before FUZE normalization.
 
-### Governance-Sensitive Action
-Any action whose risk, external effect, financial significance, or contractual significance requires stronger-than-ordinary runtime control.
+### Architectural Drift
+A condition where local implementations, APIs, services, reports, or products begin redefining platform semantics outside the canonical specification hierarchy.
 
----
+## Truth Class Taxonomy
+FUZE MUST preserve the following truth classes across the architecture where relevant:
+1. **Semantic truth** — what a concept means and which domain owns that meaning
+2. **Policy truth** — what rules govern action, eligibility, mutation, restriction, review, or interpretation
+3. **Runtime truth** — what is happening during execution right now
+4. **Ledger / storage truth** — the durable authoritative record for a domain
+5. **Provider-input truth** — unnormalized external state
+6. **Implementation-adapter truth** — translation or normalization state at a boundary
+7. **Projection / reporting truth** — derived summaries, publications, analytics, registry outputs, or explanatory models
+8. **Presentation truth** — rendered UX and wording state
 
-## Canonical Platform Definition
+These truth classes MUST NOT be collapsed into one undifferentiated system description.
 
-FUZE is a transparency-first, platform-first, multi-product SaaS ecosystem.
+## Architectural Position in the Spec Hierarchy
+This document sits beneath the active registry and foundation index files and alongside `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md` as one of the top-level governing architectural documents.
 
-At the system-design level, FUZE must be understood as all of the following simultaneously:
+Within scope:
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md` is authoritative for canonical ownership and top-level truth-family ownership
+- this document is authoritative for ecosystem overview, system shape, and architectural boundary interpretation
 
-- a shared operating layer
-- a shared commercial layer
-- a shared wallet-aware participation layer
-- a shared AI orchestration and workflow layer
-- a shared transparency and reporting layer
-- a shared governance-aware control layer
-- a product extension ecosystem built on top of those shared layers
-- an ecosystem that integrates off-chain application logic with bounded on-chain financial and participation infrastructure
+Downstream specifications such as `PLATFORM_ARCHITECTURE_SPEC.md`, `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`, `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`, `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`, product boundary specs, identity/access specs, commercial specs, API specs, and reporting specs MUST remain consistent with this document.
 
-FUZE is not synonymous with any one product. The platform exists beneath products and remains structurally prior to them for shared concerns.
+If a downstream specification conflicts with this document on top-level layer interpretation, system decomposition, or required architectural separations, this document wins unless an explicitly higher constitutional source overrides it.
 
----
+## System Overview
+FUZE is a platform-first ecosystem composed of shared off-chain platform capabilities, bounded product domains, chain-connected economic and governance rails, reporting and public-trust surfaces, and governance-aware control pathways.
+
+At a high level, the system includes:
+- one shared account and access foundation
+- one shared collaboration and scope foundation centered on workspaces and organizations
+- one shared authorization and entitlement foundation
+- one shared commercial and credits foundation
+- shared AI orchestration, workflow, integration, audit, and reporting-support capabilities
+- bounded product domains that consume and extend those primitives
+- chain-connected layers for token participation, committed credits and payout execution where applicable, and governance-sensitive controls
+- public and stakeholder-facing reporting surfaces that explain or expose approved slices of system truth
+- external dependency boundaries for payment, identity provider, wallet, AI vendor, communication, and infrastructure integrations
+
+FUZE is therefore neither a single monolithic application nor a loose federation of unrelated products. It is one governed system with bounded internal domains.
 
 ## System Boundaries
+FUZE MUST be interpreted through the following top-level boundary layers.
 
-The FUZE ecosystem is divided into four canonical top-level system layers.
+### 1. Shared Platform Core Boundary
+The platform core owns cross-product primitives and rules. This includes, at minimum:
+- canonical account identity
+- linked access-path and session foundations
+- workspace and organization foundations
+- authorization foundations and effective-access evaluation inputs
+- entitlement and capability-gating foundations
+- shared commercial rails and Platform Credits semantics
+- audit, traceability, and control-plane support capabilities
+- integration normalization and shared API/event discipline
+- shared workflow and orchestration primitives
+- transparency-supporting records and reporting inputs where platform-owned
 
-### 1. FUZE Platform Layer
-The shared off-chain application and service layer.
+### 2. Product Domain Boundary
+Products own bounded product-local capabilities, including:
+- product-local objects
+- product-local workflows
+- product-local AI behavior where genuinely product-owned
+- product-local UX and user-facing composition
+- product-local analytics and configuration
 
-The platform layer owns cross-product operating capabilities, cross-product commercial infrastructure, cross-product policy and orchestration logic, shared audit/reporting capability, and shared control-plane coordination.
+Products MUST consume platform-owned primitives rather than redefining them.
 
-### 2. FUZE Product Layer
-The product-specific domain layer.
+### 3. Chain Boundary
+The chain boundary contains explicitly committed on-chain state and contract-enforced roles. This includes token participation state and any formally committed credits, payout-execution, treasury, reserve, or governance-control state.
 
-The product layer owns product-specific entities, workflows, interfaces, analytics, prompts, experience logic, and category-specific execution patterns that are not elevated to shared platform scope.
+On-chain presence is canonical only for the meanings explicitly committed on-chain.
 
-### 3. On-Chain Participation and Financial Layer
-The explicit contract and chain-committed state layer.
+### 4. Reporting and Publication Boundary
+This boundary contains internal reporting, public registry surfaces, transparency outputs, investor/community reporting, and other publication-oriented read models.
 
-This layer owns only the categories of truth expressly committed on-chain, such as token balances on Ethereum, credits commitments on Base where applicable, funded payout claims on Base, reserve/vault constraints, and certain governance restrictions.
+This boundary is derived by default and MUST NOT silently replace source-domain truth.
 
-### 4. External Dependency Layer
-The third-party dependency layer.
+### 5. Control and Governance Boundary
+This boundary contains policy enforcement, security containment, support correction, admin review, rollout posture, approval routing, emergency action controls, treasury-sensitive controls, and similar elevated pathways.
 
-This layer owns its own provider execution and raw provider state, but does not own FUZE’s internal interpretation, policy, canonical business meaning, or platform truth unless a downstream spec explicitly declares a normalization boundary.
+This boundary constrains the system but does not become the ordinary owner of the affected business domains.
 
-These layers interact heavily, but they do not share undifferentiated ownership.
+### 6. External Dependency Boundary
+This boundary contains providers and systems FUZE depends on but does not own, including:
+- external identity providers
+- payment processors and app-store billing systems
+- wallet clients and RPC/indexing providers
+- AI vendors and model providers
+- infrastructure and delivery vendors
+- communication and notification providers
 
----
+External state remains external until normalized through owner-controlled platform boundaries.
 
 ## Adjacent Boundaries
+This specification interacts with adjacent top-level and domain specifications as follows:
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md` defines who owns truth across the top-level layers described here
+- `PLATFORM_ARCHITECTURE_SPEC.md` refines the internal platform structure and service/runtime view
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md` assigns specific domains to owners within the overview model
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md` refines persistence and entity-level ownership consequences
+- `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md` refines the chain boundary described here
+- `PRODUCT_BOUNDARY_AND_DOMAIN_OWNERSHIP_SPEC.md` refines product boundedness and admission posture
+- identity/account/session/access-control foundation documents refine the access side of the overview model
+- commercial, governance, reporting, API, event, and workflow specs refine other major boundary families described here
 
-This specification must be interpreted together with the following adjacent boundary documents:
+This document does not duplicate all those details. It defines the ecosystem map within which they must remain coherent.
 
-- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md` defines the ownership model and escalation logic for truth, execution, reporting, and governance-sensitive control.
-- `PLATFORM_ARCHITECTURE_SPEC.md` defines the runtime architecture, platform service domains, execution layers, and platform interaction model.
-- identity, auth/session, and workspace/access-control specs define the platform’s user, account, session, workspace, and authorization primitives.
-- financial, ledger, payout, and chain specs refine economic and execution boundaries that are only stated here at the top level.
-- API and integration specs refine how these boundaries are represented in contracts, service interfaces, and event flows.
+## Conflict Resolution Rules
+When materials, implementations, or interpretations conflict, the following rules apply:
+1. the active refined registry and higher constitutional materials win over narrower documents
+2. this document wins on overall ecosystem shape, architectural separation, and top-level boundary interpretation
+3. `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md` wins on explicit ownership, truth-family ownership, and mutation-owner interpretation
+4. canonical source domains win over reports, surfaces, caches, exports, or explanatory views
+5. on-chain committed truth wins only for the categories actually committed on-chain; broader off-chain business meaning remains off-chain unless explicitly committed
+6. provider input never wins by itself; verified and normalized internal consequences win
+7. control-plane or operator involvement does not transfer ordinary business-domain ownership
+8. where ambiguity remains, FUZE MUST prefer the more conservative architecture-consistent interpretation and record the boundary more explicitly downstream
 
-This document wins on top-level system interpretation.
-Downstream documents may refine detail, but must not violate the layer model, economic separation model, or platform-first framing declared here.
-
----
+## Default Decision Rules
+When ambiguity exists and no narrower approved exception is available, FUZE MUST default to the following:
+1. cross-product capabilities default to platform ownership
+2. product-local workflows default to product ownership only if they do not redefine shared platform semantics
+3. user identity defaults to canonical account ownership, not provider, product, workspace, or wallet ownership
+4. authenticated runtime state defaults to session/domain ownership, not frontend or product-local ownership
+5. authorization defaults to evaluated post-auth scope logic, not login-success logic
+6. entitlement defaults to a distinct eligibility/capability layer, not a hidden role flag or UI toggle
+7. external commercial payment state defaults to provider-input status until normalized into FUZE commercial consequences
+8. credits, billing, payout, and token participation default to separate economic concepts even when operationally linked
+9. public reporting defaults to derived-state status, not canonical business-state ownership
+10. if no explicit owner or layer can be named, the design is incomplete and MUST NOT be treated as production-grade
 
 ## Roles / Actors / Entities
-
-At the top-level system-overview layer, the principal architectural actors are:
-
+### Human Actors
 - end users
-- workspace members and administrators
-- product runtime services
-- platform runtime services
-- async workers and background processors
-- reporting and transparency pipelines
-- platform control-plane operators
-- governance-constrained operational actors
-- smart contracts on Ethereum and Base
-- external providers and transport/access-path dependencies
+- workspace members and owners
+- product operators
+- support operators
+- security reviewers
+- finance and treasury reviewers
+- governance or approval actors
+- public, community, partner, and investor readers of approved trust surfaces
 
-This document does not define person-level permissions. It defines which system layers and actor classes exist and which categories of responsibility they may own.
+### System Actors
+- platform services
+- product services
+- authorization and entitlement evaluators
+- workflow and worker systems
+- chain-adjacent adapters
+- reporting and registry publishers
+- control-plane systems
+- provider adapters and verification systems
 
----
+### Core Entity Families
+- account and linked access-path entities
+- session entities
+- workspace, organization, membership, and scoped authorization entities
+- entitlement and capability state
+- product-local entities
+- commercial and credits entities
+- payout, treasury, and chain-reference entities
+- audit and traceability entities
+- reporting and publication artifacts
+- normalization and remediation records
 
 ## Ownership Model
+This overview specification requires every major domain to be analyzed across at least five dimensions:
+1. **semantic ownership** — who defines what the concept means
+2. **mutation ownership** — who accepts writes that change canonical state
+3. **runtime execution ownership** — who performs the operational action
+4. **presentation ownership** — who renders or explains the state
+5. **governance/control ownership** — who may approve, constrain, pause, or remediate sensitive actions
 
-### Platform-Owned Categories
-The platform layer owns, at minimum:
-
-- canonical account-rooted user identity
-- linked login methods and session/security state
-- workspace and organization models
-- wallet-link mapping and account-associated participation context
-- shared billing and commerce orchestration
-- Platform Credits policy, issuance logic, spend orchestration, adjustments, and internal balance semantics
-- platform-wide entitlements and cross-product capability control where applicable
-- shared AI orchestration and workflow primitives
-- audit and transparency pipelines
-- payout-cycle orchestration before on-chain funding
-- provider normalization logic where FUZE internal truth depends on external events
-- platform control-plane behavior and governance-aware operational constraints
-
-### Product-Owned Categories
-Products own, at minimum:
-
-- product-specific entities and data models
-- product-specific interfaces and experience flows
-- product-specific AI prompts, workflows, and outputs
-- product-specific usage semantics
-- product-specific configuration within platform rules
-- product-specific reports and views that do not redefine platform truth
-- product-specific monetization configuration only within platform-owned commercial rules
-
-### On-Chain-Owned Categories
-The on-chain layer owns, at minimum:
-
-- FUZE token balance truth on Ethereum
-- contract-level token events and contract-governed restrictions
-- Base credits commitment truth where credits are formally committed on-chain
-- funded payout pool and claim execution truth on Base
-- reserve, lock, vesting, or timelock constraints encoded in contracts
-- contract-governed permissions and event history where applicable
-
-### External-Owned Categories
-External systems own, at minimum:
-
-- raw provider execution state
-- external payment-processor outcomes before FUZE normalization
-- external purchase authorization state in app-store environments
-- external messaging or mini-app runtime behavior
-- AI model vendor execution environments
-- infrastructure-provider runtime guarantees
-- RPC/indexing access service behavior
-- wallet software and client-side transaction environments
-
----
+These dimensions MUST remain distinct. A layer may execute, display, approve, or summarize a state change without owning the underlying semantic truth.
 
 ## Authority / Decision Model
+### Platform Authority
+The platform has final authority over shared primitives, including identity, access foundations, workspace foundations, entitlement foundations, shared commercial semantics, integration normalization rules, and top-level security and audit discipline.
 
-Different kinds of authority must remain distinct.
+### Product Authority
+Products have authority over product-local object models, product workflows, product-local AI specialization, product UX, and product-local analytics within platform constraints.
 
-### Canonical Policy Authority
-Usually belongs to the platform layer for cross-product concerns.
+### Contract Authority
+Contracts have authority only over the state and enforcement explicitly committed into their design. Contract state does not automatically own broader accounting, policy, reporting, or product meaning.
 
-Examples:
-- identity rules
-- billing rules
-- credits rules
-- wallet-link semantics
-- platform entitlement framework
-- payout-cycle orchestration policy
+### Control / Governance Authority
+Governance-sensitive control pathways have authority to authorize, restrict, pause, review, or require remediation for elevated actions. They do not become default owners of downstream business state.
 
-### Product Decision Authority
-Belongs to product domains for product-specific concerns.
+### External Authority
+External providers have authority only inside their own systems. FUZE decides what it accepts, how it verifies it, and what internal consequences follow.
 
-Examples:
-- product UX patterns
-- product object models
-- product AI strategy
-- product workflow variants
-- product feature packaging within platform billing constraints
+## Domain Map
+The canonical FUZE domain map should be interpreted as follows.
 
-### Contract Execution Authority
-Belongs to the relevant on-chain contract domains for explicitly committed chain actions and state transitions.
+### Identity and Access Foundation
+The access foundation is layered, not collapsed:
+- identity answers who the actor is
+- authentication answers how access was proven
+- session answers what authenticated runtime state exists now
+- workspace and organization layers answer collaborative and operational scope
+- authorization answers what scoped actions are allowed
+- entitlement answers whether the subject is eligible to use a product, capability, capacity band, or commercial right
 
-### Governance-Constrained Authority
-Belongs to governance structures, multisig/timelock-protected pathways, or explicitly controlled high-impact platform operations.
+These are adjacent but distinct domains.
 
-### Presentation Authority
-Belongs to reporting or interface layers for rendering and explanation only, never for canonical reinterpretation of owning-domain truth.
+### Workspace and Organization Foundation
+Workspaces and organizations define durable collaborative and operational scope. They are not replacements for account identity and not shortcuts for authorization or entitlement.
 
----
+### Product Layer
+Products consume canonical identity and scope context, then implement product-local logic on top. They remain bounded extension domains.
+
+### Commercial Layer
+Commercial architecture contains distinct subdomains, including:
+- payment verification and normalization
+- Platform Credits semantics
+- billing and subscription truth
+- invoicing and receipt truth
+- refunds, reversals, and adjustments
+- pricing and monetization policy
+
+These MUST remain separate from identity, authorization, and product-local balance shortcuts.
+
+### Chain-Connected Economic and Governance Layer
+The chain-connected layer contains token participation truth, committed credits and payout execution where formally designed, and governance and treasury controls where formally committed. It interacts with off-chain policy, accounting, reconciliation, and reporting layers without replacing them.
+
+### Reporting, Transparency, and Public Trust Layer
+This layer publishes approved views of system truth for users, stakeholders, partners, or the public. It remains a read-model and publication layer unless a narrower specification explicitly elevates a defined reporting dataset.
+
+### Security, Audit, and Control Layer
+This layer spans the ecosystem and preserves reviewability, traceability, containment, remediation, policy enforcement, and operator-safety controls across other domains.
 
 ## State Model
+### Canonical State Families
+At a top level, FUZE canonical state is distributed across bounded domains rather than one global store. Canonical state families include:
+- platform identity and access state
+- workspace and scope state
+- authorization and entitlement state
+- product-local operational state
+- commercial and credits state
+- chain-committed state where applicable
+- audit and traceability state
+- reporting and publication artifacts where explicitly designated
 
-The FUZE top-level state model is layered.
+### Derived and Non-Canonical State Families
+Derived or non-canonical state includes:
+- caches
+- analytics projections
+- search indexes
+- dashboards
+- AI summaries or explanations
+- exports
+- public registry material derived from source systems
+- UI composition state
 
-### 1. Platform Canonical State
-Off-chain application truth owned by platform domains.
-
-### 2. Product Canonical State
-Product-domain truth owned by individual product domains.
-
-### 3. Chain Canonical State
-Explicitly committed on-chain truth owned by relevant contract layers.
-
-### 4. External Source State
-Raw provider state controlled by third parties and optionally normalized by FUZE.
-
-### 5. Derived and Reporting State
-Summarized, aggregated, joined, reconciled, or audience-specific state derived from canonical sources.
-
-### 6. Presentation State
-UI, dashboard, transparency page, and user-facing explanation layers.
-
-When states disagree, the owning canonical layer wins over derived or presentation state.
-
----
+Derived state may accelerate reads or support publication, but it MUST remain subordinate to canonical state.
 
 ## Lifecycle / Workflow Model
+At the ecosystem level, FUZE workflows SHOULD be understood as layered boundary crossings.
 
-The canonical high-level FUZE system flow is:
+A canonical workflow generally contains:
+1. user or system entry through a surface, provider, or internal trigger
+2. identity, authentication, and session resolution where relevant
+3. workspace or scope resolution where relevant
+4. authorization and entitlement checks where relevant
+5. source-domain validation and canonical mutation acceptance
+6. optional async execution, provider interaction, chain interaction, or downstream orchestration
+7. audit emission, reconciliation hooks, and projection or reporting updates
+8. explicit remediation, reversal, supersession, or recovery handling when failures or conflicts occur
 
-1. an end user, service, or system process initiates an action
-2. identity, account, session, and workspace context are resolved through platform-owned mechanisms
-3. authorization, entitlement, and policy checks are applied in the appropriate platform and/or product boundaries
-4. the platform orchestration layer determines whether the action is synchronous, asynchronous, chain-mediated, or mixed
-5. product-specific domain logic executes where the action is product-owned
-6. shared billing, credits, workflow, AI, reporting, or chain-integration behavior executes where relevant
-7. canonical state changes are recorded by the appropriate owners
-8. audit, traceability, and transparency-relevant outputs are generated where required
-9. reporting and presentation layers render the resulting state without becoming the source of record
-
-This workflow model is intentionally platform-mediated for shared concerns.
-
----
+Any workflow that collapses these boundaries into one hidden step is architecturally suspicious and MUST be examined for drift.
 
 ## Invariants
-
-The following invariants are mandatory.
-
-1. FUZE remains platform-first.
-2. Products may extend the platform but may not redefine shared platform primitives without explicit platform-level approval and spec change.
-3. Canonical account identity remains platform-owned and account-rooted.
-4. Authentication methods, sessions, workspaces, and authorization remain distinct concerns even when closely coordinated.
-5. Wallet awareness does not replace account identity.
-6. FUZE token, Platform Credits, revenue, profit, stablecoin payouts, and reserve categories remain separate concepts.
-7. Ethereum remains the canonical token participation layer.
-8. Base remains the operational credits and payout execution layer where those capabilities are committed on-chain.
-9. Off-chain business logic must not pretend to own explicitly on-chain truth.
-10. On-chain contracts must not be treated as owners of application domains they were not designed to represent.
-11. External providers remain trust-boundary systems and may not silently become FUZE’s canonical business owner.
-12. Reporting and presentation surfaces must not overwrite or redefine canonical source state.
-13. Governance-sensitive actions must not be executed through ordinary runtime convenience paths when stronger control is required.
-14. A failure in one product or one provider must not redefine shared platform truth.
-
----
+The following invariants are mandatory across the FUZE system overview model:
+1. FUZE is one platform ecosystem with bounded internal domains
+2. every material category of truth MUST belong to an explicit domain and layer
+3. identity, auth, session, scope, authorization, and entitlement MUST remain conceptually separable
+4. products MUST extend the platform rather than fork its primitives
+5. chain-committed state and off-chain business meaning MUST remain distinguishable
+6. provider input MUST be normalized before it mutates FUZE truth
+7. reports, dashboards, exports, AI outputs, caches, and registries MUST NOT silently become systems of record
+8. governance and control pathways MUST remain bounded, explicit, and auditable
+9. boundary-sensitive failures MUST preserve clarity about what is canonical, what is pending, and what is derived
+10. downstream implementations MUST preserve the ecosystem map defined here
 
 ## Functional Rules
+### Rule 1: Shared Primitive Consumption
+Products, APIs, workers, and surfaces MUST consume shared platform primitives through canonical interfaces rather than recreating them locally.
 
-### Rule 1: Platform Before Product
-If a capability is cross-product, economically shared, identity-defining, governance-sensitive, or foundational to future products, it defaults to platform scope unless a narrower explicit exception is declared.
+### Rule 2: Boundary-Preserving Access Flow
+Authentication MUST precede session establishment; session establishment MUST precede scoped authorization; scoped authorization and entitlement MUST be evaluated distinctly from login success.
 
-### Rule 2: Products Are Extension Domains
-Products may configure, consume, and extend platform capabilities, but they may not instantiate alternate versions of identity, workspace, credits, payout, reserve, or governance primitives.
+### Rule 3: Product-Local Extension Discipline
+Product-local entities MAY exist freely within bounded product scope, but product-local user, billing, entitlement, workspace, or chain semantics MUST NOT replace platform-owned semantics.
 
-### Rule 3: Chain Truth Is Narrow but Binding
-On-chain truth is authoritative only for the categories explicitly committed to chain, but for those categories it is binding.
+### Rule 4: Hybrid Economic Discipline
+Token participation, Platform Credits, billing obligations, invoices and receipts, payout execution, and public reporting MUST remain distinct economic layers even when linked by policy or workflow.
 
-### Rule 4: External Inputs Must Be Normalized
-Provider-originated events may influence FUZE state only through explicit verification, normalization, and policy interpretation boundaries.
+### Rule 5: Derived-State Discipline
+Any reporting, analytics, search, dashboard, export, or AI-summary layer MUST preserve source references, freshness discipline, and supersession behavior where material.
 
-### Rule 5: Reporting Is Downstream
-Reporting, transparency, and user-facing presentation may summarize and explain, but may not silently redefine source meaning.
+### Rule 6: External Input Normalization
+Payment, provider, wallet, AI-vendor, and infrastructure-originating inputs MUST pass through explicit normalization or verification boundaries before internal mutation.
 
-### Rule 6: Mixed Execution Is Allowed, Mixed Ownership Is Not
-A workflow may cross request/response, async, and chain layers, but each state transition must still have one canonical owner.
+### Rule 7: Control-Path Bounding
+Admin, support, governance, or emergency actions MUST remain reason-coded, policy-constrained, audited, and bounded to approved corrective pathways.
 
-### Rule 7: Ambiguity Must Escalate, Not Drift
-If a downstream design cannot clearly identify the owner of a category of truth, decision, or state transition, that design is incomplete and must escalate to the relevant boundary or ownership spec.
-
----
+### Rule 8: No Hidden Alternate Architecture
+Temporary adapters, compatibility layers, product-local exceptions, and launch shortcuts MUST NOT harden into hidden permanent alternate architecture.
 
 ## Permission / Access Considerations
-
-This specification does not define detailed permissions, but it establishes the top-level boundary rules that permission systems must respect:
-
-- identity is not authorization
-- workspace context is not itself authority
-- entitlement is not identical to role/permission
-- product admin capability is not equivalent to platform control-plane authority
-- governance-sensitive control is not ordinary runtime permission
-- contract authority is not the same as application authorization
-
-Downstream access-control specifications must preserve these distinctions.
-
----
+This overview document does not redefine the full authorization model, but it mandates the following top-level rules:
+- login success is not final permission
+- workspace scope and organization context matter after authentication
+- role and permission evaluation is distinct from entitlement evaluation
+- operator and admin pathways require stronger authorization and explicit audit controls
+- public reporting visibility is not equivalent to internal authority to mutate source truth
+- control-plane tools must respect the same ownership boundaries they administrate
 
 ## Entitlement Considerations
+This document treats entitlement as a distinct architectural layer that answers whether a subject is eligible to use a product, feature, capacity, or commercial right. It MUST remain separate from:
+- identity truth
+- session validity
+- workspace membership
+- role and permission grants
+- billing truth
+- credits-ledger truth
+- UI visibility state
 
-Entitlements are downstream to this system-overview spec, but this document establishes the following top-level rules:
-
-- entitlements are a bounded layer between platform commerce/policy and product capability exposure
-- entitlements must not silently redefine identity, workspace authority, billing truth, or credits truth
-- product capability gating may be product-specific, but must operate within platform-owned entitlement and billing constraints where shared platform monetization applies
-
----
+Downstream entitlement and capability specifications MUST preserve this separation.
 
 ## API / Contract Implications
-
-All downstream API specifications must reflect the top-level system boundaries declared here.
-
-Required API-design implications include:
-
-- APIs must make platform-owned, product-owned, and contract-mediated responsibilities distinguishable
-- APIs must not imply that non-owning layers are canonical owners
-- APIs must preserve separation between operational off-chain flows and on-chain committed state
-- APIs must make control-plane operations distinguishable from ordinary runtime operations
-- APIs must preserve identity/session/workspace/authorization/entitlement separations
-- APIs must not expose presentation or projection layers as if they were sources of record
-- public, authenticated product, internal service, admin, and governance-sensitive pathways must remain meaningfully segmented
-
----
-
-## Event / Async Implications
-
-The FUZE ecosystem includes substantial asynchronous and event-mediated behavior. This document establishes the following rules:
-
-- async execution does not create alternate ownership
-- events must be understood as propagation or coordination artifacts, not substitutes for owning-domain truth
-- retries for billing, credits, payouts, and chain interactions must be designed so that replay does not invent new truth
-- reporting pipelines may lag canonical state, but may not overwrite it
-- chain event ingestion is an access and synchronization mechanism, not a license to relocate business policy into event-consumer code
-
-Downstream event and idempotency specs must preserve these rules.
-
----
-
-## Data Model / Storage Implications
-
-This system-overview specification requires downstream data-model and storage designs to preserve layer boundaries.
+The system overview requires downstream API and contract layers to preserve explicit domain boundaries.
 
 At minimum:
+- identity APIs MUST NOT claim to answer final scoped permission
+- session APIs MUST NOT act as workspace or entitlement owners
+- workspace and authorization APIs MUST NOT redefine identity semantics
+- product APIs MUST NOT bypass platform-owned access or commercial foundations
+- payment and provider APIs MUST distinguish raw provider outcomes from normalized internal consequences
+- public APIs MUST avoid exposing derived views as though they were the only canonical truth where that would cause semantic drift
+- internal service APIs MUST preserve owner-controlled mutation boundaries and reason about idempotency per domain
+- contract interfaces MUST preserve the distinction between contract state and off-chain policy, accounting, and reporting meaning
 
-- platform-owned entities must remain distinguishable from product-owned entities
-- chain-derived records must remain distinguishable from off-chain application records
-- provider-normalized state must remain distinguishable from raw provider input
-- reporting/read models must remain distinguishable from canonical transactional state
-- reserve, payout, credits, billing, and participation records must not collapse into a single undifferentiated economic persistence model
-- caches, summaries, and projections must not become writable truth by accident
+## Event / Async Implications
+The ecosystem boundary model requires async and event systems to preserve ownership clarity.
 
----
+Therefore:
+- owner domains SHOULD emit canonical events after durable commits
+- async workers MAY execute follow-up work but MUST NOT become hidden owners of source semantics
+- retryable processes MUST preserve idempotent business meaning and MUST NOT manufacture duplicate outcomes
+- provider callbacks and chain-event ingestion MUST resolve through normalization and owner-controlled transitions
+- execution state MUST remain distinguishable from final business truth
+- projection and publication pipelines MUST tolerate lag without rewriting canonical records
+
+## Data Model / Storage Implications
+This overview requires storage and data-model design to preserve domain boundaries.
+
+At minimum:
+- canonical records MUST live with or under the authority of the owning domain
+- execution records MUST remain distinguishable from business-domain records
+- provider raw input and normalized outcomes MUST remain distinguishable
+- chain-derived records and off-chain policy records MUST remain distinguishable
+- reporting, search, analytics, and dashboard stores MUST remain downstream unless a narrower spec explicitly elevates one
+- product-local data MUST remain distinct from shared-platform data even when co-located in one backend estate
+
+## Read Model / Projection / Reporting Rules
+The following rules are mandatory for read models, projections, reports, dashboards, registry outputs, and transparency artifacts:
+1. they are derived by default
+2. they MUST identify or preserve lineage back to source domains where material
+3. they MUST NOT directly mutate canonical source records
+4. they MUST label lag, estimation, or reconciliation-pending states where relevant
+5. they MUST NOT be treated as authoritative merely because they are public-facing or executive-facing
+6. if a narrow reporting dataset is intentionally elevated, that elevation MUST be explicitly documented in a narrower governing spec
 
 ## Security / Risk / Abuse Controls
+The ecosystem boundary model requires security posture to preserve boundary discipline.
 
-This document establishes the following top-level security and risk rules:
+Therefore:
+- privileged surfaces MUST NOT bypass canonical domain mutation rules
+- provider compromise or callback spoofing risks MUST be addressed at normalization boundaries
+- chain-adjacent and wallet-adjacent interactions MUST preserve account-rooted identity rules
+- product faults MUST NOT corrupt shared platform primitives
+- control-plane actions MUST be bounded, reason-coded, policy-versioned where relevant, and audit-visible
+- degraded modes MUST fail safely rather than silently changing semantic ownership
 
-- ownership clarity is a security requirement, not only an architecture preference
-- product-level failure or compromise must not grant product layers authority over platform-owned truth
-- external provider inconsistency must not directly corrupt credits, entitlement, or payout meaning without explicit normalization
-- wallet identity must not silently replace account identity
-- control-plane operations must remain explicitly separable from ordinary product runtime operations
-- governance-sensitive actions require stronger controls than ordinary end-user flows
-- economic boundary violations are security and integrity risks, not merely reporting mistakes
-
----
+## Boundary Violation Detection / Non-Canonical Patterns
+The following patterns are non-canonical and forbidden unless explicitly elevated by narrower governing specification:
+- product-local identity or access systems that replace platform identity and access foundations
+- product-local balance or credits systems that replace shared commercial primitives
+- UI, admin, dashboard, analytics, or export layers mutating canonical source truth directly
+- queue completion being treated as business completion without owner validation
+- provider callback state being treated as final FUZE truth without normalization
+- public registry or transparency output being treated as the owner of internal transactional truth
+- wallet presence being treated as equivalent to account identity ownership
+- operator tooling silently bypassing domain contracts or audit lineage
 
 ## Audit / Traceability Requirements
-
-This top-level boundary model requires downstream systems to support traceability for:
-
-- which layer owns a category of truth
-- which system executed a mutation
-- whether an action was runtime, async, control-plane, or contract-mediated
-- whether a user-facing report is canonical, derived, or presentational
-- how external provider inputs were normalized into FUZE-owned outcomes
-- how off-chain policy decisions relate to on-chain execution where applicable
-
-Auditability is part of platform architecture, not a downstream reporting convenience.
-
----
+Boundary-significant behavior MUST be reconstructable. Where relevant, downstream implementations MUST preserve:
+- the initiating actor or system
+- resolved identity and scope context
+- the owning domain that accepted or rejected mutation
+- the policy or ruleset version applied for sensitive actions
+- trace or correlation identifiers across sync, async, provider, and chain crossings
+- reason codes for operator, admin, correction, remediation, or containment actions
+- distinguishable evidence for canonical mutation, derived projection, and public publication
 
 ## Failure Handling / Edge Cases
+### Provider Failure
+Integration failures MUST preserve the distinction between unavailable provider outcome and changed platform truth.
 
-The following top-level failure rules are mandatory:
-
-### Product Isolation Failure
-Failure in one product domain must not corrupt shared platform identity, workspace, billing, credits, wallet-link, or reporting truth.
-
-### Provider Degradation
-Temporary payment-provider, AI-provider, or infrastructure-provider degradation must not silently mutate FUZE internal meaning. Degradation must be recorded explicitly.
-
-### Chain Sync Lag
-Delayed RPC or indexing visibility must not be confused with changed canonical chain meaning.
-
-### Partial Mixed-Flow Completion
-If a workflow partially completes across platform, async, and chain boundaries, the system must record incomplete orchestration rather than pretending fully completed truth.
-
-### Control-Plane Interruption
-Missing approval, policy denial, governance delay, or timelock delay must fail safely and explicitly.
+### Workflow / Worker Failure
+Execution failure MUST NOT be misinterpreted as automatic rollback of already committed business truth unless an owning domain explicitly defines that compensation behavior.
 
 ### Reporting Lag
-Reporting or transparency surfaces may lag source truth, but they must reconcile rather than overwrite.
+Reporting and publication surfaces MAY lag source truth but MUST reconcile without rewriting canonical source records.
 
-### Ambiguous Ownership
-When the owning layer is unclear, the system must escalate the ambiguity rather than absorb it through informal implementation.
+### Control-Plane Unavailability
+Sensitive actions MUST fail safely rather than converting into ungated ordinary runtime behavior.
 
----
+### Chain Visibility Lag
+Indexing or RPC lag MUST NOT be mistaken for changed chain truth.
+
+### Product Isolation Failure
+Product-specific faults MUST NOT corrupt shared platform primitives.
+
+### Mixed-Plane Partial Completion
+If application-plane acceptance occurred but later execution, provider, or chain stages fail, the system MUST preserve lineage of partial completion rather than collapse state into a misleading binary.
+
+### Scope Ambiguity
+If the system cannot determine the relevant workspace, product, or governance-sensitive scope, it MUST require explicit resolution or fail closed.
 
 ## Operational Considerations
-
-This specification imposes the following operational requirements on downstream architecture:
-
-- runtime layers should align with the ownership and flow model rather than collapse boundaries for convenience
-- platform observability must distinguish request-path, async, chain, reporting, and control-plane activity
-- provider adapters must be treated as integration boundaries with explicit fallback/retry behavior
-- public reporting and transparency publication must be downstream to canonical state owners
-- product expansion should reuse platform primitives unless a documented exception is approved
-- emergency and risk controls must constrain behavior without rewriting canonical source state
-
----
+The refined overview intentionally does not force one deployment style, but it does require:
+- architectural separation even if multiple domains are deployed within one backend estate
+- observability that distinguishes plane and domain boundaries
+- runbooks and remediation flows that identify canonical owners before action
+- rollout discipline that favors reuse of shared domains over local reimplementation
+- explicit provider adapters and chain-adjacent services rather than scattered direct calls
+- safe operator tooling aligned to control-plane boundaries
+- migration paths that preserve ownership semantics and lineage
 
 ## Migration / Compatibility / Supersession Considerations
+This refined system overview supersedes looser interpretations in which:
+- products behave as mini-platforms
+- frontend or reporting layers own business truth
+- workflow or AI runtime is treated as owner of all downstream effects
+- provider callbacks directly become platform truth
+- contracts are treated as owners of off-chain business policy
+- admin tools silently bypass domain ownership
 
-This refined document supersedes weaker or more ambiguous interpretations of FUZE as:
+Compatibility layers MAY exist temporarily, but they MUST preserve canonical ownership and explicit plane separation.
 
-- a single-product system
-- a token-first or chain-first architecture
-- a per-product backend portfolio with loosely shared concerns
-- a system where reporting, projections, or providers silently become canonical owners
-- a system where products may invent alternate spending, identity, payout, or reserve semantics
+This refined file also intentionally avoids locking FUZE into a premature deployment topology. Service decomposition MAY evolve over time, but the ecosystem boundaries in this document remain governing.
 
-Downstream legacy documents may preserve historical language, but where they conflict with this refined system-overview model, this refined specification governs the top-level interpretation.
+## Implementation-Contract Guardrails
+Downstream implementation-contract layers MUST preserve all of the following where relevant:
+1. explicit distinction between platform, product, chain, reporting, control-plane, and external-provider layers
+2. explicit distinction between identity, authentication, session, scope, authorization, entitlement, commercial, and chain semantics
+3. one explicit owner per material truth family
+4. one explicit authoritative storage or contract boundary per truth family
+5. clear mutation boundaries and forbidden bypass patterns
+6. deterministic handling of retries, replays, callbacks, and partial completion
+7. explicit distinction between canonical, execution, derived, publication, and presentation state
+8. reason-coded and audit-visible operator and remediation pathways
+9. policy-version and trace/correlation support for sensitive or replay-prone workflows
+10. fail-closed handling when safe ownership, safe authority, or safe scope cannot be determined
 
----
+## Downstream Execution Staging
+This document is intended to support the following refinement flow:
+1. ecosystem overview and top-level boundaries
+2. explicit ownership matrix and entity ownership
+3. platform architecture and plane decomposition
+4. on-chain versus off-chain responsibility refinement
+5. product-boundary and product-admission refinement
+6. identity, access, workspace, entitlement, and commercial implementation-contract refinement
+7. API, event, workflow, audit, reporting, and operational refinement
+
+Downstream documents MUST not restart from a different top-level system interpretation.
+
+## Required Downstream Specs / Contract Layers
+This document materially informs and constrains:
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
+- `PRODUCT_BOUNDARY_AND_DOMAIN_OWNERSHIP_SPEC.md`
+- `PRODUCT_ADMISSION_AND_EXPANSION_GATE_SPEC.md`
+- identity, auth/session, workspace, authorization, entitlement, credits, billing, payout, governance, security, audit, API, event, workflow, reporting, transparency, and product-integration specifications
+
+## Canonical Examples / Anti-Examples
+### Canonical Examples
+- a product UI gathers input, but the platform or product owner domain validates and persists the canonical record
+- a payment provider sends a callback, but billing or payment normalization determines the internal state transition
+- a chain event confirms payout execution, while off-chain policy and reporting still distinguish funding, claiming, and publication semantics
+- a reporting surface shows a lagging balance with explicit lag labeling rather than rewriting canonical source truth
+- a product uses platform session, workspace, authorization, and entitlement results rather than inventing local equivalents
+
+### Anti-Examples
+- a dashboard edits a transactional record directly because it already displays the data
+- a product invents a local credits balance that diverges from platform-owned credits semantics
+- a worker completion record is treated as business completion even though owner validation never succeeded
+- an AI-generated suggestion is stored as approval evidence or financial truth without owner acceptance and audit lineage
+- a provider callback is treated as final authority without owner-controlled verification and normalization
 
 ## Dependencies / Cross-Spec Links
-
 This specification depends on:
+- `REFINED_SYSTEM_SPEC_INDEX.md`
+- `DOCS_SPEC_INDEX.md`
+- `SYSTEM_SPEC_INDEX.md`
+- `API_SPEC_INDEX.md`
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
+- `PRODUCT_BOUNDARY_AND_DOMAIN_OWNERSHIP_SPEC.md`
+- `FUZE_ACCOUNT_ACCESS_AND_SESSION_THESIS_FINAL_SPEC.md`
+- `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
+- `FUZE_WORKSPACE_ACCESS_CONTROL_BASICS_THESIS_FINAL_SPEC.md`
 
-- `REFINED_SYSTEM_SPEC_INDEX.md` as the active refined-system registry
-- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md` for ownership categories, truth classes, and escalation logic
-- `PLATFORM_ARCHITECTURE_SPEC.md` for runtime layers, shared platform domains, control-plane structure, and integration model
-- identity/account/auth/session specs for account-rooted identity, session boundaries, and provider-link continuity
-- workspace/authorization specs for workspace scope, roles, permissions, and access evaluation
-- API architecture specs for contract-layer expression of these boundaries
-- data and chain-responsibility specs for persistence and on-chain/off-chain truth refinement
-- financial and treasury specs for credits, revenue, profit, payouts, reserves, and reporting boundaries
-
-This specification governs:
-
-- all downstream system interpretation involving top-level layer boundaries
-- all downstream attempts to define or extend shared platform capability
-- all downstream attempts to interpret platform vs product vs chain vs provider ownership
-- all downstream attempts to reason about top-level economic and trust separation
-
----
+This specification directly governs or materially informs:
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
+- `PRODUCT_BOUNDARY_AND_DOMAIN_OWNERSHIP_SPEC.md`
+- `PRODUCT_ADMISSION_AND_EXPANSION_GATE_SPEC.md`
+- identity, auth/session, workspace, authorization, entitlement, credits, billing, payout, governance, API, event, workflow, monitoring, audit, reporting, transparency, and product-integration specifications
 
 ## Explicitly Deferred Items
+The following are intentionally deferred to downstream specifications:
+- exact service topology and service-split timing
+- exact queue and event-bus technologies
+- exact database, warehouse, search, and cache-stack selection
+- exact edge-gateway, mesh, or frontend-composition choices
+- exact provider-by-provider adapter internals
+- exact contract ABI and indexer implementation details
+- exact dashboard, report, registry, or export layout designs
+- exact product-local object models and UX structures
 
-The following are intentionally deferred:
-
-- precise service-topology and deployment-shape decisions
-- exact cross-product entitlement composition model
-- exact event bus and queue technologies
-- exact database and tenancy topologies
-- exact API surface partitioning details
-- exact schema maps for every platform/product entity
-- exact provider-by-provider trust and recovery contracts
-- exact governance approval graphs for every sensitive action
-
-These deferrals are implementation-detail refinements, not gaps in the top-level system model.
-
----
+These are refinements of this boundary model, not replacements for it.
 
 ## Final Normative Summary
+FUZE is a platform-first ecosystem with explicit top-level boundaries.
 
-FUZE is the shared platform foundation beneath a multi-product SaaS ecosystem. It must be interpreted as a platform-first architecture with explicit separation between the platform layer, the product layer, the on-chain participation and financial layer, and the external dependency layer. Shared cross-product capabilities belong to the platform. Product-specific domains belong to products. Explicitly committed chain truth belongs to the relevant contracts and chains. Third-party systems remain external trust-boundary systems whose inputs must be normalized before they become FUZE-owned business outcomes.
+The platform owns shared operating primitives and shared policy. Products own bounded product-local domains within platform constraints. On-chain contracts own only the truths explicitly committed to contract design. External systems remain external trust-boundary systems whose signals must be verified and normalized before FUZE mutates internal truth. Reporting and publication layers are derived by default. Control-plane and governance pathways constrain, authorize, or remediate behavior without silently becoming the owners of ordinary business truth.
 
-This specification also makes the following separations non-negotiable: account identity versus wallet awareness; authentication/session versus authorization; workspace scope versus entitlements; token participation versus Platform Credits; revenue versus profit; profit versus funded payout; off-chain policy/orchestration versus on-chain execution; and canonical truth versus derived or presentational state.
+All downstream FUZE specifications and implementations MUST preserve this ecosystem model.
 
-All downstream FUZE specifications must remain consistent with this top-level system interpretation. If a downstream design weakens these boundaries, this document wins.
+## Quality Gate Checklist
+- [x] Canonical top-level layers are explicit
+- [x] Adjacent boundaries are explicit
+- [x] Truth classes are explicit
+- [x] Conflict-resolution rules are explicit
+- [x] Default decision rules are explicit
+- [x] Shared versus product-owned semantics are explicit
+- [x] On-chain versus off-chain posture is explicit
+- [x] Reporting and projection rules are explicit
+- [x] Operator and control-plane paths are bounded and auditable
+- [x] Failure and degraded-mode behavior is explicit
+- [x] Downstream implementation guardrails are explicit
+- [x] Dependencies and downstream impacts are explicit
+- [x] Non-goals and deferred items are explicit
+- [x] The document is strong enough to support downstream implementation-contract work without inventing contradictory top-level semantics
