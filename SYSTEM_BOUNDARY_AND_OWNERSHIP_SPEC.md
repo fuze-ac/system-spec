@@ -1,14 +1,21 @@
 # FUZE System Boundary and Ownership Specification
 
 ## Document Metadata
-- Document Name: `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
-- Document Type: Canonical refined system specification
-- Status: Active refined system spec
-- Governing Layer: Platform constitution / system boundary / ownership
-- Parent Registry: `REFINED_SYSTEM_SPEC_INDEX.md`
-- Primary Audience: Platform architecture, backend engineering, product engineering, API design, data engineering, security, operations, governance, finance, reporting, transparency, implementation-contract authors
-- Primary Purpose: Define the canonical boundary and ownership model of the FUZE ecosystem, including which layers own which categories of truth, policy, mutation, execution, presentation, and governance authority, and which boundary rules all downstream specifications and implementations must preserve.
-- Primary Upstream References:
+- **Document Name:** `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- **Document Type:** Canonical refined system specification
+- **Status:** Active refined system spec
+- **Version:** 1.0
+- **Effective Date:** 2026-04-21
+- **Last Updated:** 2026-04-21
+- **Reviewed On:** 2026-04-21
+- **Document Owner:** FUZE Platform Architecture (canonical owner); named individual owner not explicitly specified in retrieved source material
+- **Approval Authority:** Not explicitly specified in retrieved source material; constitutional approval authority remains governed by the active refined registry and FUZE approval workflow
+- **Review Cadence:** Not explicitly specified in retrieved source material; SHOULD be reviewed whenever a top-level boundary, ownership, economic, governance, or trust model changes
+- **Governing Layer:** Platform constitution / system boundary / ownership
+- **Parent Registry:** `REFINED_SYSTEM_SPEC_INDEX.md`
+- **Primary Audience:** Platform architecture, backend engineering, product engineering, API design, data engineering, security, operations, governance, finance, reporting, transparency, implementation-contract authors
+- **Primary Purpose:** Define the canonical boundary and ownership model of the FUZE ecosystem, including which layers own which categories of truth, policy, mutation, execution, presentation, and governance authority, and which boundary rules all downstream specifications and implementations MUST preserve
+- **Primary Upstream References:**
   - `REFINED_SYSTEM_SPEC_INDEX.md`
   - `DOCS_SPEC_INDEX.md`
   - `SYSTEM_SPEC_INDEX.md`
@@ -21,7 +28,7 @@
   - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
   - `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
   - `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
-- Primary Downstream Dependents:
+- **Primary Downstream Dependents:**
   - `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
   - `PLATFORM_ARCHITECTURE_SPEC.md`
   - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
@@ -29,12 +36,13 @@
   - `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
   - `PRODUCT_BOUNDARY_AND_DOMAIN_OWNERSHIP_SPEC.md`
   - identity, auth/session, workspace, authorization, entitlement, credits, billing, payout, governance, security, audit, API, event, workflow, reporting, transparency, and product-integration specifications
-- Supersedes: Earlier or weaker interpretations of FUZE system ownership, including drafts or implementation assumptions that permit shadow ownership, cross-domain mutation without owner control, or conflation of platform, product, on-chain, and provider truth.
-- Superseded By: None currently defined.
-- Related Decision Records: Not yet explicitly linked in active registry.
-- Canonical Status Note: This is the highest-priority governing document for FUZE system-boundary and ownership interpretation unless an explicitly higher constitutional registry or decision record overrides it.
-- Implementation Status: Normative architecture source; downstream implementation contracts, APIs, events, schemas, and runbooks must align.
-- Approval Status: Draft refined canonical specification pending explicit approval workflow.
+- **Supersedes:** Earlier or weaker interpretations of FUZE system ownership, including drafts or implementation assumptions that permit shadow ownership, cross-domain mutation without owner control, or conflation of platform, product, on-chain, reporting, control-plane, and provider truth
+- **Superseded By:** None currently defined
+- **Related Decision Records:** Not explicitly linked in the retrieved source material
+- **Canonical Status Note:** This is the highest-priority governing document for FUZE system-boundary and ownership interpretation unless an explicitly higher constitutional registry or decision record overrides it
+- **Implementation Status:** Normative architecture source; downstream implementation contracts, APIs, events, schemas, data models, and runbooks MUST align
+- **Approval Status:** Draft refined canonical specification pending explicit approval workflow
+- **Change Summary:** Consolidated the active refined-system interpretation for FUZE boundary and ownership; normalized metadata; clarified truth classes, conflict rules, default decision rules, control-plane boundaries, reporting/projection limits, and implementation-contract guardrails
 
 ## Purpose
 This specification defines the canonical boundary and ownership model for the FUZE ecosystem.
@@ -43,10 +51,10 @@ Its purpose is to make the following explicit:
 - what FUZE includes as platform-governed system scope
 - what belongs to products versus the shared platform core
 - what is canonical on-chain truth versus off-chain policy, accounting, orchestration, and product truth
-- what remains external-provider truth and must be treated as a trust boundary
+- what remains external-provider truth and MUST be treated as a trust boundary
 - which domain owns each major category of durable truth, mutation authority, execution responsibility, presentation responsibility, and governance authority
 - how non-owning layers may read, derive, route, summarize, cache, or present truth without becoming alternate systems of record
-- how ambiguity, overlap, failure, and governance-sensitive actions must be resolved
+- how ambiguity, overlap, failure, and governance-sensitive actions MUST be resolved
 
 This specification is intentionally constitutional. It is not a descriptive overview, an implementation memo, or a product-local design note. Downstream specifications MUST remain consistent with it.
 
@@ -122,6 +130,12 @@ Canonical business truth MAY be changed only through the owning domain’s expli
 ### 8. Failure-Clarity Principle
 Under degradation, lag, or incident conditions, FUZE MUST become more explicit about ownership and uncertainty, not less.
 
+### 9. Governance-Separation Principle
+Governance-sensitive approval or restriction authority MAY constrain or authorize an action, but it MUST NOT silently become the owner of the resulting business state.
+
+### 10. Auditability Principle
+Boundary-significant behavior MUST be reconstructable after the fact, including who owned the truth, who initiated the action, which boundary accepted mutation, which policy or ruleset version applied, which execution components ran, and which outputs were canonical versus derived.
+
 ## Canonical Definitions
 ### Canonical Owner
 The domain or contract layer authoritative for existence, canonical fields, permitted state transitions, validation rules, mutation acceptance, and owner-emitted events for a category of truth.
@@ -129,29 +143,51 @@ The domain or contract layer authoritative for existence, canonical fields, perm
 ### Canonical Truth
 The authoritative state owned by the canonical owner.
 
+### Policy Truth
+The governing policy or rule set that determines how a category of truth may be created, mutated, restricted, or interpreted.
+
+### Runtime Truth
+The current live operational state of request handling, execution progress, control-plane posture, provider availability, or chain interaction progress. Runtime truth may be real and important without becoming the canonical owner of the business domain.
+
+### Ledger / Storage Truth
+The authoritative durable recording layer used by the canonical owner for a truth category. Ledger or storage truth MAY be off-chain or on-chain depending on the domain.
+
+### Execution State
+Operational state that tracks job progression, retries, submissions, confirmations, callback processing, or orchestration lifecycle. Execution state does not automatically define business meaning.
+
 ### Derived Truth
 A computed or aggregated view built from one or more canonical sources for reporting, search, analytics, dashboards, public presentation, or explanation. Derived truth does not replace source truth.
 
 ### Presentation State
 Formatting, UX composition, charting, route state, wording, and other user-facing representation logic. Presentation state is non-canonical.
 
-### Local Draft
-Temporary user- or surface-local state that may later be submitted into canonical workflows.
+### Public Read-Model Truth
+A bounded published view intentionally exposed for community, investor, partner, or public trust purposes. It remains downstream to canonical source owners unless a narrower spec explicitly elevates a narrowly defined publication dataset.
 
-### Proposal
-A candidate action or payload generated by UI assistance, automation, or AI that has not yet passed owner validation and has not become canonical truth.
+### Control Domain
+A domain whose primary responsibility is approval, restriction, remediation, emergency control, risk control, or governance-aware operational enablement.
 
-### Execution State
-Operational state that tracks job progression, retries, submissions, confirmations, callback processing, or orchestration lifecycle. Execution state does not automatically define business meaning.
+### Domain Contract
+The explicit interaction and mutation boundary through which non-owners read from, request writes from, or execute against the owning domain.
 
 ### Governance-Sensitive Action
 An action whose consequences affect treasury, reserves, payout controls, credits policy, contract registries, critical permissions, or other trust-sensitive platform behavior requiring elevated control.
 
-### Control Plane
-The layer that governs enablement, restrictions, rollout posture, emergency controls, provider configuration, and sensitive-action pathways. The control plane constrains runtime behavior but does not replace business-domain truth.
-
 ### Transport Context
 Routing or launch context carried by a surface or provider, such as deep links, callbacks, wallet session hints, mini-app launch state, or notification links. Transport context assists routing but is not permission truth or business truth.
+
+## Truth Class Taxonomy
+FUZE MUST distinguish the following truth classes wherever relevant:
+1. **Semantic truth** — what a business concept means and which domain owns that meaning
+2. **Policy truth** — what rules govern permissible actions and interpretations
+3. **Runtime truth** — what is currently happening during execution
+4. **Ledger / storage truth** — where the authoritative durable record is maintained
+5. **Provider-input truth** — raw external input before normalization
+6. **Implementation adapter behavior** — normalization, translation, or delivery logic at boundaries
+7. **Projection / reporting truth** — derived views, analytics, transparency outputs, or public reporting
+8. **Presentation truth** — user-facing explanation or rendering state
+
+These truth classes MUST NOT be collapsed into one undifferentiated model.
 
 ## Architectural Position in the Spec Hierarchy
 This document sits directly beneath the active registries and governing index files and above all narrower architecture, domain, entity, access-control, financial-rail, API, event, workflow, reporting, and product-integration specifications.
@@ -159,7 +195,7 @@ This document sits directly beneath the active registries and governing index fi
 If a downstream specification conflicts with this document on cross-domain ownership, canonical truth, mutation authority, or top-level system boundaries, this document wins unless an explicitly higher FUZE constitutional source overrides it.
 
 ## System Boundaries
-FUZE is divided into four top-level ownership layers.
+FUZE is divided into six top-level ownership layers.
 
 ### 1. Platform Layer
 The shared off-chain application and service layer that owns common operating capabilities across all FUZE products.
@@ -170,7 +206,13 @@ The product-specific domain layer that owns bounded product-local entities, work
 ### 3. On-Chain Layer
 The contract layer that owns explicitly committed chain truth on Ethereum, Base, and any future governed chain rails.
 
-### 4. External Dependency Layer
+### 4. Reporting and Publication Layer
+The derived-output layer that owns publication artifacts, public or internal reporting views, reconciled summaries, registry outputs, stakeholder-facing reports, and similar read-oriented artifacts unless a narrower specification explicitly elevates a reporting-owned canonical dataset.
+
+### 5. Control Plane / Governance-Constrained Operations Layer
+The layer that governs approvals, restrictions, rollout posture, emergency controls, provider configuration, and sensitive-action pathways. It constrains runtime behavior without replacing the underlying business-domain owner.
+
+### 6. External Dependency Layer
 Third-party systems FUZE depends on operationally but does not own, including payment processors, app stores, AI vendors, wallet clients, RPC/indexing providers, and infrastructure vendors.
 
 These layers MUST NOT be collapsed into one undifferentiated system-of-record model.
@@ -186,6 +228,27 @@ This specification must be interpreted together with adjacent files as follows:
 
 This document governs the interpretation of those files. It does not absorb all of their detail.
 
+## Conflict Resolution Rules
+When sources, layers, or systems disagree, the following rules apply:
+1. the active registry and higher constitutional refined specifications win over narrower downstream specifications
+2. this document wins on cross-domain ownership, canonical truth, mutation authority, and top-level boundary interpretation
+3. the canonical owner wins over any derived, reporting, cache, surface, queue, or explanatory layer
+4. explicit on-chain committed truth wins for the categories actually committed on-chain, but not for broader off-chain policy meaning unless that policy is also explicitly committed
+5. raw external-provider input NEVER wins by itself; it MUST first be verified and normalized by the owning FUZE domain
+6. governance approval authority may authorize, constrain, or block a change, but the resulting business state MUST still be written through the correct owner domain
+7. when ambiguity remains after applying these rules, the most conservative architecture-consistent interpretation MUST be chosen and the ambiguity MUST be escalated into downstream refinement or decision recording
+
+## Default Decision Rules
+Where ambiguity exists and no narrower approved exception is available, FUZE MUST default to the following:
+1. cross-product concerns default to platform ownership
+2. product-local objects default to product ownership only if they do not redefine a shared primitive
+3. financial, credits, payout, reserve, or governance-sensitive semantics default to platform or on-chain ownership according to the relevant economic and chain-boundary specs, never to a surface or product convenience layer
+4. provider callbacks default to external input status until owner-controlled normalization succeeds
+5. projections, reports, dashboards, search indexes, and exports default to derived-state status
+6. queues, jobs, and schedulers default to execution-state status
+7. control-plane actions default to policy restriction or enablement status, not business-domain ownership status
+8. if no explicit owner can be named, the design is incomplete and MUST NOT be treated as production-grade
+
 ## Roles / Actors / Entities
 ### Platform Domains
 Platform domains own shared operating capabilities including identity, account continuity, sessions, workspaces, wallet-link mapping, billing/commercial orchestration, Platform Credits semantics, shared entitlements, workflow primitives, audit, transparency-supporting records, integration normalization, and governance-aware control pathways.
@@ -194,7 +257,7 @@ Platform domains own shared operating capabilities including identity, account c
 Product domains own product-local entities, product-local workflows, product-local analytics, product-local AI outputs where truly product-owned, product-local configuration, and product-local UX.
 
 ### Contract Domains
-Contract domains own chain-committed truth such as token balances, contract events, explicitly committed credits state where used, funded payout claim execution state, vesting/lock constraints, and contract-level governance state where implemented.
+Contract domains own chain-committed truth such as token balances, contract events, explicitly committed credits state where used, funded payout claim execution state, vesting or lock constraints, and contract-level governance state where implemented.
 
 ### External Providers
 External providers own raw provider-state within their own systems. FUZE may consume and normalize that state but does not become the owner of the provider’s raw system.
@@ -277,14 +340,14 @@ External raw state includes:
 - raw wallet-client behavior
 - raw AI-vendor execution environment behavior
 - raw infrastructure-provider runtime behavior
-- raw RPC/indexer service delivery and availability
+- raw RPC or indexer service delivery and availability
 
 External raw state is not FUZE canonical truth. It becomes FUZE-relevant only through explicit verification and normalization.
 
 ## Lifecycle / Workflow Model
 All boundary-crossing workflows MUST be decomposable into one or more of the following steps:
 1. request or input collection by a non-owning surface or dependency
-2. canonical identity/session/scope resolution where relevant
+2. canonical identity, session, and scope resolution where relevant
 3. owner-controlled validation and mutation acceptance
 4. owner-emitted state change or canonical outcome publication
 5. optional downstream execution, projection, reporting, or public rendering
@@ -356,7 +419,7 @@ This boundary model imposes the following contract requirements:
 3. internal service APIs MUST preserve domain ownership rather than encourage incidental coupling
 4. API semantics MUST keep auth, session, workspace scope, authorization, entitlement, and business validation separate in meaning and failure handling
 5. API schemas and error contracts MUST make pending, derived, reconciled, provider-sourced, and chain-sourced states explicit where relevant
-6. admin and control-plane APIs MUST remain clearly distinct from ordinary product/runtime APIs when sensitive actions are involved
+6. admin and control-plane APIs MUST remain clearly distinct from ordinary product or runtime APIs when sensitive actions are involved
 7. chain-write boundaries MUST remain separate from higher-level business-policy decisions
 
 A downstream API specification that cannot answer who owns the object, who may mutate it, and what is authoritative when values disagree is incomplete.
@@ -378,6 +441,13 @@ A downstream API specification that cannot answer who owns the object, who may m
 5. reporting and transparency stores MAY aggregate from canonical sources but MUST preserve source traceability
 6. migrations MUST preserve ownership boundaries when schemas move, split, consolidate, or proxy legacy systems
 
+## Read Model / Projection / Reporting Rules
+1. read models, caches, analytics stores, exports, search indexes, and transparency views are downstream to canonical owners by default
+2. a projection MAY be operationally critical and still remain non-canonical
+3. reporting lag, reconciliation lag, and indexer lag MUST be represented explicitly rather than hidden by overwriting source truth
+4. public reporting surfaces MUST preserve source attribution, timestamp discipline, and semantic distinction between committed truth, derived truth, and explanatory narrative
+5. no projection, dashboard, or publication layer MAY become a write path for upstream transactional truth unless a narrower governing specification explicitly authorizes that bounded exception
+
 ## Security / Risk / Abuse Controls
 Clear ownership is a security control. Therefore:
 - platform-owned identity, billing, credits, and payout orchestration MUST be insulated from product-local overreach
@@ -387,6 +457,19 @@ Clear ownership is a security control. Therefore:
 - AI outputs MUST NEVER become approval evidence, monetary truth, or permission truth by default
 - governance-sensitive actions MUST NOT be routable through ordinary convenience flows
 - provider configuration and secret changes MUST remain control-plane concerns rather than product-runtime truth
+
+## Boundary Violation Detection / Non-Canonical Patterns
+The following are non-canonical and forbidden unless a downstream specification explicitly elevates them with constitutional consistency:
+- frontend-owned workflow truth
+- AI-memory-owned approval or payment evidence
+- reporting tables patched as transactional source-of-record
+- queue completion treated as business truth without owner publication
+- product-local replacements for platform identity, workspace, authorization foundation, credits semantics, payout architecture, or governance pathways
+- direct provider callback mutation of canonical internal truth without owner-controlled normalization
+- hidden operator database edits that bypass domain mutation boundaries and lineage
+- convenience endpoints that mutate multiple owner domains without explicit owner coordination and audit boundaries
+
+Systems SHOULD detect and flag attempted boundary violations through validation, policy checks, audit events, and operational alerts.
 
 ## Audit / Traceability Requirements
 Boundary-significant actions MUST be attributable and reviewable.
@@ -423,7 +506,7 @@ Canonical chain meaning remains tied to the contract layer. FUZE MUST distinguis
 Cache remains non-canonical. Local state MAY accelerate UX but MUST NOT define lifecycle truth, permission truth, or financial truth.
 
 ### Governance-Sensitive Action Initiated Through Ordinary Product UI
-The action MUST be rerouted through the correct control/governance pathway or rejected.
+The action MUST be rerouted through the correct control or governance pathway or rejected.
 
 ### Control-Plane Unavailability
 Sensitive actions MUST fail safely rather than creating hidden partial state or implicit approval.
@@ -451,13 +534,16 @@ Downstream implementation-contract layers MUST preserve the following:
 5. explicit policy-version, reason-code, and traceability hooks where operator, financial, governance, or security-sensitive behavior exists
 6. deterministic handling for blocked mutations, ambiguous ownership, provider contradictions, lag, and reconciliation-required cases
 7. prohibition of hidden direct writes across domains, convenience-table ownership drift, and surface-led canonical mutation
+8. explicit degraded-mode semantics so unavailable visibility is not mistaken for changed truth
 
-The following are non-canonical and forbidden unless a downstream specification explicitly elevates them with constitutional consistency:
-- frontend-owned workflow truth
-- AI-memory-owned approval or payment evidence
-- reporting tables patched as transactional source-of-record
-- queue completion treated as business truth without owner publication
-- product-local replacements for platform identity, workspace, authorization foundation, credits semantics, payout architecture, or governance pathways
+## Downstream Execution Staging
+The intended downstream execution order is:
+1. system interpretation and architecture alignment
+2. domain ownership and entity ownership refinement
+3. on-chain vs off-chain responsibility refinement
+4. API, event, and idempotency contract refinement
+5. security, audit, migration, and runtime-operational hardening
+6. product-integration refinement under platform-first boundary constraints
 
 ## Required Downstream Specs / Contract Layers
 This specification materially informs and constrains:
@@ -472,6 +558,19 @@ This specification materially informs and constrains:
 - credits, billing, payment-rail, payout, treasury, and governance specifications
 - API architecture, public/internal API, event, webhook, and workflow specifications
 - monitoring, audit, migration, reporting, transparency, and product-integration specifications
+
+## Canonical Examples / Anti-Examples
+### Canonical Examples
+- a product UI gathers input, but the platform or product owner domain validates and persists the canonical record
+- a payment provider sends a callback, but billing or payment normalization determines the internal state transition
+- a chain event confirms payout execution, while off-chain policy and reporting still distinguish funding, claiming, and publication semantics
+- a reporting surface shows a lagging balance with explicit lag labeling rather than rewriting canonical source truth
+
+### Anti-Examples
+- a dashboard edits a transactional record directly because it already displays the data
+- a product invents a local credits balance that diverges from platform-owned credits semantics
+- a worker completion record is treated as business completion even though owner validation never succeeded
+- an AI-generated suggestion is stored as approval evidence or financial truth without owner acceptance and audit lineage
 
 ## Dependencies / Cross-Spec Links
 ### Upstream Dependencies
@@ -529,3 +628,20 @@ Canonical truth, mutation authority, execution responsibility, presentation resp
 No surface, dashboard, AI layer, cache, report, queue, export, or provider callback may silently become an alternate source of record. All material cross-domain mutations MUST flow through explicit owner-controlled boundaries. Under failure, lag, or ambiguity, FUZE MUST preserve ownership clarity rather than hide it.
 
 If a current or future implementation conflicts with these rules, this document governs unless an explicitly higher-priority FUZE source-of-truth document overrides it.
+
+## Quality Gate Checklist
+- [x] Canonical owner is explicit for each material truth family at the boundary layer
+- [x] Mutation boundaries are explicit
+- [x] Adjacent boundaries are explicit
+- [x] Truth classes are explicit
+- [x] Conflict-resolution rules are explicit
+- [x] Default decision rules are explicit
+- [x] Non-canonical patterns are called out clearly
+- [x] Operator and admin override paths are bounded and audited
+- [x] Read-model, cache, reporting, and projection rules are explicit
+- [x] On-chain vs off-chain responsibilities are explicit at the boundary layer
+- [x] Failure and degraded-mode behaviors are explicit
+- [x] Downstream implementation guardrails are explicit
+- [x] Dependencies and downstream impacts are explicit
+- [x] Non-goals and deferred items are explicit
+- [x] The document is strong enough to anchor backend, API, data, runtime, reporting, and governance interpretation without inviting contradictory semantics
