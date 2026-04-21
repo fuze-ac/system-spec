@@ -5,10 +5,17 @@
 - Document Name: `FUZE_ACCOUNT_ACCESS_CONTINUITY_SPEC.md`
 - Document Type: Canonical refined system specification
 - Status: Active refined system spec
+- Version: 2.0.0
+- Effective Date: 2026-04-21
+- Last Updated: 2026-04-21
+- Reviewed On: 2026-04-21
+- Document Owner: FUZE Platform Identity / Access Architecture
+- Approval Authority: FUZE Platform Architecture and Governance Authority
+- Review Cadence: Quarterly or upon material change to account identity, linked authentication methods, provider resolution, recovery posture, session-security posture, or continuity-sensitive operator controls
 - Governing Layer: Platform core / account access continuity
 - Parent Registry: `REFINED_SYSTEM_SPEC_INDEX.md`
-- Primary Audience: Platform architecture, backend engineering, product engineering, security, support operations, audit, governance, API design, operations
-- Primary Purpose: Define the canonical FUZE access-continuity model that preserves a user’s ability to keep reaching the same canonical account over time despite provider changes, password changes, recovery events, product changes, workspace changes, wallet-aware participation changes, and security/risk interventions
+- Primary Audience: Platform architecture, backend engineering, product engineering, security engineering, support operations, audit, governance, API design, platform operations, reliability engineering
+- Primary Purpose: Define the canonical FUZE continuity model that preserves a user’s ability to keep reaching the same canonical account over time despite provider changes, password changes, recovery events, session invalidation, product entry changes, workspace changes, wallet-aware participation changes, and security/risk intervention
 - Primary Upstream References:
   - `REFINED_SYSTEM_SPEC_INDEX.md`
   - `DOCS_SPEC_INDEX.md`
@@ -19,21 +26,40 @@
   - `PLATFORM_ARCHITECTURE_SPEC.md`
   - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
   - `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
-  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_THESIS_FINAL_SPEC.md`
-  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
   - `IDENTITY_AND_ACCOUNT_SPEC.md`
   - `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_THESIS_FINAL_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
+  - `FUZE_PROVIDER_RESOLUTION_AND_LINKING_SPEC.md`
+  - `FUZE_SESSION_LIFECYCLE_AND_SECURITY_SPEC.md`
+  - `FUZE_ACCOUNT_RECOVERY_AND_CONFLICT_HANDLING_SPEC.md`
   - `WALLET_AWARE_USER_SPEC.md`
+  - `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md`
+  - `AUTH_IDENTITY_API_SPEC.md`
+  - `SESSION_AND_LINKED_LOGIN_API_SPEC.md`
 - Primary Downstream Dependents:
   - `FUZE_PROVIDER_RESOLUTION_AND_LINKING_SPEC.md`
   - `FUZE_SESSION_LIFECYCLE_AND_SECURITY_SPEC.md`
   - `FUZE_ACCOUNT_RECOVERY_AND_CONFLICT_HANDLING_SPEC.md`
-  - `SESSION_AND_LINKED_LOGIN_API_SPEC.md`
+  - `KEY_MANAGEMENT_AND_USER_RECOVERY_SPEC.md`
   - `AUTH_IDENTITY_API_SPEC.md`
-  - `SECURITY_AND_RISK_CONTROL_SPEC.md`
+  - `SESSION_AND_LINKED_LOGIN_API_SPEC.md`
   - `WORKSPACE_AND_ORGANIZATION_SPEC.md`
   - `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
+  - `SECURITY_AND_RISK_CONTROL_SPEC.md`
   - product integration specifications
+  - support and admin control-plane workflows
+- Supersedes: Earlier continuity writeups that were less explicit about truth classes, cross-domain continuity dependencies, continuity posture ownership, operator controls, and implementation-contract constraints
+- Superseded By: Not yet known
+- Related Decision Records: Not yet known
+- Canonical Status Note: This document is the governing FUZE continuity specification. Downstream APIs, services, products, operator tools, and reporting surfaces MUST NOT reinterpret continuity semantics defined here.
+- Implementation Status: Normative architecture baseline; downstream API, workflow, storage, security, and runtime contracts must conform
+- Approval Status: Drafted for refined-system inclusion; formal approval record not yet attached
+- Change Summary:
+  - tightened continuity truth-class separation from identity, auth-link, session, recovery, authorization, wallet, and reporting layers
+  - normalized continuity posture, mutation checks, and continuity-sensitive decision outcomes
+  - strengthened conflict/default decision rules for last-path removal, provider replacement, recovery completion, and operator correction
+  - clarified derived-view boundaries, audit lineage, idempotency, degraded-mode requirements, and downstream implementation guardrails
 
 ---
 
@@ -43,15 +69,15 @@ This specification defines the canonical FUZE account access continuity model.
 
 Its purpose is to make explicit:
 
-- what access continuity means in FUZE
-- why continuity is a first-class platform concern rather than an incidental login convenience
-- how continuity must be preserved across products, providers, sessions, workspaces, wallets, and recovery events
-- what platform rules must prevent an account from being silently stranded, silently fragmented, or silently reassigned
-- how continuity posture should be evaluated before sensitive access mutations
-- what continuity-related states, entities, and controls are required
-- how products, frontends, support tools, and internal services must consume continuity information without redefining identity or session truth
+- what continuity means in FUZE and what it does not mean
+- why continuity is a platform-owned trust property rather than a convenience feature
+- how continuity must be preserved across linked authentication methods, provider flows, password changes, recovery events, session containment, and product entry changes
+- how continuity interacts with workspace continuity, wallet-aware continuity, billing continuity, and audit continuity without collapsing those domains into one ambiguous state
+- what continuity posture the platform must be able to evaluate before sensitive mutations
+- how products, frontends, support tools, internal services, and reporting surfaces may consume continuity information without becoming owners of it
+- which invariants downstream implementations must preserve so accounts are not silently stranded, silently fragmented, silently merged, or silently reassigned
 
-This document exists because FUZE is a multi-product platform. In a multi-product platform, access continuity is part of identity integrity. If continuity is weak, users do not just lose one login method. They risk losing their cross-product history, workspace membership continuity, wallet-aware context, billing relationships, and trust in the platform itself.
+This document exists because FUZE is a multi-product platform with shared identity, linked access methods, workspace-aware collaboration, wallet-aware participation, and account-rooted historical continuity. In such a platform, loss of access continuity does not merely mean “login stopped working.” It can orphan the user from their cross-product history, workspace relationships, wallet-linked context, billing relationships, support lineage, and future portability through the platform. Continuity is therefore a named architectural obligation.
 
 ---
 
@@ -59,60 +85,61 @@ This document exists because FUZE is a multi-product platform. In a multi-produc
 
 This specification governs:
 
-- the canonical definition of account access continuity in FUZE
+- the canonical semantic meaning of account access continuity in FUZE
 - continuity across linked authentication methods
-- continuity across products and product-specific login surfaces
-- continuity posture before access-path mutations
-- continuity interactions with recovery, session invalidation, risk restrictions, and operator remediation
-- continuity interactions with workspaces, wallet-aware context, billing context, and audit lineage
-- continuity-safe linking, unlinking, disabling, and recovery completion
-- continuity-related derived views and posture summaries
-- minimum data-model direction for continuity-aware platform behavior
-- failure handling and edge cases involving stranded access or conflicting identity resolution
+- continuity across provider changes, password changes, and access-path replacement
+- continuity posture evaluation before continuity-sensitive mutations
+- continuity interactions with recovery, remediation, session invalidation, security/risk containment, and support-led correction
+- continuity interactions with workspace continuity, wallet-aware continuity, billing continuity, product continuity, and audit continuity
+- continuity-safe linking, unlinking, disabling, restoring, and recovery completion
+- continuity posture views and decision records
+- minimum canonical state, event, and data-model requirements for continuity-aware behavior
+- implementation-contract guardrails for APIs, services, operator tooling, products, and reporting surfaces
 
-This specification does not define:
+This specification does not define in full depth:
 
-- full provider-specific resolution heuristics
-- exact support playbooks
-- exact session token transport or refresh mechanism
-- full MFA design
-- exact workspace membership lifecycle
-- exact wallet verification mechanics
-- exact abuse scoring or security detection implementation
-- exact UI designs for continuity warnings or support tools
+- the canonical account identity model
+- detailed provider-resolution heuristics for ambiguous cases
+- the full session-lifecycle model
+- the full recovery evidence and review playbook
+- detailed workspace membership lifecycle rules
+- detailed wallet verification or wallet-auth policy
+- detailed UI copy or frontend design for continuity warnings
+- exact storage engine, queue, or deployment topology
 
-Those belong in downstream specifications.
+Those areas belong to adjacent or downstream specifications and must remain compatible with this document.
 
 ---
 
 ## Out of Scope
 
-This specification is explicitly out of scope for:
+This document is explicitly out of scope for:
 
-- product-local login system design
-- exact provider SDK implementation
-- exact browser/mobile transport details
-- exact support tooling screens
-- exact legal, compliance, or KYC identity rules
-- exact admin routing procedures
-- exact database topology or service split
+- product-local login systems
+- product-local fallback identity systems
+- exact provider SDK implementation detail
+- exact browser/mobile token transport detail
+- exact support console UX
+- exact legal identity or KYC verification requirements
+- treasury, payout, or governance remediation flows except where account continuity must be preserved
+- treating wallet possession alone as universal continuity proof unless separately approved by policy and specification
 
 ---
 
 ## Design Goals
 
-The design goals of FUZE account access continuity are:
+The design goals of the FUZE continuity model are:
 
-1. Preserve a user’s ability to keep reaching the same canonical account over time.
-2. Prevent unsafe self-service actions from stranding access.
-3. Preserve cross-product continuity even as login preference or product entry point changes.
-4. Preserve workspace, billing, wallet-aware, and audit continuity across access changes.
-5. Make continuity posture explicit and testable rather than implicit and ad hoc.
-6. Keep continuity rules separate from but coordinated with recovery, security, and session controls.
-7. Prevent silent duplication, silent merge, or silent reassignment of access paths.
-8. Support future provider expansion without weakening the continuity model.
-9. Make continuity visible enough for product surfaces, support tools, and security operations to behave consistently.
-10. Preserve clear owner boundaries among identity, auth/session, authorization, and wallet-aware domains.
+1. preserve the user’s ability to keep reaching the same canonical `account_id` over time
+2. prevent ordinary self-service actions from stranding the account
+3. preserve continuity across products even when entry points and supported providers differ
+4. preserve workspace, wallet-aware, billing, and audit continuity while keeping ownership boundaries clear
+5. make continuity posture explicit, testable, auditable, and implementation-usable
+6. keep continuity distinct from identity truth, session truth, authorization truth, and reporting truth
+7. support provider expansion and migration without weakening continuity guarantees
+8. ensure ambiguous or contested cases route to explicit review rather than silent guesses
+9. make support and admin correction possible without creating hidden second identity systems
+10. preserve deterministic behavior under retry, partial failure, degraded runtime, and asynchronous remediation conditions
 
 ---
 
@@ -120,72 +147,109 @@ The design goals of FUZE account access continuity are:
 
 This specification is not intended to:
 
-- make every account support every provider
-- force all accounts to have multiple linked login methods
-- treat continuity posture as identical to security risk posture
-- treat wallet linkage as a universal fallback access path unless separately approved
-- allow product-local access continuity logic to replace platform truth
-- define every recovery workflow step in full detail
-- allow convenience overrides that silently break continuity semantics
+- guarantee fully automated recovery in every case
+- require every account to maintain multiple access methods
+- equate session presence with durable continuity
+- equate continuity with workspace permissions or product capabilities
+- treat wallet linkage as an automatic fallback access path unless separately approved
+- allow product teams to define local continuity semantics
+- replace downstream API specifications, schema documents, or runbooks
+- optimize solely for low friction where doing so weakens continuity integrity
 
 ---
 
 ## Core Principles
 
 ### 1. Continuity Is Part of Identity Integrity
-Access continuity is not a separate convenience feature. It is part of protecting the integrity of the canonical account.
+Continuity is not a cosmetic login feature. It protects the integrity of the canonical account over time.
 
 ### 2. The Account Is the Continuity Anchor
-Continuity always refers to preserving access to the same canonical account, not to preserving attachment to one provider.
+Continuity always refers to preserving reachability to the same canonical `account_id`, not preserving a specific provider or session.
 
-### 3. Provider Flexibility Without Stranding
-Users may add, remove, or change access methods, but those changes must not strand the account without another viable path or approved recovery/remediation path.
+### 3. Linked Methods Are Access Paths
+Linked authentication methods are continuity-relevant access paths. They are not alternate identities.
 
-### 4. No Silent Fragmentation
-The platform must not silently respond to continuity stress by creating a second account or silently remapping access to another account.
+### 4. Sessions Support Runtime Access; They Do Not Replace Continuity
+An active session may temporarily preserve current runtime access, but it does not substitute for a durable future access path.
 
-### 5. Session State Is Not Continuity by Itself
-A still-active session is not a full continuity strategy. The platform must preserve account reachability beyond transient session presence.
+### 5. Continuity Before Convenience
+When convenience conflicts with continuity integrity, FUZE MUST preserve continuity integrity.
 
-### 6. Continuity Is Cross-Product
-Continuity must survive product entry changes. A user remains the same platform actor whether they arrive through HerHelp, QTB, AIMM, ZAGA, AIE, Botmad, or any future product.
+### 6. Review Over Guessing
+If the platform cannot determine a safe continuity outcome, it MUST enter explicit review, remediation, or denial posture rather than guess.
 
-### 7. Continuity Requires Explicit Posture Evaluation
-Sensitive access changes must evaluate continuity posture before mutating linked methods or completing recovery.
+### 7. Products Consume Continuity; They Do Not Own It
+Products may read continuity posture and display continuity warnings, but they may not define continuity truth or bypass continuity controls.
 
-### 8. Recovery Restores Continuity, It Does Not Redefine Identity
-Recovery must restore access to the same account rather than silently creating a new account or abandoning linked relationships.
+### 8. Recovery Restores Continuity; It Does Not Redefine Identity
+Recovery must restore reachability to the same account, not create substitute identity paths or hide prior ambiguity.
 
 ---
 
 ## Canonical Definitions
 
 ### Account Access Continuity
-The property that the same canonical account remains reachable over time through at least one viable approved access path or approved recovery/remediation path.
+The property that the same canonical account remains reachable over time through at least one viable approved ordinary access path or one approved recovery/remediation path.
 
 ### Viable Access Path
-An approved authentication method that is active, not blocked, not removed, and policy-eligible to authenticate the account.
+An approved authentication method that is linked to the canonical account, active or otherwise allowed for ordinary use, not removed, not unresolved-conflict, and not blocked by account state or policy for the relevant operation.
 
 ### Continuity Posture
-A platform-evaluated summary of whether the account currently has resilient, fragile, or blocked access continuity.
-
-### Stranded Account
-A canonical account that lacks any normal viable access path and lacks a presently usable approved recovery or remediation route.
+A platform-evaluated summary of the account’s present continuity resilience and whether ordinary or recovery-driven access remains safely possible.
 
 ### Continuity-Sensitive Mutation
-A mutation that can materially weaken future ability to reach the same account.
+A mutation that can materially weaken the account’s future reachability, including linked-method removal, provider replacement, password replacement, recovery-significant attribute change, recovery completion, or operator correction affecting access paths.
 
-### Primary Access Resilience
-The minimum level of access-path durability the platform requires before allowing sensitive changes.
-
-### Recovery-Eligible Posture
-A continuity posture in which ordinary access is insufficient, but an approved recovery or remediation path remains available.
+### Stranded Account
+A canonical account that lacks any presently viable ordinary access path and lacks any presently usable approved recovery or remediation route.
 
 ### Continuity Risk
-A condition in which the account is not yet stranded but is closer than policy allows to becoming stranded.
+A state in which the account is not yet stranded but is closer than policy allows to becoming stranded.
+
+### Recovery-Only Posture
+A posture in which ordinary self-service access is presently unavailable or insufficient, but an approved recovery or remediation route remains available.
 
 ### Continuity Warning
-A user-facing or operator-facing indication that a requested action would reduce access resilience.
+A user-facing or operator-facing signal that a requested action would reduce continuity resilience or require stronger controls.
+
+### Continuity Decision Record
+A durable record showing why a continuity-sensitive mutation was allowed, blocked, rerouted, or escalated.
+
+---
+
+## Truth Class Taxonomy
+
+This domain MUST distinguish the following truth classes:
+
+### Canonical Identity Truth
+`account` and identity-domain lifecycle semantics remain canonical identity truth. Continuity attaches to that account but does not redefine identity ownership.
+
+### Auth-Link Truth
+`linked_auth_method` and equivalent approved access-path bindings are canonical auth-link truth and are one major input to continuity.
+
+### Runtime Session Truth
+`auth_session`, refresh lineage, revocation state, and invalidation state are runtime truth. They may affect current usability but do not replace durable continuity.
+
+### Recovery / Conflict Truth
+`account_recovery_case`, conflict state, remediation state, and approved restoration posture are canonical recovery/conflict truth for continuity exceptions.
+
+### Policy Truth
+Continuity thresholds, allowed recovery paths, unlink rules, step-up requirements, operator-control rules, and security/risk policy are policy truth.
+
+### Provider-Input Truth
+Provider claims, callback payloads, profile hints, issuer-subject pairs, and other external inputs are evidence and mapping inputs, not continuity truth by themselves.
+
+### Derived Read-Model Truth
+Continuity summaries, posture dashboards, support views, session lists, and product UX summaries are derived. They MAY summarize continuity state but MUST NOT become write owners.
+
+### Reporting Truth
+Exports, analytics summaries, and reporting projections may reflect continuity-related outcomes but MUST remain downstream and correctable from canonical truth.
+
+### Wallet-Linked Context Truth
+Wallet links are canonical within the wallet-aware domain and continuity-relevant as attached context, but they are not canonical continuity truth or universal login proof by default.
+
+### Authorization / Entitlement Truth
+Workspace membership, organization scope, roles, permissions, entitlements, and product capabilities are separate truths. Continuity preserves access to the account, not automatic preservation of all downstream powers.
 
 ---
 
@@ -202,388 +266,542 @@ and above:
 - `FUZE_PROVIDER_RESOLUTION_AND_LINKING_SPEC.md`
 - `FUZE_SESSION_LIFECYCLE_AND_SECURITY_SPEC.md`
 - `FUZE_ACCOUNT_RECOVERY_AND_CONFLICT_HANDLING_SPEC.md`
-- `SESSION_AND_LINKED_LOGIN_API_SPEC.md`
+- `KEY_MANAGEMENT_AND_USER_RECOVERY_SPEC.md`
 - `AUTH_IDENTITY_API_SPEC.md`
+- `SESSION_AND_LINKED_LOGIN_API_SPEC.md`
 
-This document does not redefine canonical account identity or session lifecycle in full. It defines the continuity constraints that those domains must preserve.
-
----
-
-## Canonical Continuity Rule
-
-FUZE MUST preserve the following continuity rule:
-
-> No ordinary self-service mutation should leave a canonical account without another viable active authentication method, an approved recovery path, or an operator-reviewed remediation path.
-
-This is the central continuity rule of the platform.
-
-It applies to:
-- linked provider removal
-- password reset and password replacement flows
-- recovery-significant email changes
-- provider disablement
-- provider migration
-- recovery completion
-- support-led access correction
-- any future wallet-auth enablement or disablement if adopted
+This document does not redefine canonical account identity, provider-resolution logic in full depth, session lifecycle in full depth, workspace authorization, or wallet verification. It defines the continuity rules those domains must preserve.
 
 ---
 
-## Why Continuity Matters in FUZE
+## System Boundaries
 
-Continuity matters in FUZE because the account anchors more than just login.
+This specification governs the continuity domain and its required coordination with adjacent domains.
 
-The account also anchors:
-- product history
-- workspace membership continuity
-- wallet-aware context
-- billing and credits continuity where account-scoped
-- audit and support lineage
-- future product expansion and identity portability
+The continuity domain MUST govern:
 
-When continuity breaks, the user does not merely lose a login provider. The user risks losing the practical ability to reach the same platform history and relationships.
+- continuity meaning at the account level
+- continuity posture semantics
+- continuity-sensitive mutation decision semantics
+- continuity-safe evaluation requirements before commit
+- continuity-related derived view constraints
+- continuity-related audit and reason-code requirements
+- continuity implications of provider changes, password changes, recovery completion, session invalidation, and operator correction
 
-That is why FUZE must treat continuity as a named platform capability.
+This specification MUST NOT be interpreted to transfer ownership of:
 
----
-
-## Continuity Scope Across the Platform
-
-Account access continuity must preserve the following cross-domain continuities:
-
-### Product Continuity
-The same person must remain the same account when entering through different products.
-
-### Workspace Continuity
-Workspace memberships, organization ties, and collaboration history remain attached to the account and must not be orphaned by provider changes.
-
-### Billing and Credits Continuity
-Commercial relationships remain tied to the canonical account and/or workspace, not to one provider path.
-
-### Wallet-Aware Continuity
-Wallet links and derived wallet-aware context remain attached to the account even when login preference changes.
-
-### Audit Continuity
-Audit and support history must remain traceable to the same account through access-path changes.
-
-### Recovery Continuity
-Recovery must restore access to the same account rather than spawning a new identity path.
+- canonical account identity
+- ordinary provider-resolution execution
+- linked-auth lifecycle execution
+- ordinary session issuance or transport
+- workspace membership or authorization truth
+- wallet-link execution truth
+- reporting truth
 
 ---
 
-## Continuity Posture Model
+## Adjacent Boundaries
 
-FUZE SHOULD maintain an explicit continuity posture model.
+### Identity and Account Domain
+Owns canonical `account_id`, lifecycle state, anti-fragmentation rules, and identity-level conflict meaning. Continuity protects reachability to that identity.
 
-At minimum, the platform should support semantic posture states such as:
+### Auth / Session / Linked Login Domain
+Owns linked-method lifecycle, auth challenge state, session issuance, session invalidation, and auth mutation execution. Continuity constrains what those mutations are allowed to do.
 
-- `resilient`
-- `acceptable`
-- `fragile`
-- `recovery_only`
-- `blocked`
-- `under_review`
+### Provider Resolution and Linking Domain
+Owns provider normalization, provider subject mapping, link-intent execution, and provider conflict detection. Continuity constrains safe add/remove/replace outcomes.
 
-### resilient
-The account has more than one viable access path, or otherwise satisfies a strong platform-defined resilience threshold.
+### Recovery and Conflict Handling Domain
+Owns recovery-case and conflict-case lifecycle, restoration evidence, and remediation process. Continuity defines the restoration outcome that must be preserved.
 
-### acceptable
-The account has a viable access path and an approved continuity posture, but reduced redundancy.
+### Session Lifecycle and Security Domain
+Owns detailed session states, rotation, expiry, revocation, and containment. Continuity defines when session presence is insufficient and when session containment affects future reachability.
 
-### fragile
-The account remains reachable but one additional failed mutation or provider loss could strand it.
+### Workspace / Authorization / Entitlement Domains
+Own post-auth operating scope, permissions, and capabilities. Continuity does not guarantee those downstream powers remain unchanged.
 
-### recovery_only
-The account is not presently reachable by ordinary self-service login, but a controlled recovery/remediation route remains available.
-
-### blocked
-No acceptable normal access path or currently usable recovery path is available without higher-severity intervention.
-
-### under_review
-A conflict, security review, or operator-managed remediation case is active and continuity cannot be treated as ordinary.
-
-These exact names may evolve, but the platform must support the semantic distinction.
+### Wallet-Aware Domain
+Owns wallet-link truth and wallet verification. Continuity requires wallet-linked context remain attached to the same account unless separately corrected under controlled policy.
 
 ---
 
-## Continuity Evaluation Rules
+## Conflict Resolution Rules
 
-The platform SHOULD evaluate continuity posture before any continuity-sensitive mutation.
+When continuity-relevant layers disagree, the platform MUST resolve conflicts in the following order unless a higher-order policy explicitly states otherwise:
 
-### Continuity-Sensitive Mutations include:
-- add linked provider if it affects future continuity
-- remove linked provider
-- disable linked provider
-- change recovery-significant email
-- replace password credentials
-- complete recovery
-- merge/remediation affecting access paths
-- support-led access correction
-- future wallet-auth enablement/disablement if supported
+1. canonical identity-domain records and restriction state
+2. canonical recovery/conflict state and approved remediation outcomes
+3. canonical linked-auth records and auth-session state
+4. explicit policy and security/risk constraints
+5. validated provider-input evidence within approved resolution rules
+6. runtime client state
+7. derived views, support dashboards, analytics, and product-local caches
 
-### Minimum Evaluation Questions
-Before allowing a mutation, the platform should ask:
+Specific conflict rules:
 
-1. Will the account still have at least one viable ordinary access path after this mutation?
-2. If not, does an approved recovery/remediation path remain available?
-3. Will this action create ambiguity about which account owns the resulting access path?
-4. Will session invalidation or restriction also affect account reachability?
-5. Will the action orphan linked product, workspace, or wallet-aware continuity?
-6. Is the account already in fragile or review posture?
-
-If those questions cannot be answered safely, the mutation should be blocked, held, or rerouted to controlled review.
+- provider-email overlap MUST NOT justify silent continuity decisions
+- stale session presence MUST NOT justify bypassing continuity blocks
+- wallet presence MUST NOT by itself prove continuity unless wallet-auth is separately approved for that exact purpose
+- product-local records MUST NOT override platform continuity posture
+- support views MUST NOT be treated as authoritative if they diverge from canonical records
+- ambiguous cases default to explicit review rather than silent continuation
 
 ---
 
-## Viable Access Path Rules
+## Default Decision Rules
 
-A viable access path must satisfy all of the following:
+Where ambiguity exists, the following defaults apply:
 
-- it is linked to the canonical account
-- it is not removed
-- it is not disabled or blocked for ordinary use
-- it is not in unresolved conflict
-- its provider or platform-backed mechanism remains available enough for normal use
-- policy and risk state allow it to authenticate the account
-
-A remembered session alone is not sufficient to count as durable future continuity for sensitive unlink or reset decisions unless policy explicitly allows that in a very narrow case.
-
----
-
-## Continuity and Linked Provider Changes
-
-### Adding a Provider
-Adding a new provider generally improves continuity, but only if:
-- the provider subject is verified
-- the link is unique
-- the platform is not entering a conflict state
-- the added method becomes a viable access path
-
-### Removing a Provider
-Removing a provider is continuity-sensitive and MUST be blocked if it would leave the account stranded without another viable path or approved recovery/remediation path.
-
-### Disabling a Provider
-Disabling a provider due to risk or compromise may be necessary, but continuity posture must be recalculated immediately.
-
-### Replacing One Provider with Another
-Replacement is safe only if the new method is fully viable before the old one is removed, or if policy explicitly routes the transition through a controlled migration flow.
+1. default continuity anchor: `account_id`
+2. default owner of account-level continuity meaning: Identity Domain in coordination with the Continuity rule set
+3. default owner of auth-path viability: Auth / Session / Linked Login Domain
+4. default owner of recovery exception posture: Recovery / Conflict Handling Domain
+5. default interpretation of provider identity: evidence for mapping, not a continuity root
+6. default interpretation of session presence: temporary runtime access, not durable future continuity
+7. default interpretation of wallet link: attached participation context, not universal fallback access
+8. default decision for removal of last viable access path: block ordinary self-service mutation
+9. default decision for ambiguous reassignment, duplicate-account, or provider collision: explicit review/remediation
+10. default decision for operator override: require policy basis, stronger authorization, reason code, audit lineage, and bounded workflow
 
 ---
 
-## Continuity and Password-Based Access
+## Roles / Actors / Entities
 
-Where password-based access exists:
+### End User
+May initiate approved account-management changes, recovery flows, or product entry flows that affect continuity.
 
-- password reset restores access to the same account
-- password replacement is continuity-sensitive
-- password removal or deprecation must not strand the account
-- completion of password reset may require global session invalidation
-- password recovery paths must remain subordinate to the canonical account model
+### Authenticated User Performing Sensitive Mutation
+May attempt to add, remove, replace, disable, or restore access paths, subject to continuity controls and recent-auth requirements.
 
-Password mechanics are defined elsewhere, but the continuity rule governs their effect.
+### Identity Domain Service
+Owns canonical account identity and identity-side continuity meaning.
 
----
+### Auth / Session / Linked Login Service
+Owns access-path lifecycle, auth challenges, session issuance, and continuity checks at auth mutation time.
 
-## Continuity and Recovery
+### Recovery / Conflict Service
+Owns recovery-case and conflict-case lifecycle and controlled restoration/remediation pathways.
 
-Recovery exists to preserve continuity when normal access paths fail.
+### Security / Risk Function
+Owns elevated review posture, compromise-response requirements, containment triggers, and heightened evidence thresholds.
 
-### Recovery Principles for Continuity
-1. Recovery restores access to the same canonical account.
-2. Recovery must not create a new account as a shortcut.
-3. Recovery must not orphan linked products, workspaces, wallet links, or billing continuity.
-4. Recovery completion may invalidate prior sessions when security requires.
-5. Recovery may transition continuity posture from `recovery_only` to `acceptable` or `resilient`.
-6. If automated certainty is insufficient, the platform should route to review rather than guess.
+### Support / Operations Function
+May review and execute bounded remediation actions through approved, audited control-plane pathways.
 
-Detailed recovery procedures belong in `FUZE_ACCOUNT_RECOVERY_AND_CONFLICT_HANDLING_SPEC.md`, but this document governs the continuity outcome that recovery must preserve.
+### Product Surface
+May expose continuity warnings and approved account-management entry points but MUST NOT own continuity truth.
 
----
-
-## Continuity and Sessions
-
-Sessions support current runtime access, but continuity is broader than session presence.
-
-### Session Continuity Rules
-- active sessions may temporarily preserve runtime access even when a provider is lost
-- active sessions must not be treated as permanent replacement for a durable access path
-- session invalidation after recovery, password reset, or suspension may reduce continuity posture
-- account state and risk controls override routine session continuation
-- session listing or continuity summary views are derived and must not replace canonical truth
-
-The result is simple:
-
-> session continuity supports current use; account access continuity protects future reachability.
-
----
-
-## Continuity and Workspace / Authorization Layers
-
-Continuity must not be confused with authorization.
-
-A user may retain continuity to the same account even if:
-- they no longer belong to a workspace
-- a workspace changes ownership
-- a role is reduced
-- entitlements change
-- product capability is reduced
-
-Continuity preserves access to the canonical account. It does not guarantee every downstream permission remains the same.
-
-This distinction is important because otherwise products may incorrectly equate “can still log in” with “can still do everything.”
-
----
-
-## Continuity and Wallet-Aware Participation
-
-Wallet-aware participation remains attached to the account. Therefore:
-
-- changing login providers must not orphan wallet links
-- recovery must preserve wallet-aware account linkage unless a separate wallet correction is required
-- continuity posture may matter for products that surface holder-aware benefits
-- wallet linkage does not itself replace the need for viable account access continuity
-
-Wallets enrich continuity context, but they are not by default the universal continuity fallback.
-
----
-
-## Continuity and Cross-Product Entry
-
-FUZE products may present different provider sets or onboarding styles, but all of them must preserve the same continuity model.
-
-This means:
-- switching products must not create a second account
-- using a different product-specific entry path must still resolve to the same account when appropriate
-- product-specific login UX must not hide continuity risk from the user
-- products must not keep separate continuity logic or separate “real user” concepts
-
-Continuity is therefore platform-owned, not product-owned.
-
----
-
-## Continuity-Sensitive User Experience Rules
-
-Products and account-management surfaces should expose continuity posture honestly.
-
-### Recommended UX Rules
-- warn before removing the last viable access path
-- show whether backup access exists
-- distinguish “currently signed in” from “future access resilience”
-- explain when a recovery path is the only remaining route
-- route high-risk continuity actions to stronger verification
-
-This file does not define UX details, but the platform semantics must support them.
-
----
-
-## Conflict and Ambiguity Rules
-
-Continuity can be threatened by ambiguity, not only by obvious provider loss.
-
-### Examples of Continuity Threatening Ambiguity
-- provider subject already linked elsewhere
-- same user appears to have accidentally created multiple accounts
-- support request cannot safely prove which account should receive a provider
-- recovery-significant email conflicts with another account
-- a sensitive unlink action is requested during a pending remediation case
-
-### Rule
-If continuity cannot be preserved safely by ordinary rules, the system must enter explicit conflict, review, or remediation posture rather than silently guessing.
-
----
-
-## Canonical Entity and Data Direction
-
-This canonical continuity spec does not define the final schema, but the platform SHOULD include durable representations for:
-
-- continuity posture summary or view
-- continuity-sensitive mutation decision records
-- continuity warning or block reason codes
-- recovery-only posture indicators
-- continuity-impacting provider mutation events
-- conflict or remediation linkage for continuity cases
-
-### Recommended conceptual entities
-- `account_access_continuity_view`
+### Canonical Entities
+- `account`
+- `linked_auth_method`
+- `auth_session`
+- `auth_challenge`
+- `account_recovery_case`
+- `identity_conflict_case`
+- `account_access_continuity_view` or equivalent derived posture view
 - `continuity_mutation_evaluation`
-- `continuity_warning`
-- `continuity_remediation_reference`
-
-These may be implemented as derived views plus durable event records rather than standalone top-level tables, but the semantics must exist.
+- `continuity_decision_record`
+- continuity-related audit/event references
 
 ---
 
-## Read / Write Rights
+## Ownership Model
 
 ### Identity Domain Owns
 - the canonical account whose continuity is being protected
 - account-level continuity meaning
-- identity conflict/remediation posture
+- identity-side anti-fragmentation rules
+- final identity-safe admissibility of restoration to the same account
+- identity-level conflict/remediation implications
 
-### Auth / Session Domain Owns
-- linked-method viability
-- session invalidation effects
+### Auth / Session / Linked Login Domain Owns
+- viability of linked ordinary access paths
 - continuity checks at auth mutation time
-- continuity summary materialization where assigned
+- execution of add/remove/disable/restore changes after approved decisions
+- session-containment effects relevant to continuity
+- current auth posture summary where assigned
 
-### Recovery / Remediation Domain Owns
-- controlled restoration paths
-- recovery-case lifecycle
-- remediation transitions affecting future account reachability
+### Recovery / Conflict Handling Domain Owns
+- approved recovery and remediation pathways
+- recovery-only and under-review exception paths
+- case lifecycle for restoration and ambiguity handling
+- controlled reassignment only where explicitly approved by policy
+
+### Security / Risk Domain Owns
+- elevated risk posture that constrains continuity decisions
+- compromise-related containment requirements
+- additional step-up or denial requirements for sensitive mutations
 
 ### Product Domains May
 - read continuity posture
-- show user warnings
-- route users into approved account-management flows
+- render warnings and guidance
+- initiate approved flows
+- consume continuity-safe results
 
 ### Product Domains Must Not
 - redefine continuity posture
 - bypass continuity blocks
 - create product-local fallback identity systems
+- treat a product-specific session as sufficient continuity truth
 
 ---
 
-## State Mutation Rules
+## Authority / Decision Model
 
-### Deterministic Mutation Rule
-Continuity-affecting truth may be changed only through explicit owner-controlled mutation boundaries.
+Continuity decisions are conservative and layered.
 
-### Pre-Mutation Evaluation Rule
-Sensitive access mutations SHOULD perform continuity evaluation before commit.
+### Automated continuation is allowed only when:
+- the canonical account is unambiguous
+- the resulting post-mutation state still preserves an acceptable viable ordinary path or approved recovery/remediation path
+- no unresolved conflict or elevated risk posture blocks progression
+- downstream mutation execution is idempotent, auditable, and owner-controlled
 
-### Block Rule
-If a requested mutation would strand the account without an approved recovery/remediation route, the platform MUST block or reroute the action.
+### Explicit review is required when:
+- provider subject already maps elsewhere
+- multiple candidate accounts appear plausible
+- recovery-significant attributes conflict with another account
+- continuity would otherwise be reduced below policy threshold
+- support/admin correction could alter access-path ownership
+- compromise suspicion or elevated risk requires human or elevated decisioning
 
-### Review Rule
-If safe evaluation is impossible due to ambiguity or conflict, the platform MUST enter review/remediation posture.
-
-### Audit Rule
-Continuity-impacting decisions MUST be auditable and reason-coded.
+### Operator remediation is permitted only when:
+- policy explicitly permits the action class
+- stronger authorization is present
+- a reason code and policy reference are captured
+- continuity, session containment, and audit effects are explicit
+- the action does not silently redefine identity outside approved mutation boundaries
 
 ---
 
-## Failure Handling and Edge Cases
+## State Model
 
-### Last Linked Method Removal Attempt
-The platform must block or reroute the action if it would strand the account without a safe recovery or approved replacement path.
+FUZE SHOULD support explicit continuity posture states with stable semantics. Exact names may evolve, but the distinctions below MUST remain preserved.
 
-### Provider Outage
-If a provider is unavailable, the canonical account still exists. Ordinary continuity posture may degrade, but identity must not fragment.
+### `resilient`
+The account has more than one viable ordinary access path or otherwise satisfies the platform’s strong resilience threshold.
 
-### Recovery Completes After Suspected Compromise
-The platform may revoke prior sessions and require fresh trusted login state while still preserving continuity to the same account.
+### `acceptable`
+The account remains reachable and policy-acceptable, but redundancy is lower than the resilient threshold.
 
-### Password Reset on Fragile Account
-The platform must ensure the reset path results in a viable access method rather than leaving the account in an unusable partial state.
+### `fragile`
+The account remains reachable, but one more failed mutation, provider loss, or invalidation event could strand it.
 
-### Product Switch With Different Provider Set
-The user should still be routed toward the same canonical account or into an explicit link/conflict flow rather than silently creating a second account.
+### `recovery_only`
+Ordinary access is presently unavailable or insufficient, but an approved recovery or remediation route remains available.
 
-### Wallet Link Remains, Ordinary Access Lost
-Wallet-aware context remains attached historically, but wallet linkage alone should not be treated as sufficient continuity unless policy explicitly supports wallet-auth as an approved access path.
+### `under_review`
+A conflict, security review, or operator-managed remediation case is active, and ordinary continuity semantics are temporarily suspended pending explicit decision.
 
-### Support Error During Provider Correction
-The platform must preserve auditable correction lineage and must not silently rewrite continuity state without explicit remediation records.
+### `blocked`
+No acceptable ordinary access path or currently usable recovery/remediation route is available without higher-severity intervention.
+
+### State Rules
+- continuity posture state must be explicit and auditable
+- derived posture summaries must map back to canonical contributing truths
+- terminal remediation and recovery outcomes must update posture deterministically
+- stale projections must not redefine posture
+- posture transitions that affect user or operator decisions should emit durable events or decision records
+
+---
+
+## Lifecycle / Workflow Model
+
+### 1. Ordinary Access Baseline
+The account begins in whatever continuity posture results from the current set of active linked methods, account state, recovery posture, and policy constraints.
+
+### 2. Pre-Mutation Continuity Evaluation
+Before any continuity-sensitive mutation commits, the platform MUST evaluate:
+- whether at least one viable ordinary access path will remain after the mutation
+- if not, whether an approved recovery/remediation route will remain
+- whether the mutation creates ambiguity in account ownership
+- whether session invalidation or restriction changes future reachability
+- whether workspace, wallet-aware, billing, or audit continuity would be orphaned
+- whether existing recovery, conflict, or risk posture blocks continuation
+
+### 3. Mutation Decision
+The platform MUST normalize the pre-mutation result into one of a small set of decision outcomes:
+- `allow`
+- `allow_with_warning`
+- `block`
+- `review_required`
+- `reroute_to_recovery`
+- `reroute_to_remediation`
+
+### 4. Controlled Mutation Execution
+If allowed, execution MUST occur through owner-controlled mutation boundaries with idempotency, audit lineage, and reason capture where required.
+
+### 5. Post-Mutation Recalculation
+After a continuity-affecting mutation, the platform MUST recalculate continuity posture and emit required audit or domain events.
+
+### 6. Recovery / Remediation Exception Path
+If ordinary access is insufficient, the platform routes through approved recovery or remediation. Completion restores reachability to the same canonical account and triggers continuity recalculation.
+
+### 7. Post-Completion Containment
+Where trust posture requires, completion MAY trigger targeted or global session invalidation and stronger re-entry requirements while preserving continuity to the same account.
+
+---
+
+## Invariants
+
+1. continuity attaches to one canonical `account_id`
+2. linked authentication methods are access paths, not alternate identities
+3. sessions are temporary runtime state and do not by themselves satisfy durable continuity requirements
+4. no ordinary self-service action should strand the account without an approved replacement, recovery, or operator-reviewed remediation path
+5. provider flexibility is allowed; silent fragmentation, silent merge, and silent reassignment are forbidden
+6. recovery restores the same account rather than creating a substitute
+7. product surfaces may consume continuity posture but may not own it
+8. workspace, billing, wallet-aware, and audit continuity remain attached to the same account unless separately corrected through approved owner domains
+9. continuity-sensitive decisions must be auditable, reason-coded where applicable, and reconstructable
+10. degraded runtime conditions must not cause hidden semantic downgrade or truth substitution
+11. ambiguous cases default to explicit review rather than silent guesswork
+12. derived views and reports must never become continuity write owners
+
+---
+
+## Functional Rules
+
+### Viable Access Path Rule
+A method counts as a viable ordinary access path only if it:
+- is durably linked to the account
+- is active or otherwise approved for ordinary use
+- is not removed
+- is not blocked by unresolved conflict or risk posture
+- is allowed by account state and policy for the relevant operation
+
+### Last Viable Path Rule
+Ordinary self-service removal or disablement of the last viable ordinary access path MUST be blocked unless:
+- a replacement path is fully viable before removal commits, or
+- an approved recovery/remediation path remains available and the flow is explicitly routed through that path under policy
+
+### Replacement Rule
+Replacing one access path with another is safe only when:
+- the replacement is fully established and viable before the old path is removed, or
+- a controlled migration flow guarantees continuity and auditability
+
+### Password Continuity Rule
+Where password-backed access exists:
+- password reset restores access to the same account
+- password replacement is continuity-sensitive
+- password removal or deprecation must not strand the account
+- reset or replacement may require session containment
+- password paths remain subordinate to canonical account semantics
+
+### Provider Change Rule
+Adding, removing, disabling, restoring, or replacing provider-backed access paths is continuity-sensitive and must remain coordinated with provider-resolution, auth-link, and recovery rules.
+
+### Recovery Rule
+Recovery exists to preserve continuity when ordinary access fails. Recovery:
+- restores access to the same account
+- must not create a new account as a shortcut
+- must not orphan workspace, wallet, billing, or audit continuity
+- may invalidate prior sessions where security requires
+- must reroute to review when automated certainty is insufficient
+
+### Session Interaction Rule
+An active session may support current use but does not replace durable continuity. Session presence MUST NOT be overtrusted when evaluating last-path removal, replacement, or similar mutations.
+
+### Product Entry Rule
+Different products may present different providers or onboarding flows, but switching products must not create a second account or hide continuity risk.
+
+### Wallet-Aware Rule
+Wallet-aware participation remains attached to the account. Wallet linkage alone is not sufficient continuity unless explicitly approved as an access path by policy and specification.
+
+---
+
+## Permission / Access Considerations
+
+Continuity is not authorization.
+
+A user may retain continuity to the same account even if:
+- they no longer belong to a workspace
+- a workspace role is reduced
+- a product entitlement is lost
+- a product capability is disabled
+
+Continuity preserves ability to reach the account. It does not guarantee any specific downstream permission or capability remains available.
+
+Continuity-sensitive privileged actions require stronger authorization than ordinary self-service actions. Support/admin actions that can weaken or correct continuity MUST require bounded control-plane pathways, reason codes, policy references, and audit capture.
+
+---
+
+## Entitlement Considerations
+
+Continuity does not mint, transfer, or reinterpret entitlement truth.
+
+Required rules:
+- account-scoped and workspace-scoped entitlements remain attached according to their owning domains
+- continuity-preserving recovery or remediation must preserve entitlement subject continuity to the same account and/or workspace
+- continuity views may summarize entitlement-adjacent risk or impact for UX purposes but MUST NOT become entitlement owners
+
+---
+
+## API / Contract Implications
+
+Downstream APIs MUST preserve explicit continuity behavior.
+
+### Identity / Access APIs should support:
+- continuity posture or continuity summary retrieval
+- continuity-sensitive mutation evaluation
+- explicit block/warning/review reason codes
+- post-recovery continuity state
+- references to recovery or remediation cases where applicable
+
+### Session / Linked-Login APIs should support:
+- continuity-safe linked-method add, remove, disable, restore, and replace flows
+- explicit last-path removal blocks
+- session invalidate or revoke-all when trust reset affects continuity
+- continuity-aware responses for sensitive auth mutations
+
+### Support / Admin APIs should support:
+- stronger authorization for continuity-breaking or continuity-correcting actions
+- reason-code and policy-reference capture
+- explicit remediation references
+- idempotent side-effecting mutation semantics where retries are plausible
+
+### API Rules
+- side-effecting continuity-sensitive endpoints MUST support correlation identifiers
+- idempotency is mandatory where retries or callback replays are plausible
+- errors must distinguish bounded categories such as validation failure, continuity block, under review, policy denied, and dependency degraded without leaking unsafe internal detail
+- review-required flows should return case or operation references rather than implying synchronous finality
+
+---
+
+## Event / Async Implications
+
+Continuity-relevant behavior must emit durable domain events or equivalent audit/event lineage after canonical commits.
+
+Representative semantic events include:
+- `identity.continuity_evaluated`
+- `identity.continuity_warning_emitted`
+- `identity.continuity_blocked`
+- `identity.continuity_posture_changed`
+- `identity.continuity_rerouted_to_recovery`
+- `identity.continuity_rerouted_to_review`
+- `identity.continuity_restored`
+- `auth.session_global_invalidated`
+- `auth.linked_method_removed`
+- `auth.linked_method_disabled`
+- `auth.linked_method_restored`
+
+Async workflow rules:
+- continuity evaluation and mutation execution may be orchestrated asynchronously, but canonical decision state must remain explicit
+- retries must be replay-safe and idempotent
+- contradictory terminal events must not be emitted for the same decision
+- review workflows must preserve ownership boundaries among identity, auth/session, recovery, and security domains
+
+---
+
+## Data Model / Storage Implications
+
+This specification requires durable semantic support for continuity behavior, even if implementations choose different physical schemas.
+
+At minimum, the platform SHOULD support semantics equivalent to:
+
+### `account_access_continuity_view`
+Representative fields:
+- `account_id`
+- `continuity_posture`
+- `viable_access_path_count`
+- `recovery_route_available`
+- `under_review_flag`
+- `last_evaluated_at`
+- derived contributing-state references
+
+This is a derived view and MUST NOT become the write owner.
+
+### `continuity_mutation_evaluation`
+Representative fields:
+- `evaluation_id`
+- `account_id`
+- `mutation_type`
+- `pre_state_reference`
+- `decision_outcome`
+- `reason_code`
+- `policy_reference`
+- `evaluated_at`
+- `correlation_id`
+
+### `continuity_decision_record`
+Representative fields:
+- `decision_record_id`
+- related evaluation reference
+- final action state
+- actor type
+- actor reference
+- remediation or recovery reference where applicable
+- audit reference
+- committed_at
+
+### `continuity_warning`
+Representative fields:
+- `warning_id`
+- `account_id`
+- warning_type
+- severity
+- surfaced_to_actor_type
+- created_at
+- cleared_at`
+
+### Data Rules
+- derived continuity views must be regenerable from canonical upstream truths
+- destructive rewrites that erase continuity lineage SHOULD NOT be used where explicit state transitions can preserve auditability
+- storage and event design must support “what was the continuity posture at time T?” reconstruction
+
+---
+
+## Read Model / Projection / Reporting Rules
+
+Read models, dashboards, support views, and analytics MAY summarize continuity state only if they preserve the following rules:
+
+- they must be clearly identified as derived
+- they must be regenerable from canonical identity, auth-link, session, recovery, and policy truths
+- they must not become mutation owners
+- they must not invent continuity states that lack canonical backing
+- stale projections must not be used to override real-time continuity blocks
+
+Public or external-facing reporting MUST NOT expose internal continuity-sensitive detail that would weaken account safety.
+
+---
+
+## Security / Risk / Abuse Controls
+
+Continuity is also a security control.
+
+The platform MUST preserve:
+- continuity checks before last-path removal or replacement
+- stronger verification or recent-auth for sensitive access changes where policy requires
+- session containment after trust-reset events where security requires
+- conservative handling of ambiguous provider or duplicate-account cases
+- anti-replay and idempotency for continuity-affecting callbacks and workflows
+- audit durability even during degraded runtime conditions
+- operator workflow containment for high-risk corrections
+
+If continuity is weak or implicit:
+- users can strand themselves
+- providers can be removed unsafely
+- support can perform hidden rewrites
+- products can invent fallback identity logic
+- sessions can be overtrusted
+- recovery can accidentally orphan the account
+
+All downstream security, abuse, and operations specifications must preserve this continuity model.
+
+---
+
+## Boundary Violation Detection / Non-Canonical Patterns
+
+The following patterns are non-canonical and forbidden unless a higher-order approved exception explicitly states otherwise:
+
+- product-local continuity logic that outranks shared platform continuity truth
+- treating session presence as sufficient durable continuity for last-path removal
+- silent provider reassignment between accounts
+- silent duplicate-account creation to avoid surfacing a conflict
+- silent merge based on email similarity or profile similarity
+- treating wallet linkage as universal fallback access without explicit policy and specification support
+- support-tool edits that rewrite continuity state without durable case lineage and audit capture
+- reporting views used as authoritative continuity sources
+
+Systems should detect and surface these patterns as policy violations, review conditions, or audit anomalies where feasible.
 
 ---
 
@@ -592,62 +810,152 @@ The platform must preserve auditable correction lineage and must not silently re
 FUZE must be able to determine:
 
 - what continuity posture an account had at a given time
-- why a continuity-sensitive mutation was allowed, blocked, or rerouted
+- why a continuity-sensitive mutation was allowed, blocked, warned, or rerouted
 - which viable access paths existed before and after a mutation
 - whether recovery or remediation was the last remaining continuity route
-- how provider, password, session, and risk events affected continuity
-- whether a visible continuity summary is derived or canonical decision output
+- how session invalidation, provider changes, password changes, and risk events affected continuity
+- whether a surfaced continuity summary was canonical decision output or derived projection
 - how support or operator actions changed continuity posture
 
-Auditability is required because continuity errors are often high-impact and difficult to reconstruct after the fact.
+Continuity-sensitive actions MUST be reason-coded where policy requires, correlated to actors and services, and reconstructable through durable audit lineage.
 
 ---
 
-## Security / Risk / Abuse Controls
+## Failure Handling / Edge Cases
 
-Account access continuity is also a security control.
+### Last Linked Method Removal Attempt
+Ordinary self-service must be blocked or rerouted if the result would strand the account.
 
-If continuity is weak or implicit:
-- users may accidentally strand themselves
-- providers may be removed unsafely
-- support may perform risky corrections
-- product teams may create hidden fallback identity logic
-- sessions may be overtrusted as continuity replacements
-- security incidents may be resolved in ways that orphan the account
+### Provider Outage
+A provider outage may degrade continuity posture, but it must not fragment identity or cause silent reassignment.
 
-All downstream security, abuse, and operations specs must preserve this continuity model.
+### Recovery Completes After Suspected Compromise
+The platform may invalidate stale sessions and require fresh trusted entry while still preserving continuity to the same account.
+
+### Password Reset on Fragile Account
+The platform must ensure the reset result produces a viable future access path rather than leaving the account in partial unusable state.
+
+### Product Switch With Different Provider Set
+The user must still be routed toward the same account or into explicit link/conflict/recovery flow rather than silent re-bootstrap.
+
+### Wallet Link Remains, Ordinary Access Lost
+Wallet-aware history remains attached, but wallet linkage alone is not sufficient continuity unless separately approved for that purpose.
+
+### Support Error During Provider Correction
+The platform must preserve auditable correction lineage and must not silently rewrite continuity state.
+
+### Degraded Adjacent Service
+If enrichment, projection, or dashboard systems are degraded, the platform must preserve canonical continuity semantics from owner-controlled truths rather than invent fallback continuity from stale derived data.
 
 ---
 
-## API / Contract Implications
+## Operational Considerations
 
-The platform SHOULD expose continuity-aware behaviors through explicit API boundaries.
+Operational implementations MUST preserve:
 
-### Identity / Access APIs should support:
-- continuity summary or posture view
-- continuity-sensitive mutation checks
-- block reasons for unsafe auth-method removal
-- post-recovery continuity state
-- explicit conflict/remediation references where needed
-
-### Product APIs should not:
-- expose product-local truth as continuity truth
-- bypass continuity evaluation for provider changes
-- infer continuity from provider identity alone
-
-### Support / Admin APIs should:
-- preserve stronger authorization for continuity-breaking actions
-- return audit-friendly reason codes
-- require explicit remediation references where appropriate
+- deterministic continuity evaluation for the same canonical inputs
+- strong correlation and request tracing for continuity-sensitive mutations
+- replay safety for provider callback, recovery completion, and admin remediation transitions
+- clear ownership boundaries among identity, auth/session, recovery, and security services
+- auditable behavior under degraded runtime conditions
+- bounded operator workflows for high-risk actions
+- monitoring for continuity posture degradation, review backlog, and mutation-block rates where operationally relevant
 
 ---
 
 ## Migration / Compatibility / Supersession Considerations
 
 - migrations must not silently weaken continuity semantics
-- compatibility layers may preserve older flows temporarily, but canonical continuity meaning must remain platform-owned
-- provider additions must occur through the shared continuity model, not through product-local exceptions
-- if older documents or implementations imply that continuity is merely implied by session presence or single-provider login, this refined specification supersedes that interpretation within its scope
+- compatibility layers may preserve older UX or transport behavior temporarily, but they must not weaken canonical continuity meaning
+- future providers must plug into the shared continuity model rather than product-local exceptions
+- if older implementations or documents imply that continuity is merely session presence or single-provider reachability, this specification supersedes that interpretation within its scope
+- migration plans affecting auth links, provider mappings, recovery routes, or session containment MUST include replay-safe mapping, lineage preservation, rollback posture, and explicit continuity verification
+
+---
+
+## Implementation-Contract Guardrails
+
+Downstream implementations MUST preserve all of the following:
+
+1. `account_id` remains the continuity anchor
+2. linked authentication methods remain access paths rather than identities
+3. sessions remain temporary runtime truth and do not replace durable continuity
+4. ordinary self-service removal of the final viable access path is blocked unless approved exception conditions are met
+5. recovery restores access to the same account rather than creating substitutes
+6. provider changes remain conservative, deterministic, auditable, and continuity-safe
+7. product-local abstractions remain downstream of shared continuity truth
+8. operator actions remain bounded, reason-coded, policy-constrained, and audited
+9. derived continuity views remain derived and regenerable
+10. degraded runtime conditions must not cause hidden semantic downgrade or truth substitution
+11. side-effecting continuity workflows preserve idempotency and replay safety
+12. downstream teams must not optimize away explicit continuity checks, decision records, or lineage where those elements protect continuity, security, or auditability
+
+These guardrails are mandatory and MUST NOT be optimized away for convenience.
+
+---
+
+## Downstream Execution Staging
+
+Preferred downstream staging SHOULD follow this order:
+
+1. stabilize canonical account and identity semantics
+2. stabilize linked-auth and provider-resolution rules
+3. stabilize continuity posture and continuity-sensitive mutation checks
+4. stabilize session lifecycle and containment behavior
+5. stabilize recovery and remediation workflows
+6. integrate workspace, authorization, and entitlement sequencing
+7. integrate wallet-aware participation handling
+8. build support, reporting, and operational read models
+
+This sequence exists to keep continuity semantics stable before downstream adaptation layers proliferate.
+
+---
+
+## Required Downstream Specs / Contract Layers
+
+This specification directly requires compatible downstream refinement and implementation-contract work in:
+
+- `FUZE_PROVIDER_RESOLUTION_AND_LINKING_SPEC.md`
+- `FUZE_SESSION_LIFECYCLE_AND_SECURITY_SPEC.md`
+- `FUZE_ACCOUNT_RECOVERY_AND_CONFLICT_HANDLING_SPEC.md`
+- `KEY_MANAGEMENT_AND_USER_RECOVERY_SPEC.md`
+- `AUTH_IDENTITY_API_SPEC.md`
+- `SESSION_AND_LINKED_LOGIN_API_SPEC.md`
+- `SECURITY_AND_RISK_CONTROL_SPEC.md`
+- `WORKSPACE_AND_ORGANIZATION_SPEC.md`
+- `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
+- `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md`
+- `WALLET_AWARE_USER_SPEC.md`
+- product integration specifications
+- support/admin workflow specifications
+
+---
+
+## Canonical Examples / Anti-Examples
+
+### Canonical Example 1 — Add Then Remove
+A user adds a second provider-backed access path, the new method becomes fully viable, and only then removes the older one. Continuity remains intact.
+
+### Canonical Example 2 — Recovery Restores Same Account
+A user loses ordinary access, completes an approved recovery case, prior risky sessions are invalidated, and the user regains access to the same `account_id`.
+
+### Canonical Example 3 — Workspace Changes Without Continuity Loss
+A user leaves one workspace but still reaches the same account. Continuity is preserved even though permissions change.
+
+### Canonical Example 4 — Wallet-Aware Context Persists
+A user changes login preference while wallet-linked participation remains attached to the same account. Continuity is preserved without wallet becoming identity root.
+
+### Anti-Example 1 — Session Equals Continuity
+A product sees an active session and allows the user to remove the final viable access path. This is forbidden.
+
+### Anti-Example 2 — Silent Provider Reassignment
+Support silently moves a provider subject from one account to another without explicit remediation records. This is forbidden.
+
+### Anti-Example 3 — Product-Local Fallback Identity
+A product invents a local “real user” record to work around continuity blocks. This is forbidden.
+
+### Anti-Example 4 — Wallet as Universal Fallback
+A team assumes linked wallet possession alone is always enough to recover the account. This is forbidden unless separately approved by policy and specification.
 
 ---
 
@@ -664,10 +972,13 @@ This specification depends on:
 - `PLATFORM_ARCHITECTURE_SPEC.md`
 - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
 - `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
-- `FUZE_ACCOUNT_ACCESS_AND_SESSION_THESIS_FINAL_SPEC.md`
-- `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
 - `IDENTITY_AND_ACCOUNT_SPEC.md`
 - `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
+- `FUZE_ACCOUNT_ACCESS_AND_SESSION_THESIS_FINAL_SPEC.md`
+- `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
+- `FUZE_PROVIDER_RESOLUTION_AND_LINKING_SPEC.md`
+- `FUZE_SESSION_LIFECYCLE_AND_SECURITY_SPEC.md`
+- `FUZE_ACCOUNT_RECOVERY_AND_CONFLICT_HANDLING_SPEC.md`
 - `WALLET_AWARE_USER_SPEC.md`
 
 This specification directly governs or materially informs:
@@ -675,12 +986,13 @@ This specification directly governs or materially informs:
 - `FUZE_PROVIDER_RESOLUTION_AND_LINKING_SPEC.md`
 - `FUZE_SESSION_LIFECYCLE_AND_SECURITY_SPEC.md`
 - `FUZE_ACCOUNT_RECOVERY_AND_CONFLICT_HANDLING_SPEC.md`
-- `SESSION_AND_LINKED_LOGIN_API_SPEC.md`
+- `KEY_MANAGEMENT_AND_USER_RECOVERY_SPEC.md`
 - `AUTH_IDENTITY_API_SPEC.md`
-- `SECURITY_AND_RISK_CONTROL_SPEC.md`
+- `SESSION_AND_LINKED_LOGIN_API_SPEC.md`
 - `WORKSPACE_AND_ORGANIZATION_SPEC.md`
 - `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
-- product integration specifications
+- `SECURITY_AND_RISK_CONTROL_SPEC.md`
+- product integration and support/admin workflow specifications
 
 ---
 
@@ -688,21 +1000,39 @@ This specification directly governs or materially informs:
 
 The following are intentionally deferred to downstream specifications:
 
-- exact continuity score or scoring model
-- exact UI shape for warnings and posture indicators
-- exact support workflow for recovery-only and blocked cases
-- exact provider-by-provider fallback behavior
+- exact continuity scoring or scoring thresholds
+- exact UI shapes for warnings and posture indicators
+- exact provider-by-provider fallback rules
 - exact wallet-auth fallback policy if ever adopted
-- exact admin exception workflow and approval routing
+- exact support escalation routing and approval hierarchy
+- exact evidence formats for recovery review
+- exact storage topology, queueing strategy, and deployment split
 
-These do not weaken the canonical continuity model established here.
+These deferrals do not weaken the canonical continuity semantics established here.
 
 ---
 
 ## Final Normative Summary
 
-FUZE account access continuity is the platform capability that preserves a user’s ability to keep reaching the same canonical account over time. It exists so that product entry changes, provider changes, password changes, recovery flows, risk controls, workspace changes, and wallet-aware participation changes do not fragment identity or strand the account.
-
-The account remains the continuity anchor. Linked authentication methods are access paths. Sessions are temporary runtime state and do not by themselves replace durable continuity. Sensitive access mutations must evaluate continuity posture before commit. Unsafe actions that would strand the account must be blocked or rerouted into approved recovery or remediation paths. Products may consume continuity posture, but they may not redefine it.
+FUZE account access continuity is the platform capability that preserves a user’s ability to keep reaching the same canonical account over time. The account remains the continuity anchor. Linked authentication methods are continuity-relevant access paths. Sessions are temporary runtime state and may support current use, but they do not by themselves replace durable future continuity. Recovery restores continuity to the same account rather than creating substitute identity paths. Ambiguous cases default to explicit review rather than silent guesswork. Products may consume continuity posture, but they may not define or bypass it.
 
 This document is the canonical continuity rule set for the FUZE identity and access foundation.
+
+---
+
+## Quality Gate Checklist
+
+- [x] Canonical owner is explicit for every material truth family
+- [x] Mutation boundaries are explicit
+- [x] Adjacent boundaries are explicit
+- [x] Truth classes are explicit
+- [x] Conflict-resolution rules are explicit where needed
+- [x] Default decision rules are explicit where ambiguity could arise
+- [x] Non-canonical patterns are called out clearly
+- [x] Operator/admin override paths are bounded and audited
+- [x] Read-model, cache, reporting, and projection rules are explicit
+- [x] Failure and degraded-mode behaviors are explicit
+- [x] Downstream implementation guardrails are explicit
+- [x] Dependencies and downstream impacts are explicit
+- [x] Non-goals and deferred items are explicit
+- [x] The document is strong enough to support downstream API, data, runtime, and security implementation without contradictory reinterpretation
