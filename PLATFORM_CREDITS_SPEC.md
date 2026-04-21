@@ -1,57 +1,115 @@
 # PLATFORM_CREDITS_SPEC
 
+## Document Metadata
+
+- Document Name: `PLATFORM_CREDITS_SPEC.md`
+- Document Type: Canonical refined system specification
+- Status: Active refined system spec
+- Governing Layer: Platform core / shared commercial infrastructure / platform credits
+- Parent Registry: `REFINED_SYSTEM_SPEC_INDEX.md`
+- Primary Audience: Platform architecture, commerce and billing engineering, credits and ledger engineering, payments engineering, product engineering, finance operations, treasury/governance operators, security engineering, audit/compliance, support operations, API design, data engineering, platform operations
+- Primary Purpose: Define the canonical FUZE Platform Credits model as the platform-owned internal consumption unit that normalizes verified external value into one reusable internal economic layer across products while preserving strict separation from payment rails, billing truth, revenue recognition, treasury settlement, token participation, and stablecoin profit participation
+- Primary Upstream References:
+  - `REFINED_SYSTEM_SPEC_INDEX.md`
+  - `DOCS_SPEC_INDEX.md`
+  - `SYSTEM_SPEC_INDEX.md`
+  - `API_SPEC_INDEX.md`
+  - `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+  - `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+  - `PLATFORM_ARCHITECTURE_SPEC.md`
+  - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+  - `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+  - `PRODUCT_BOUNDARY_AND_DOMAIN_OWNERSHIP_SPEC.md`
+  - `PRODUCT_ADMISSION_AND_EXPANSION_GATE_SPEC.md`
+  - `IDENTITY_AND_ACCOUNT_SPEC.md`
+  - `WORKSPACE_AND_ORGANIZATION_SPEC.md`
+  - `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
+  - `SCOPED_AUTHORIZATION_MODEL_SPEC.md`
+  - `ACCESS_EVALUATION_AND_EFFECTIVE_PERMISSION_SPEC.md`
+  - `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md`
+  - `ENTITLEMENT_AND_CAPABILITY_GATING_SPEC.md`
+  - `CHAIN_ARCHITECTURE_SPEC.md`
+  - `SECURITY_AND_RISK_CONTROL_SPEC.md`
+- Primary Downstream Dependents:
+  - `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md`
+  - `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`
+  - `PAYMENT_RAILS_INTEGRATION_SPEC.md`
+  - `INVOICING_AND_RECEIPTS_SPEC.md`
+  - `REFUND_REVERSAL_AND_ADJUSTMENT_SPEC.md`
+  - `PAYMENT_FRAUD_AND_ABUSE_PREVENTION_SPEC.md`
+  - `PRICING_AND_MONETIZATION_MODEL_SPEC.md`
+  - `AI_USAGE_METERING_SPEC.md`
+  - product-specific monetization and spend-consumer specifications
+  - commerce, reconciliation, reporting, and treasury workflows
+
+---
+
 ## Purpose
 
-This document defines the canonical Platform Credits architecture of FUZE. Its purpose is to establish the source-of-truth specification for what a FUZE Platform Credit is, how credits are issued, recorded, spent, reversed, expired, scoped, reported, and governed across the platform ecosystem.
+This specification defines the canonical FUZE Platform Credits model.
 
-This specification is foundational because Platform Credits are the internal economic layer of FUZE. They sit between external payment rails and internal product consumption, and they allow multiple products, multiple payment inputs, multiple pricing styles, and multiple usage patterns to operate inside one coherent commercial framework.
+Its purpose is to make explicit:
 
-This document is therefore not just a billing specification. It is one of the core economic architecture specifications of FUZE.
+- what a FUZE Platform Credit is and is not
+- why FUZE uses a payment-to-credits normalization model rather than product-local balance models
+- how credits operate as the unified internal consumption layer across products and workspaces
+- how credits remain separate from identity, entitlement, permission, invoice truth, payment-rail truth, accounting truth, token participation, and profit participation
+- which domain owns credit issuance semantics, spend semantics, class semantics, ownership attachment, transfer restrictions, and policy-level lifecycle rules
+- how downstream ledger, billing, payment, product, AI-usage, and treasury systems must consume the credits model without redefining it
+- what minimum security, audit, API, event, and operational rules are required for a production-grade platform credits layer
+
+This document exists because FUZE is a platform-of-products with shared commerce. In such a system, external payment methods cannot be allowed to become the internal usage model, and product-local balances cannot be allowed to replace platform economic truth. FUZE therefore requires one canonical internal spending unit so subscriptions, usage billing, premium actions, automation, and other platform services can operate inside one coherent economic environment.
 
 ---
 
 ## Scope
 
-This specification covers:
+This specification governs:
 
-- the canonical definition of Platform Credits
-- the role of credits inside the FUZE economic architecture
-- credit classes
-- issuance paths
-- balance ownership and scope
-- credit-ledger principles
-- spend rules
-- refund, reversal, and adjustment rules
-- expiry policy
-- account-bound versus workspace-bound behavior
-- transfer restrictions
-- audit, reporting, and governance implications
-- boundary rules between credits, token, revenue, and profit participation
+- canonical meaning and role of FUZE Platform Credits
+- the boundary between payment intake and internal platform consumption
+- approved ownership scopes for credits, including account-bound and workspace-bound posture
+- canonical credit classes and their policy posture
+- canonical issuance categories, spend categories, reversal categories, expiry posture, and controlled-transfer posture
+- relationship between credits and entitlement-aware consumption
+- chain-layer role of credits within FUZE’s layered architecture
+- minimum policy requirements for conversion, issuance control, spend validation, and lifecycle auditability
+- minimum event and API semantics required so downstream systems can interoperate safely
+- security and operational requirements for a shared multi-product credits layer
 
-This specification does not define the full payment-verification logic, invoice detail, chain contract bytecode, or complete payout accounting treatment. Those are refined in:
+---
 
-- `PAYMENT_RAILS_INTEGRATION_SPEC.md`
-- `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`
-- `INVOICING_AND_RECEIPTS_SPEC.md`
-- `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md`
-- `REFUND_REVERSAL_AND_ADJUSTMENT_SPEC.md`
-- `BASE_PLATFORM_CREDITS_LAYER_SPEC.md`
-- `PROFIT_PARTICIPATION_SYSTEM_SPEC.md`
+## Out of Scope
+
+This specification is explicitly out of scope for:
+
+- detailed double-entry or state-transition mechanics of the authoritative ledger implementation
+- payment processor integration behavior in full depth
+- invoice rendering, tax handling, receipt formatting, or accounting recognition rules in full depth
+- exact product price tables, per-action rates, promotional campaigns, or enterprise commercial terms
+- final treasury settlement logic for distributable profit
+- token economics, token supply, or holder snapshot construction
+- end-user UX copy for every spend failure, refund case, or promotional rule
+- unrestricted on-chain market transfer behavior for credits, which is expressly disallowed by platform policy
+
+Those concerns are governed by adjacent credits-ledger, payment rails, billing, invoicing, refund, treasury, governance, and public trust specifications.
 
 ---
 
 ## Design Goals
 
-The design goals of the Platform Credits system are:
+The design goals of the FUZE Platform Credits model are:
 
-1. to provide one shared internal economic unit across the FUZE ecosystem
-2. to normalize many external payment rails into one internal consumption system
-3. to support subscriptions, usage billing, AI actions, feature unlocks, and cross-product monetization through one unified balance model
-4. to preserve strict separation between credits, FUZE token, and stablecoin payouts
-5. to support transparent and auditable issuance, spending, reversal, and reporting
-6. to support both account-scoped and workspace-scoped commercial behavior
-7. to make the platform easier to expand commercially as new products are added
-8. to provide a policy-driven economic system that remains operationally practical on Base
+1. give the ecosystem one internal economic language across products
+2. separate external value intake from internal product consumption
+3. support hybrid monetization including subscriptions, usage billing, premium actions, and add-ons without fragmenting balance models
+4. preserve strict role separation between credits, token participation, and profit participation
+5. support both personal and workspace-level purchasing power without hidden shadow ledgers
+6. make issuance, spend, reversal, expiry, and policy changes transparent, auditable, and operationally governable
+7. reduce product duplication by centralizing economic primitives at the platform layer
+8. support AI-native and automation-heavy workloads with cost-aware shared consumption semantics
+9. keep credits usable in real operations while preventing them from behaving like an unrestricted market asset
+10. provide a durable foundation for future ledger, settlement, reporting, and governance controls
 
 ---
 
@@ -59,738 +117,649 @@ The design goals of the Platform Credits system are:
 
 This specification is not intended to:
 
-- make Platform Credits the same thing as the FUZE token
-- make credits a freely tradable market asset
-- make credits a governance asset
-- make credits a direct equity-like or profit-right instrument
-- allow products to create independent hidden balance systems outside the credits model
-- blur credit issuance into automatic profit or payout entitlement
-- define an unconstrained discretionary mint system
-
-These non-goals are necessary to preserve economic clarity.
-
----
-
-## Canonical Credits Principle
-
-The primary principle of the FUZE credits system is:
-
-> Platform Credits are the internal consumption unit of the FUZE ecosystem, issued under platform policy after verified value intake or approved platform action, and used to consume products and services across the platform without replacing the FUZE token or the stablecoin payout system.
-
-This means:
-
-- credits are internal platform purchasing power
-- credits are not the token
-- credits are not stablecoin profit participation
-- credits are not general treasury assets
-- credits are the shared unit through which products meter and collect internal consumption value
-
-This principle must remain invariant across all products and integrations.
+- treat payment confirmation itself as the canonical credit balance
+- treat invoice state as the same thing as credit state
+- treat credits as equity, governance rights, or profit rights
+- let products invent independent credit currencies for shared platform usage
+- let support or admin tooling mint credits through undocumented ad hoc behavior
+- make credits freely tradable like an open-market token
+- collapse entitlement, authorization, and credits into a single ambiguous access switch
+- allow downstream services to reinterpret credit class or ownership semantics inconsistently
 
 ---
 
-## Canonical Definition of a Credit
+## Core Principles
 
-A **FUZE Platform Credit** is a platform-denominated internal balance unit that represents eligible purchasing power inside the FUZE ecosystem.
+### 1. Internal Consumption Unit Principle
+A FUZE Platform Credit is the canonical internal spending unit of the FUZE ecosystem. It exists to represent platform purchasing power inside FUZE, not to represent public-market value, ownership, or governance.
 
-A Platform Credit is:
+### 2. Payment-Rail Separation Principle
+External payment rails are intake channels. They are not themselves the internal economic layer. Verified external value may justify credit issuance, but payment assets and credits are not the same asset.
 
-- tied to a canonical account or workspace context
-- issued after verified payment or approved non-payment issuance
-- usable under defined product and platform policies
-- recorded in the platform credits ledger model
-- committed to an operational on-chain credits ledger on Base where applicable
-- separate from both FUZE token ownership and stablecoin payout claims
+### 3. Platform-Wide Economic Language Principle
+All FUZE products that consume shared platform commerce must consume one platform credits model rather than inventing isolated internal balance systems.
 
-A Platform Credit is not:
+### 4. Credits-Are-Not-Token Principle
+Platform Credits are not the FUZE token. Token participation and internal platform consumption are distinct domains and must remain conceptually and operationally separate.
 
-- a public market token
-- a holder-participation asset
-- a governance right
-- a reserve bucket
-- a stablecoin claim
-- a direct measure of distributable profit
+### 5. Credits-Are-Not-Profit Principle
+Credits do not automatically equal recognized revenue, distributable profit, or payout entitlement. Credits belong to the platform consumption layer; profit belongs to accounting and treasury settlement layers.
 
-This explicit definition must be preserved in user-facing explanations, product logic, and downstream specs.
+### 6. Scope-Bound Ownership Principle
+Credits must attach to an explicit canonical subject, such as an account or workspace. Contextless balances are disallowed.
 
----
+### 7. Controlled Issuance Principle
+Credits must be issuable only through approved, policy-governed paths with reason-coded traceability. Arbitrary admin minting is disallowed.
 
-## Why Platform Credits Exist
+### 8. Deterministic Spend Principle
+Credit spend must be validated against ownership, class policy, pricing policy, entitlement-aware consumption rules, and sufficient available balance.
 
-Platform Credits exist because FUZE is a multi-product platform ecosystem with:
+### 9. Transparent Lifecycle Principle
+Issuance, reservation, spend, reversal, expiry, and policy-sensitive ownership movement must be observable, reconstructable, and auditable.
 
-- multiple payment inputs
-- multiple pricing models
-- multiple products
-- multiple usage patterns
-- AI-driven metered actions
-- account and workspace commercial contexts
-- a need for internal economic consistency
+### 10. Controlled Transfer Principle
+Credits are account-bound or workspace-bound internal units. Controlled internal reassignment may exist where policy allows, but public free-market transfer behavior is forbidden.
 
-Without credits, each product would tend to develop its own internal commercial logic. That would fragment the platform economically even if the identity and product layers were shared.
+### 11. Shared Infrastructure Principle
+Credits are a platform primitive. Product teams may consume and parameterize credits through approved platform contracts, but they may not replace platform-owned credits semantics.
 
-Credits solve that problem by creating one internal commercial language.
-
-They allow FUZE to:
-
-- accept external value through many payment rails
-- convert verified value into one internal unit
-- meter usage and subscriptions consistently
-- support cross-product balances
-- track internal consumption coherently
-- preserve a clean distinction between consumption and participation
-
-Credits therefore exist because a platform company requires an internal economic layer, not merely many disconnected product billing systems.
+### 12. Fail-Closed Integrity Principle
+If the system cannot determine safe ownership, class validity, or spend authorization posture for a sensitive cost-bearing action, the platform must not silently approve consumption.
 
 ---
 
-## Payment -> Credits -> Usage -> Ledger Model
+## Canonical Definitions
 
-The canonical credits flow is:
+### Platform Credit
+The canonical FUZE internal consumption unit used to represent spendable purchasing power inside the ecosystem.
 
-1. **External payment or approved issuance event occurs**
-2. **Platform verifies and normalizes the event**
-3. **Credits are issued under policy**
-4. **Credits are recorded in the platform ledger model**
-5. **Credits are committed to the Base credits layer where applicable**
-6. **Products consume credits through platform charging logic**
-7. **Spend, reversal, reporting, and reconciliation flows update the economic state**
+### Credit Subject
+The approved account, workspace, organization, or other explicitly approved platform subject that owns or controls a credit balance.
 
-This model is important because it preserves clean separation between:
+### Credit Class
+A policy-defined category of credits, such as paid, bonus, or restricted, with distinct spend, expiry, and eligibility posture.
 
-- external money in
-- internal purchasing power
-- product consumption
-- revenue recognition
-- profit determination
-- payout execution
+### Credit Issuance
+The platform-controlled act of creating credits for a defined subject through an approved verified payment, reward, adjustment, migration, or other governance-approved path.
 
-Each of these is related, but they are not the same thing.
+### Credit Conversion Policy
+The policy layer that determines how verified external value maps into internal credits during approved issuance paths.
 
----
+### Credit Spend
+The deduction or reservation-backed consumption of credits for an approved product or platform action.
 
-## Supported Payment Inputs
+### Credit Reversal
+A controlled reduction or unwind of previously issued or available credits due to refund, fraud, correction, revocation, expiry, or other approved operational reasons.
 
-Platform Credits are designed to accept value from the following approved input categories:
+### Credit Reservation
+A temporary hold of spendable credits for a pending action, workflow, or settlement-sensitive operation before final spend or release.
 
-- fiat / Stripe
-- stablecoins such as USDT under approved rails
-- FUZE token under approved conversion policy
-- Telegram Stars
-- Apple In-App Purchase
-- Google Play Billing
-- future approved payment rails
+### Available Balance
+The portion of a subject’s credits that remains usable under current class, reservation, policy, and restriction posture.
 
-These are input rails, not the internal economic layer itself.
+### Internal Transfer
+A controlled platform-approved reassignment or reattachment of credits between permitted internal scopes, such as user-to-workspace migration or enterprise billing ownership correction.
 
-A key architectural rule is:
-
-> payment rail diversity at the edge must not create internal economic fragmentation at the center.
-
-All approved inputs must therefore normalize into the Platform Credits system rather than causing product-specific private balance systems to emerge.
+### Credits Policy Surface
+The governed set of rules that define allowed classes, issuance paths, spend posture, expiry, priority, internal transfer patterns, and operator controls.
 
 ---
 
-## Credit Classes
+## Architectural Position in the Spec Hierarchy
 
-FUZE credits must support multiple credit classes because credits do not all enter the ecosystem under the same economic conditions.
+This document sits below:
 
-### 1. Paid Credits
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `PRODUCT_BOUNDARY_AND_DOMAIN_OWNERSHIP_SPEC.md`
+- `PRODUCT_ADMISSION_AND_EXPANSION_GATE_SPEC.md`
+- `IDENTITY_AND_ACCOUNT_SPEC.md`
+- `WORKSPACE_AND_ORGANIZATION_SPEC.md`
+- `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
+- `SCOPED_AUTHORIZATION_MODEL_SPEC.md`
+- `ACCESS_EVALUATION_AND_EFFECTIVE_PERMISSION_SPEC.md`
+- `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md`
+- `ENTITLEMENT_AND_CAPABILITY_GATING_SPEC.md`
+- `CHAIN_ARCHITECTURE_SPEC.md`
+- `SECURITY_AND_RISK_CONTROL_SPEC.md`
 
-Paid Credits are issued after a verified payment event.
+and above:
 
-They are the strongest and most standard credit class because they represent direct user-purchased platform value.
+- `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md`
+- `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`
+- `PAYMENT_RAILS_INTEGRATION_SPEC.md`
+- `INVOICING_AND_RECEIPTS_SPEC.md`
+- `REFUND_REVERSAL_AND_ADJUSTMENT_SPEC.md`
+- `PAYMENT_FRAUD_AND_ABUSE_PREVENTION_SPEC.md`
+- `PRICING_AND_MONETIZATION_MODEL_SPEC.md`
+- `AI_USAGE_METERING_SPEC.md`
+- product-specific spend-consumer specifications
+- finance, reconciliation, and reporting surfaces
 
-Paid Credits should generally be:
-
-- non-expiring by default
-- broadly spendable according to product and platform rules
-- directly tied to verified payment source and issuance records
-
-### 2. Bonus Credits
-
-Bonus Credits are issued through approved non-payment reward paths.
-
-Examples may include:
-
-- promotional rewards
-- referral programs
-- loyalty rewards
-- service recovery credits
-- ecosystem campaigns
-- holder incentive-linked platform campaigns where appropriate
-
-Bonus Credits may be:
-
-- expiring
-- use-limited
-- restricted by product or campaign policy
-
-### 3. Restricted Credits
-
-Restricted Credits are issued for bounded contexts.
-
-Examples may include:
-
-- one-product-only credits
-- one-feature-only credits
-- duration-bound campaign credits
-- enterprise-allocated use-specific balances
-- internal operational or compensation credits with scope restrictions
-
-Restricted Credits allow FUZE to support specialized commercial structures without breaking the general credits model.
-
-### Credit Class Rule
-
-Every credit balance entry must be class-identifiable so the system can apply class-aware spend, reversal, expiry, and reporting rules.
+This document owns platform credits semantics. It does not redefine payment-rail truth, invoice truth, accounting truth, token-holder truth, payout eligibility truth, or full ledger implementation truth.
 
 ---
 
-## Balance Scopes
+## System Boundaries
 
-Credits must support scope-aware balance ownership.
+This document governs only the following platform-owned boundaries:
 
-### 1. Account-Scoped Credits
+- canonical role of credits in the FUZE architecture
+- credit ownership scopes and attachment rules
+- canonical credit classes and allowed policy posture
+- approved issuance categories and high-level issuance controls
+- approved spend categories and required spend validation posture
+- transfer restrictions and allowed internal reassignment boundaries
+- relationship between credits and entitlement-aware consumption
+- chain-role placement of credits on Base as the operational commerce layer
+- minimum event, API, audit, security, and operational rules for the credits domain
 
-Credits owned by an individual canonical account.
+It does not govern:
 
-These are appropriate for:
-
-- individual users
-- personal product usage
-- individual purchases
-- self-service access patterns
-
-### 2. Workspace-Scoped Credits
-
-Credits owned by a workspace context.
-
-These are appropriate for:
-
-- team subscriptions
-- shared product usage
-- business or organization-level balances
-- multi-user operational environments
-- workspace-level usage billing
-
-### Scope Principles
-
-- account-scoped and workspace-scoped credits must remain distinguishable
-- products must know which scope is being charged
-- billing and reporting must preserve scope context
-- transfers or reallocation between scopes, if allowed, must be explicit and auditable
-
-This scope distinction is essential for team-oriented products and future enterprise behavior.
+- how a card processor, app store, or stablecoin rail verifies payment in full depth
+- the authoritative double-entry ledger implementation details
+- exact invoice statuses, tax handling, or revenue-recognition policy
+- payout-cycle funding or treasury reserve policy in full depth
+- token allocation, holder rank, or snapshot model
+- exact product pricing schedules or monetization experiments
 
 ---
 
-## Canonical Credits Ledger Model
+## Adjacent Boundaries
 
-Platform Credits require one canonical ledger model.
+### Payment Rails Domain
+Owns external payment method integration, verification, channel constraints, and refund notifications. It may justify credits issuance or reversal but does not own credits semantics.
 
-The credits ledger must support at least the following economic state categories:
+### Billing Domain
+Owns subscriptions, usage billing logic, plan posture, billing ownership rules, and invoice state. It may consume credits and trigger credits-aware flows, but it does not replace the credits layer.
 
-- issuance
-- spend
-- reversal
-- refund-related correction
-- adjustment
-- expiry
-- migration or scope reassignment where approved
-- on-chain commitment status where applicable
+### Pricing Domain
+Owns price schedules, product charging rules, and monetization packaging. Credits consume pricing outputs but do not own pricing truth.
 
-The ledger is the canonical platform record of how credits move through the ecosystem.
+### Entitlement Domain
+Owns eligibility posture. Credits may inform capability usage where policy requires, but credits do not replace entitlement truth or authorization truth.
 
-### Ledger Principles
+### Authorization Domain
+Owns actor authority. A subject may have credits while a specific actor still lacks permission to spend against that subject.
 
-1. Every credits mutation must be reason-coded.
-2. Every credits mutation must be attributable to a source action or policy event.
-3. Every credits mutation must be auditable.
-4. Derived reporting views may summarize ledger behavior, but may not redefine it.
-5. On-chain commitment state does not eliminate the need for a platform-side canonical ledger model.
+### Credit Ledger and Settlement Domain
+Owns authoritative lifecycle recording, class-level balance integrity, settlement-facing mechanics, and reconciliation-grade ledger behavior.
 
-The credits ledger is refined further in `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md`, but the canonical requirement is established here.
+### Treasury / Profit Participation Domain
+Owns profit finalization, treasury movement, payout funding, and holder-facing payout logic. Credits do not directly become payout assets.
 
----
+### Token Domain
+Owns the FUZE token on Ethereum as the participation asset. Credits on Base remain the operational product-commerce layer.
 
-## Issuance Rules
-
-Credits may only be issued through approved issuance paths.
-
-### 1. Paid Issuance
-
-Issued after verified payment intake.
-
-Requirements:
-
-- approved payment rail
-- successful verification
-- normalization into platform value model
-- issuance reason and source tracking
-- scope assignment to account or workspace
-
-This is the primary issuance path.
-
-### 2. Reward Issuance
-
-Issued through approved non-payment reward policy.
-
-Examples:
-
-- promotions
-- referrals
-- service recovery
-- holder incentive campaigns mapped into credits, if approved
-- ecosystem growth programs
-
-Requirements:
-
-- policy-defined program
-- bounded eligibility
-- explicit class assignment
-- audit trail
-
-### 3. Adjustment Issuance
-
-Issued for correction or platform-controlled operational reasons.
-
-Examples:
-
-- finance correction
-- enterprise settlement adjustment
-- post-support remediation
-- operational reconciliation fix
-
-Requirements:
-
-- restricted authority
-- strong audit trail
-- reason code
-- approval path where required
-
-### Issuance Prohibitions
-
-Credits must not be issued through:
-
-- arbitrary operator discretion without audit
-- product-local hidden balance creation
-- unsupported payment assumptions
-- token holding alone without approved issuance policy
-- reporting-side or UI-side convenience mutation
+### Audit / Traceability Domain
+Owns reconstructable traceability for issuance, spend, reversal, override, policy change, and remediation lineage across the access and commerce stack.
 
 ---
 
-## Spend Rules
+## Roles / Actors / Entities
 
-Credits may be spent only through approved platform or product actions.
+### Credit Subject
+The account or workspace scope that owns or controls a credits balance.
 
-### Valid spend examples
+### Paying Party
+The person, workspace, organization, or commercial controller whose verified payment or approved commercial relationship justifies credits issuance.
 
-- subscription activation or renewal
-- seat activation
-- usage-based deduction
-- AI action metering
-- premium feature unlock
-- report generation
-- workflow execution
-- add-on purchase
-- product-scoped service usage
+### Credit Consumer
+A product, internal service, workflow, or API surface that requests or executes a spend against available credits.
 
-### Spend evaluation requirements
+### Issuance Authority
+A governed platform-controlled path or role allowed to create credits through defined policy.
 
-At minimum, a valid spend action must check:
+### Adjustment Authority
+A narrowly scoped operator or system path allowed to correct balances under documented policy and heightened audit constraints.
 
-1. sufficient balance exists
-2. the selected balance scope is valid
-3. the credit class is eligible for the requested use
-4. the product or feature is properly mapped to a charge reason
-5. entitlement and policy checks pass
-6. the spend event can be recorded and reconciled
+### Pricing Engine
+The service or policy layer that determines the credit cost of a product, action, subscription, or add-on.
 
-### Spend-order policy
+### Ledger Authority
+The platform-owned credits ledger implementation that records authoritative balance movement and lifecycle state.
 
-If multiple credit classes exist in one scope, the platform may define deterministic spend priority rules, such as:
-
-- expiring bonus credits first
-- restricted credits if specifically matched to the action
-- then paid credits
-
-If spend-order logic exists, it must be explicit and deterministic.
-
-### Product rule
-
-Products may define what they charge for, but not invent incompatible deduction semantics outside the platform credits system.
+### Governance Authority
+The multisig, timelock, or equivalent control layer allowed to approve sensitive policy changes affecting credits semantics.
 
 ---
 
-## Reservation and Consumption Model
+## Ownership Model
 
-Where product workflows require it, FUZE may support a two-step commercial model:
+FUZE Platform Credits are platform-owned shared infrastructure.
 
-1. **reservation / authorization of credits**
-2. **final consumption / settlement of credits**
+Ownership rules are as follows:
 
-This may be useful for:
+- the platform credits domain owns the semantic meaning of a credit, approved class taxonomy, ownership scope rules, high-level issuance categories, transfer restrictions, and spend policy posture
+- the credits ledger domain owns authoritative recording, lifecycle integrity, and settlement-grade balance state
+- the billing and pricing domains own why and how much a subject should be charged, but not what a credit is
+- the entitlement domain owns eligibility posture consumed alongside credits where required by policy
+- products may request credits consumption through approved interfaces, but they do not own the credits model itself
+- governance owns policy-level changes to allowed classes, issuance categories, and sensitive control posture
 
-- long-running AI jobs
-- batch processing
-- queued or asynchronous work
-- workflows where a charge is known to be likely but final settlement occurs later
-- support of cancellation or failure-aware refund logic
-
-If reservation is supported, the model must preserve:
-
-- clear distinction between reserved and finally spent credits
-- release behavior when work fails or is canceled
-- full audit visibility
-- deterministic settlement transitions
-
-This should be implemented only where it improves commercial correctness.
+No product, support surface, or local service may establish shadow credits semantics that conflict with the platform-owned model.
 
 ---
 
-## Refund, Reversal, and Adjustment Rules
+## Authority / Decision Model
 
-Credits must support explicit correction logic.
+Authority over credits must remain explicit and tiered.
 
-### Refund-related reversal
+### Platform Constitutional Authority
+The platform architecture and governance layers decide the existence of the credits model, the chain role of Base, and the strict separation among credits, token participation, and payout participation.
 
-If an external payment is refunded and associated credits remain unused, the unused portion may be reversed or burned according to policy.
+### Domain Authority
+The platform credits domain decides canonical class semantics, ownership scope, allowed issuance categories, allowed spend categories, and transfer restrictions.
 
-### Partial-use rule
+### Policy Authority
+Governed policy controls determine conversion rules, class restrictions, spend priority rules, expiry posture, operator authority, and other mutable policy surfaces.
 
-If some credits have already been consumed, only the unused portion should normally be directly refundable through credits reversal tied to the original payment path. Consumed platform value should not be treated as unused balance.
+### Runtime Authority
+At runtime, credits may be issued, reserved, spent, released, expired, reversed, or reassigned only through approved platform-controlled services and contracts.
 
-### Channel-aware correction
-
-Credits issued from Apple, Google, Telegram Stars, or other rails may need rail-specific correction handling after external refund or revocation events.
-
-### Chargeback / fraud handling
-
-If value intake is later invalidated, the platform may:
-
-- remove unused credits
-- create negative-balance logic or debt state where policy allows
-- restrict account or workspace access
-- escalate to fraud review
-
-### Support-issued compensation
-
-Compensation credits should be modeled as explicit issuance events, not as silent hidden ledger edits.
-
-### Adjustment rule
-
-Every adjustment must preserve economic traceability. There must never be a “mystery balance change” in the credits system.
+### Operator Authority
+Human operators may act only through narrowly scoped documented control paths for support correction, enterprise billing adjustment, fraud response, or migration. Operator action must never bypass traceability.
 
 ---
 
-## Expiry Policy
+## State Model
 
-FUZE must support class-aware expiry rules.
+The credits model must support at minimum the following conceptual state dimensions:
 
-### Paid Credits
+### Ownership State
+Defines which approved subject owns a credit balance and under which scope.
 
-Paid Credits should be non-expiring by default.
+### Class State
+Defines the class of the credits, such as paid, bonus, or restricted.
 
-This is the recommended trust-preserving standard.
+### Availability State
+Distinguishes available, reserved, restricted, expired, reversed, or otherwise unavailable posture.
 
-### Bonus Credits
+### Policy State
+Defines active policy posture including class restrictions, expiry rules, spend priority rules, and any temporary containment or risk conditions.
 
-Bonus Credits may expire where campaign or reward policy justifies it.
+### Lifecycle State
+Tracks whether credits were issued, reserved, spent, released, expired, reversed, migrated, or administratively adjusted.
 
-### Restricted Credits
+### Reconciliation State
+Tracks whether lifecycle activity has been reconciled to upstream payment, billing, refund, settlement, or reporting workflows as required by downstream specs.
 
-Restricted Credits may be expiring or non-expiring depending on their use case, but the rule must be explicit.
-
-### Expiry Principles
-
-- expiry must be visible in policy and user-facing expectations
-- expiry must be deterministic
-- expiry must be auditable
-- expiry processing must be reflected in ledger state
-- expiry should not silently apply to paid credits unless a future policy explicitly changes the standard
-
-The platform should favor clarity and trust over hidden balance erosion.
+This document intentionally defines semantic state only. It does not prescribe exact storage or ledger encoding.
 
 ---
 
-## Account-Bound and Transferability Rules
+## Lifecycle / Workflow Model
 
-Platform Credits are account-bound or workspace-bound internal assets.
+### 1. Payment-to-Credits Normalization
+Verified external value enters FUZE through an approved rail. After verification and policy evaluation, the platform converts that value into credits and issues them to an approved subject.
 
-### Default rule
+### 2. Non-Payment Issuance
+Approved reward, promotion, loyalty, service-recovery, migration, or correction paths may issue credits under stricter policy controls and reason-coded traceability.
 
-Credits are not freely transferable market assets.
+### 3. Balance Storage and Availability
+Issued credits become part of the subject’s balance under class-aware availability and policy posture.
 
-### Why
+### 4. Entitlement-Aware Consumption
+When a product or workflow requests cost-bearing access, pricing and entitlement-aware rules determine whether spend is allowed and which credits may be used.
 
-This protects the economic role of credits as:
+### 5. Reservation and Finalization
+Where necessary, credits may be reserved before final spend. Reservation must either finalize into spend or be released through deterministic workflow rules.
 
-- internal purchasing power
-- non-speculative platform unit
-- controlled billing and usage instrument
-- non-governance asset
-- non-public market token
+### 6. Reversal / Refund / Correction
+Unused credits may be reversed in response to verified refund or revocation conditions. Correction and fraud-related flows may freeze, remove, or otherwise constrain credits under policy.
 
-### Controlled internal movement may be allowed
+### 7. Expiry and Restriction
+Certain non-paid or restricted credit classes may expire or become limited according to class policy. Expiry must be explicit and reconstructable.
 
-Examples may include:
+### 8. Controlled Internal Reassignment
+Where policy allows, credits may move between approved internal scopes, such as user-to-workspace migration or enterprise billing ownership adjustments. Such movement is not public transferability.
 
-- account-to-workspace reallocation under approved rules
-- enterprise or admin migration
-- support-approved correction
-- controlled scope reassignment during billing changes or workspace restructuring
-
-### Prohibited behavior
-
-Credits should not behave like:
-
-- public exchange tokens
-- peer-to-peer resale assets
-- informal over-the-counter transferable balances
-- shadow token markets for product consumption
-
-This rule is essential to keeping the token and credits layers distinct.
+### 9. Reporting and Reconciliation
+All material lifecycle actions must remain traceable for finance, support, audit, risk, and product reporting consumers.
 
 ---
 
-## Relationship to FUZE Token
+## Invariants
 
-The Platform Credits system must remain fully distinct from the FUZE token.
+The following rules are invariant unless a higher-order governing specification explicitly supersedes them:
 
-### FUZE token is:
-- the ecosystem participation asset
-- canonical on Ethereum
-- used for holder alignment, eligibility, ecosystem status, and future governance direction
-
-### Platform Credits are:
-- the internal consumption asset
-- operational on Base
-- used for subscriptions, usage, AI actions, product access, and internal platform spending
-
-### Architectural rule
-
-No product, UI, report, or operator should imply that credits and token are the same asset class.
-
-This distinction must remain visible in:
-
-- UX
-- accounting
-- reporting
-- pricing logic
-- governance logic
-- contract architecture
+1. FUZE Platform Credits are the internal consumption unit of the ecosystem.
+2. Credits are not the FUZE token.
+3. Credits are not direct profit participation rights.
+4. Credits must attach to an explicit approved subject.
+5. Credits must not be freely transferable in public-market fashion.
+6. Credits may be issued only through approved, reason-coded, policy-governed paths.
+7. Credits spend must be validated against sufficient available balance, ownership scope, class policy, and charging context.
+8. Products may not create hidden product-local currencies that act as platform credits substitutes.
+9. Payment verification does not by itself equal authoritative credits balance until issuance is completed through the canonical path.
+10. Billing truth, invoice truth, and credits truth must remain separable even when tightly coordinated.
+11. Credits lifecycle actions must be reconstructable through auditable events or equivalent authoritative traceability surfaces.
+12. Paid credits are non-expiring by default unless a stronger governing policy explicitly and transparently states otherwise.
 
 ---
 
-## Relationship to Revenue and Profit
+## Functional Rules
 
-Credits must not be confused with revenue or profit.
+### Credit Role Rules
+- credits represent internal platform purchasing power only
+- credits may be used across FUZE products under pricing, entitlement, and policy rules
+- credits may support subscriptions, usage billing, premium actions, add-ons, reports, automation, seat packages, and other approved services
 
-### Credits are not revenue by themselves
+### Credit Class Rules
+At minimum, the platform must support the following canonical class family:
 
-Credits represent internal spendable platform value after issuance. They are not identical to realized recognized revenue.
+- `paid`: credits issued after verified payment; highest-trust class; non-expiring by default
+- `bonus`: credits issued through approved promotional, referral, loyalty, or support paths; may expire or carry class-specific restrictions
+- `restricted`: credits limited to certain products, campaigns, uses, or time windows
 
-### Revenue is not profit by itself
+Additional classes are allowed only if they preserve durable naming, policy clarity, and interoperability with downstream systems.
 
-Revenue must be reconciled against:
+### Issuance Rules
+Credits may be issued only through approved categories such as:
 
-- channel fees
-- infrastructure costs
-- AI costs
-- refunds
-- chargebacks
-- operating expenses
-- treasury and accounting policy
+- verified payment issuance
+- approved reward issuance
+- tightly controlled adjustment issuance
+- migration or enterprise correction issuance where explicitly approved
 
-### Profit is not payout until funded
+Issuance must never be silent, unreasoned, or role-unbounded.
 
-Only after policy-defined distributable profit is finalized and stablecoins are funded into the payout system does stablecoin profit participation become real claimable value.
+### Conversion Rules
+The conversion engine must be platform-owned and policy-driven. It may consider factors such as:
 
-This separation is one of the strongest safeguards in FUZE’s economic architecture.
+- payment rail
+- gross paid amount
+- fee-aware normalization posture
+- promotional or channel adjustments
+- approved FUZE-token-specific commercial enhancements where policy allows
 
----
+Conversion policy must not be left to product-local manual interpretation.
 
-## Relationship to Products
+### Spend Rules
+Every spend request must verify at minimum:
 
-Products consume the Platform Credits system, but do not own it.
+- approved consumer and action context
+- sufficient available balance
+- valid ownership scope
+- allowed class usage for the requested spend type
+- pricing outcome for the action or subscription context
+- entitlement-aware or policy-aware posture where required
 
-### Products may:
+### Priority Rules
+If spend-priority rules exist, they must be deterministic, policy-defined, and consistently applied. Hidden priority behavior is disallowed.
 
-- define chargeable actions
-- define usage meters
-- define product-specific spend reasons
-- define product-specific entitlement rules on top of platform billing
-- present credit balances and spend history in product UX where appropriate
+### Expiry Rules
+- paid credits are non-expiring by default
+- bonus or restricted credits may expire only through explicit class policy
+- expiry metadata and effect must be reconstructable and user-visible where appropriate
 
-### Products may not:
+### Transfer Rules
+- credits are not freely tradable assets
+- controlled internal reassignment may exist for approved scope migration, workspace allocation, support correction, or enterprise ownership adjustment
+- any allowed internal movement must preserve full traceability and policy reason codes
 
-- create hidden product-local credit balances
-- redefine paid/bonus/restricted classes independently
-- override platform spend policy
-- create alternate settlement semantics outside approved platform patterns
-- mutate credits without going through the credits domain
-
-This rule is one of the most important commercial integrity controls in the FUZE platform.
-
----
-
-## Relationship to Base Credits Layer
-
-Base is the operational chain for Platform Credits.
-
-This means the credits system must support:
-
-- on-chain commitment of credits state where policy requires
-- clear relation between platform ledger truth and Base execution/commitment truth
-- event visibility for committed credits changes where applicable
-- reconciliation between platform-side and chain-side records
-
-However, Base commitment does not remove the need for the platform-side credits domain.
-
-The platform still owns:
-
-- issuance policy
-- spend policy
-- correction policy
-- balance scope semantics
-- integration with billing and product logic
-
-The chain layer owns committed operational state, not the whole business meaning of the credits economy.
+### Reversal Rules
+- reversal logic must distinguish refund, chargeback, fraud containment, support replacement, and operational correction semantics
+- unused paid credits may be reversed when the associated verified value is refunded or revoked
+- partially used balance cases must not be treated as identical to untouched balance cases
 
 ---
 
-## Governance and Control Implications
+## Permission / Access Considerations
 
-Because credits are the internal economic layer of FUZE, they require explicit control boundaries.
+Credits do not grant actor authority by themselves.
 
-### Sensitive credits actions include:
+The following rules apply:
 
-- adjustment issuance
-- corrective reversal
-- balance repair
-- product charging policy changes
-- class-policy changes
-- restricted-credit campaign rules
-- migration or scope reassignment for balances
-- operational override of stuck or disputed credit states
-
-### Governance rules
-
-- sensitive actions must be role-restricted
-- high-impact actions must be auditable
-- selected actions may require approval workflows
-- product teams must not gain unrestricted powers over the credits system
-- policy changes affecting credits meaning should be treated as governance-sensitive platform decisions
-
-Credits are a platform trust surface, not just an implementation detail.
+- a subject may own credits while a specific actor still lacks permission to spend them
+- workspace-owned credits must respect workspace authorization and billing-ownership controls
+- products must not infer spend authority solely from login state or membership state
+- support and admin tools must use documented elevated paths for corrections and overrides
+- cost-bearing actions must integrate both credits posture and access posture where the subject is shared or multi-actor
 
 ---
 
-## Audit and Reporting Requirements
+## Entitlement Considerations
 
-The credits domain must support strong auditability.
+Credits and entitlement are adjacent but non-identical.
 
-### At minimum, audit and reporting must support visibility into:
+The following rules apply:
 
-- issuance source
-- issuance class
-- scope owner
-- spend reason
-- reversal reason
-- expiry behavior
-- adjustment action
-- operator/admin intervention where applicable
-- commitment status to Base where relevant
-- product attribution for usage and spend
-
-### Reporting outputs should support:
-
-- account-level credits views
-- workspace-level credits views
-- platform-wide issuance/spend reporting
-- reconciliation between ledger and chain commitment state
-- transparency-facing summaries where policy allows
-
-A credits system without strong reporting is incompatible with FUZE’s transparency-first platform model.
+- credits may enable or constrain certain capability classes when entitlement policy explicitly requires credits-aware gating
+- possessing credits does not automatically imply product entitlement or permission
+- a product may require both active entitlement posture and sufficient credits for certain usage models
+- entitlement records must not be replaced by raw credits balance checks
+- billing, entitlement, and credits systems must coordinate through explicit contracts rather than hidden coupling
 
 ---
 
-## Minimum Data Model Requirements
+## API / Contract Implications
 
-At minimum, the Platform Credits system must support semantic representation of:
+The platform credits layer must expose stable platform-consumable contracts for:
 
-### Credit Balance Context
-- owner type (account or workspace)
-- owner ID
-- credit class
-- available balance
-- reserved balance where supported
-- expired balance where relevant
+- querying subject-scoped balances and class posture
+- issuing credits through approved platform-controlled paths
+- reserving, spending, releasing, reversing, expiring, or reassigning credits
+- retrieving lifecycle and policy metadata necessary for downstream consumers
+- surfacing deterministic failure reasons for insufficient balance, invalid class, invalid scope, policy block, or operator restriction
 
-### Credit Ledger Entry
-- ledger entry ID
-- owner scope
-- entry type
-- class
-- amount
-- source reason
-- related payment/billing/product reference where relevant
-- created_at
-- actor or system source
-- commitment status where applicable
+Implementation may use one contract family or one service-plus-contract topology, but the external semantics must remain stable.
 
-### Credit Policy Context
-- class rule
-- expiry rule
-- spend eligibility rule
-- product restriction rule where applicable
-- policy version or effective rule set reference
+Recommended contract and service responsibilities include:
 
-These are minimum semantic requirements. The full data model is refined downstream.
+- core ledger authority for authoritative lifecycle recording
+- issuer registry or equivalent authority surface for approved issuance paths
+- routing or pricing adapter surfaces for spend integration
+- policy-hash or policy-version surfaces so consumers can correlate runtime behavior with approved policy posture
 
 ---
 
-## Edge Cases and Failure Handling
+## Event / Async Implications
 
-### Payment verified but Base commitment delayed
-Credits issuance may be in a pending commitment state. The platform must distinguish verified issuance intent from final committed operational state.
+The credits model must support event families sufficient for durable interoperability, including at minimum:
 
-### Product tries to charge credits twice
-Credits consumption must be idempotency-aware. Duplicate spend attempts must not silently double-charge.
+- `CreditsIssued`
+- `BonusCreditsIssued` or equivalent class-aware issuance event
+- `CreditsAdjusted`
+- `CreditsReserved`
+- `CreditsReleased`
+- `CreditsSpent`
+- `CreditsReversed`
+- `CreditsRefunded` where refund-aware semantics are distinct
+- `CreditsExpired`
+- `CreditsTransferredInternally` or equivalent scope-reassignment event
+- `CreditClassPolicyUpdated`
+- `CreditsPolicyHashUpdated`
+- `IssuerRoleUpdated` or equivalent governance/authority event
 
-### Refund arrives after partial usage
-Only unused paid value should normally be directly reversible; consumed value must follow policy-aware correction handling.
-
-### Workspace billing owner changes
-Credits scope remains explicit. Ownership and charging context changes must be auditable and policy-safe.
-
-### Bonus credits expire during pending async workflow
-Reservation, eligibility, or spend-order policy must determine the correct handling. The platform must not produce ambiguous silent balance outcomes.
-
-### Product-local cache shows old balance
-Cached state is non-canonical. The credits domain and ledger remain canonical.
-
-### Support operator makes manual correction
-The action must be reason-coded, scoped, auditable, and bounded by permission.
+Event consumers may include billing systems, support tools, finance pipelines, audit systems, product metering services, and transparency/reporting surfaces. Event publication must not imply that every consumer is source of truth.
 
 ---
 
-## Open Items
+## Data Model / Storage Implications
 
-The following areas are intentionally refined in downstream specifications:
+The credits system must support a data model capable of representing at minimum:
 
-- exact Base contract structure for credits commitment
-- exact reservation versus immediate-spend policy by product/action type
-- exact negative-balance policy for fraud or chargeback cases
-- exact product-by-product pricing and spend mappings
-- exact user-facing display model for class-priority and expiry
-- exact reconciliation cadence between platform ledger and chain commitment layer
+- subject identity and ownership scope reference
+- class identifier
+- available, reserved, spent, reversed, and expired posture as required by the downstream ledger model
+- issuance source type and source reference
+- conversion policy reference or version
+- restriction and expiry metadata
+- internal reassignment lineage
+- reason codes for adjustment and operator actions
+- timestamps, policy versions, and trace identifiers suitable for audit and reconciliation
 
-These do not weaken the canonical credits model established here.
+Derived reporting views are permitted, but they must not replace authoritative lifecycle truth.
 
 ---
 
-## Closing Summary
+## Security / Risk / Abuse Controls
 
-Platform Credits are the internal economic layer of FUZE. They provide the unified spending unit through which verified value intake is transformed into structured platform purchasing power across multiple products. Credits support subscriptions, usage billing, AI actions, premium features, and shared product consumption through one coherent system. They are class-aware, scope-aware, auditable, policy-driven, and operationally committed on Base. Just as importantly, they remain clearly separated from the FUZE token and from stablecoin profit participation. This separation is what allows FUZE to build a commercial system that is scalable, coherent, and trustworthy across a growing multi-product platform ecosystem.
+The credits layer is a sensitive economic primitive and must enforce the following controls:
+
+- strong issuer-role controls for every issuance path
+- heightened operator controls for manual adjustments, migrations, and reversals
+- explicit separation between governance authority and routine operator authority
+- pause, containment, or equivalent emergency controls for severe integrity incidents
+- fraud-aware handling for chargebacks, stolen payment instruments, channel revocations, or abusive promotional exploitation
+- deterministic rejection of malformed or out-of-policy spend requests
+- tamper-evident lifecycle logging and policy versioning
+- protection against duplicate issuance, replayed spend requests, or inconsistent reservation finalization
+
+Sensitive changes to policy or authority posture should be timelocked or otherwise governed under the broader FUZE control model.
+
+---
+
+## Audit / Traceability Requirements
+
+The platform must be able to reconstruct for every material credits action:
+
+- which subject was affected
+- which class was involved
+- which upstream source justified the action
+- which actor, system, or operator initiated it
+- which policy version or reason code applied
+- which downstream product, workflow, or billing context consumed or triggered it
+- whether the action was ordinary, corrective, or exceptional
+
+This requirement applies to issuance, spend, reserve/release, reversal, expiry, internal reassignment, and policy-sensitive overrides.
+
+---
+
+## Failure Handling / Edge Cases
+
+The credits model must explicitly account for the following edge cases:
+
+### Verification Succeeds but Issuance Fails
+Payment success must not be conflated with completed credits issuance. The system must support retry-safe issuance and operator-visible exception handling.
+
+### Duplicate Delivery or Replay
+Idempotency protections must prevent duplicate credit creation or duplicate spend when external or internal events are replayed.
+
+### Partial Spend / Partial Refund
+Unused and already-consumed portions of value must be treated differently. Reversal logic must not over-credit or over-debit the subject.
+
+### Channel Revocation
+App-store or channel-originated revocations may require constrained or asynchronous reversal handling rather than immediate symmetric unwind.
+
+### Negative-Balance or Deficit Cases
+If already-consumed value is later invalidated, the system may need deficit recording, containment, or downstream billing/risk workflows. Such cases must remain explicit and auditable.
+
+### Scope Migration
+When credits move from user context to workspace context or similar approved internal scopes, lineage must remain intact and duplicate availability must never be created.
+
+### Class Restriction Mismatch
+If a subject has balance but no spendable balance under the requested class policy, the system must deny or degrade deterministically rather than auto-broadening eligibility.
+
+### Policy Change During Reservation
+If policy changes while credits are reserved, the finalize or release path must remain deterministic and traceable.
+
+---
+
+## Operational Considerations
+
+Operating the credits layer requires:
+
+- versioned policy management with disciplined rollout
+- strong observability for issuance, spend, reversal, reservation, and failure paths
+- reconciliation workflows with payment, billing, and ledger consumers
+- support tooling that exposes safe reason-coded corrective operations without hidden bypasses
+- reporting and transparency surfaces suitable for internal finance and public trust domains where applicable
+- incident playbooks for payment mismatch, fraud, ledger inconsistency, chain outage, and policy misconfiguration
+
+Because credits are a shared platform primitive, operational defects can affect multiple products simultaneously. Operational posture must therefore be platform-grade rather than product-local.
+
+---
+
+## Migration / Compatibility / Supersession Considerations
+
+This refined specification supersedes weaker or more narrative descriptions of platform credits that did not clearly separate:
+
+- credits from payment rails
+- credits from billing truth
+- credits from token participation
+- credits from profit participation
+- semantic credits ownership from authoritative ledger implementation
+
+Migration into this canonical model must enforce the following:
+
+- product-local balance models that claim shared platform meaning must be retired or explicitly scoped as non-canonical
+- undocumented issuance paths must be removed or formalized under policy
+- ambiguous “top-up,” “wallet balance,” or “subscription balance” naming should be normalized into durable credits terminology where it truly refers to platform credits
+- downstream systems must consume approved platform interfaces rather than inferring credits truth from incidental payment or invoice artifacts
+
+Backward compatibility may require temporary adapters, but adapters must preserve canonical semantics and must not institutionalize concept drift.
+
+---
+
+## Dependencies / Cross-Spec Links
+
+This specification depends on:
+
+- `REFINED_SYSTEM_SPEC_INDEX.md`
+- `DOCS_SPEC_INDEX.md`
+- `SYSTEM_SPEC_INDEX.md`
+- `API_SPEC_INDEX.md`
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `IDENTITY_AND_ACCOUNT_SPEC.md`
+- `WORKSPACE_AND_ORGANIZATION_SPEC.md`
+- `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
+- `SCOPED_AUTHORIZATION_MODEL_SPEC.md`
+- `ACCESS_EVALUATION_AND_EFFECTIVE_PERMISSION_SPEC.md`
+- `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md`
+- `ENTITLEMENT_AND_CAPABILITY_GATING_SPEC.md`
+- `CHAIN_ARCHITECTURE_SPEC.md`
+- `SECURITY_AND_RISK_CONTROL_SPEC.md`
+
+This specification directly governs or materially informs:
+
+- `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md`
+- `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`
+- `PAYMENT_RAILS_INTEGRATION_SPEC.md`
+- `INVOICING_AND_RECEIPTS_SPEC.md`
+- `REFUND_REVERSAL_AND_ADJUSTMENT_SPEC.md`
+- `PAYMENT_FRAUD_AND_ABUSE_PREVENTION_SPEC.md`
+- `PRICING_AND_MONETIZATION_MODEL_SPEC.md`
+- `AI_USAGE_METERING_SPEC.md`
+- product monetization and premium-capability specifications
+- finance, reporting, treasury, and transparency workflows
+
+---
+
+## Explicitly Deferred Items
+
+The following are intentionally deferred to adjacent or downstream specifications:
+
+- exact ledger table or contract storage layouts
+- exact double-entry and settlement routines
+- exact credit conversion formulas and commercial rates
+- exact invoice numbering, tax, and receipt content
+- exact app-store and channel reconciliation mechanics
+- exact promotional program catalog and campaign configuration
+- exact per-product pricing logic and metering formulas
+- exact profit-finalization and payout-funding workflows
+- exact public transparency reporting schema
+
+These deferrals do not weaken the canonical credits model established here.
+
+---
+
+## Final Normative Summary
+
+FUZE Platform Credits are the unified internal consumption unit of the FUZE ecosystem. They exist so verified external value can be normalized into one reusable internal economic layer across products, workspaces, subscriptions, usage billing, premium actions, and automation. Credits are platform purchasing power inside FUZE. They are not the FUZE token, not invoice truth, not payment-rail truth, not direct profit rights, and not a freely tradable public-market asset.
+
+The platform credits domain owns the semantic meaning of credits, class taxonomy, ownership scope rules, issuance categories, spend posture, and transfer restrictions. The ledger domain owns authoritative lifecycle recording. Billing, pricing, entitlement, payment, token, and treasury systems remain adjacent but separate. Products may consume credits only through approved shared interfaces.
+
+In FUZE, the canonical model is:
+
+- payment rail -> verified payment -> platform credits -> authoritative credits ledger -> product and platform consumption
+
+This model exists to preserve one internal economic language, stronger cross-product continuity, clearer auditability, cleaner architectural separation, and safer long-term platform operations. Any implementation that collapses credits into payment artifacts, product-local balances, token semantics, or payout semantics is non-canonical.
