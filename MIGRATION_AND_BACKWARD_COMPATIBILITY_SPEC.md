@@ -1,671 +1,734 @@
-# MIGRATION_AND_BACKWARD_COMPATIBILITY_SPEC
+# FUZE Migration and Backward Compatibility Specification
+
+## Document Metadata
+- **Document Name:** `MIGRATION_AND_BACKWARD_COMPATIBILITY_SPEC.md`
+- **Document Type:** Canonical refined system specification
+- **Status:** Active refined system spec
+- **Version:** 2.0.0
+- **Effective Date:** 2026-04-22
+- **Last Updated:** 2026-04-22
+- **Reviewed On:** 2026-04-22
+- **Document Owner:** FUZE Platform Migration and Compatibility Governance Domain (canonical owner for shared migration, coexistence, supersession, and backward-compatibility posture); named individual owner is not explicitly specified in the retrieved governing materials
+- **Approval Authority:** Not explicitly specified in the retrieved governing materials; constitutional approval authority remains governed by `REFINED_SYSTEM_SPEC_INDEX.md` and the active FUZE approval workflow
+- **Review Cadence:** Not explicitly specified in the retrieved governing materials; SHOULD be reviewed whenever interface-family posture, domain ownership assignments, rollout controls, deprecation policy, contract lineage, public trust publication posture, chain-reference migration posture, or recovery/remediation policy materially changes
+- **Governing Layer:** Shared platform change-governance / migration and compatibility architecture
+- **Parent Registry:** `REFINED_SYSTEM_SPEC_INDEX.md`
+- **Primary Audience:** Platform architecture, backend engineering, product engineering, workflow/runtime engineering, API and contract authors, security, audit, operations, support/control-plane operators, registry/transparency authors, finance/control-plane engineering, implementation-contract authors
+- **Primary Purpose:** Define the canonical FUZE migration and backward compatibility layer that governs coexistence, cutover, supersession, deprecation, sunset, lineage preservation, historical interpretability, public notice posture, and migration-safe evolution across APIs, events, webhooks, identifiers, read models, public artifacts, chain references, and trust-sensitive platform surfaces without collapsing migration truth into domain business truth, rollout truth, workflow truth, queue truth, reporting truth, or operator convenience
+- **Primary Upstream References:**
+  - `REFINED_SYSTEM_SPEC_INDEX.md`
+  - `DOCS_SPEC_INDEX.md`
+  - `SYSTEM_SPEC_INDEX.md`
+  - `API_SPEC_INDEX.md`
+  - `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+  - `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+  - `PLATFORM_ARCHITECTURE_SPEC.md`
+  - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+  - `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+  - `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
+  - `PRODUCT_BOUNDARY_AND_DOMAIN_OWNERSHIP_SPEC.md`
+  - `PRODUCT_ADMISSION_AND_EXPANSION_GATE_SPEC.md`
+  - `API_ARCHITECTURE_SPEC.md`
+  - `PUBLIC_API_SPEC.md`
+  - `INTERNAL_SERVICE_API_SPEC.md`
+  - `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+  - `IDEMPOTENCY_AND_VERSIONING_SPEC.md`
+  - `FEATURE_FLAG_AND_ROLLOUT_CONTROL_SPEC.md`
+  - `WORKFLOW_AND_AUTOMATION_SPEC.md`
+  - `JOB_QUEUE_AND_WORKER_SPEC.md`
+  - `AUDIT_LOG_AND_ACTIVITY_SPEC.md`
+  - `SECURITY_AND_RISK_CONTROL_SPEC.md`
+  - `MONITORING_ALERTING_AND_INCIDENT_RESPONSE_SPEC.md`
+  - `DEPLOYMENT_AND_RUNTIME_OPERATIONS_SPEC.md`
+  - `BUSINESS_CONTINUITY_AND_RECOVERY_SPEC.md`
+  - `PUBLIC_CONTRACT_AND_WALLET_REGISTRY_SPEC.md`
+  - `TRANSPARENCY_REPORTING_SPEC.md`
+- **Primary Downstream Dependents:**
+  - `PUBLIC_API_SPEC.md`
+  - `INTERNAL_SERVICE_API_SPEC.md`
+  - `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+  - `IDEMPOTENCY_AND_VERSIONING_SPEC.md`
+  - domain API specifications
+  - domain event catalogs and webhook catalogs
+  - OpenAPI / AsyncAPI / SDK derivation layers
+  - release-control runbooks and cutover procedures
+  - registry/transparency publication contracts
+  - product migration plans and coexistence plans
+  - chain-reference replacement and supersession procedures
+- **Supersedes:** Earlier or weaker interpretations that treat migration as ad hoc implementation cleanup, allow hidden dual ownership during coexistence, let rollout flags stand in for migration truth, permit breaking changes without explicit lineage or compatibility posture, or let reporting/publication surfaces redefine canonical history
+- **Superseded By:** None currently defined
+- **Related Decision Records:** Not explicitly linked in the retrieved governing materials
+- **Canonical Status Note:** This document is the canonical governing system specification for migration and backward compatibility across FUZE. Downstream APIs, internal contracts, events, webhooks, registries, transparency artifacts, rollout plans, release controls, cutover runbooks, and implementation contracts MUST preserve the ownership, truth-separation, lineage, and compatibility rules defined here.
+- **Implementation Status:** Normative source; downstream services, compatibility registries, contract catalogs, rollout workflows, reconciliation jobs, publication systems, and operator tooling MUST align
+- **Approval Status:** Draft refined canonical specification pending explicit approval workflow
+- **Change Summary:** Refined the earlier migration/compatibility drafts into a registry-aligned production-grade system specification; normalized migration as a shared platform governance layer rather than an API-only concern; strengthened truth classes, ownership boundaries, coexistence discipline, deprecation/sunset posture, supersession lineage, public artifact handling, chain-adjacent migration posture, operator controls, failure handling, and downstream implementation-contract guardrails
+
+## Title
+FUZE Migration and Backward Compatibility Specification
 
 ## Purpose
+This specification defines the canonical migration and backward compatibility architecture of FUZE.
 
-This document defines the canonical migration and backward compatibility architecture of the FUZE ecosystem. Its purpose is to establish how FUZE evolves platform domains, products, contracts, credits flows, public interfaces, payout-related structures, and transparency surfaces over time without breaking platform coherence, corrupting canonical truth, or weakening user, partner, holder, and investor trust.
+Its purpose is to make explicit:
+- what the migration and backward compatibility domain governs and what it does not govern
+- how FUZE evolves APIs, internal contracts, events, webhooks, identifiers, schemas, projections, public artifacts, registry entries, chain references, and product-visible behavior without corrupting canonical ownership or historical interpretability
+- how coexistence, dual-run, cutover, supersession, correction, deprecation, sunset, and recovery must be represented and controlled
+- how migration interacts with rollout controls, idempotency/versioning, public trust publication, security posture, audit lineage, and operational recovery without collapsing into those domains
+- what downstream implementation contracts MUST preserve so that migration never becomes a hidden reinterpretation layer
 
-This specification is foundational because FUZE is a multi-product, transparency-first platform ecosystem with shared identity, shared commerce, Platform Credits, AI orchestration, workflow execution, product-specific domains, Ethereum-based token participation, Base-based credits and payout execution, public transparency surfaces, and governance-sensitive control layers. In such a system, change is not exceptional. Products evolve, contracts may expand, interfaces mature, policies tighten, reporting improves, and rollout sequencing creates transitional states. Without a formal migration and compatibility architecture, those changes can create fragmentation, silent behavior drift, data ambiguity, broken integrations, or public trust damage. FUZE therefore treats migration and backward compatibility as an architectural discipline rather than as ad hoc implementation cleanup.
-
----
+This specification is intentionally governing rather than descriptive. It does not merely discuss change management at a high level. It defines the durable FUZE architecture for evolving live systems while preserving trust, lineage, and platform coherence.
 
 ## Scope
+This specification governs:
+- the shared migration and backward compatibility layer across the FUZE platform and ecosystem
+- migration planning and execution posture for contract-bearing and truth-bearing surfaces
+- coexistence rules for old and new representations during transition
+- cutover, rollback, forward-fix, and supersession posture
+- compatibility commitments by surface family and trust sensitivity
+- deprecation, sunset, and historical readability posture
+- identifier mapping and lineage preservation rules
+- migration interaction with public APIs, internal APIs, events, webhooks, reports, registries, chain references, and product-visible experiences
+- auditability, approval, traceability, readiness, reconciliation, and recovery requirements for material migrations
+- implementation-contract guardrails for downstream contract, storage, publication, and operational layers
 
-This specification covers:
+## Out of Scope
+This specification does not define:
+- every table-level migration script or DDL statement
+- every product-specific release calendar
+- every domain-specific business approval rule
+- exact CI/CD pipeline implementation details
+- every domain payload field for each version transition
+- the detailed meaning of individual business-domain entities
+- exact transport-vendor or broker-vendor choices
+- exact user-facing communication copy for each migration notice
+- exact chain deployment transactions or contract ABIs
 
-- the canonical philosophy of migration and backward compatibility in FUZE
-- the distinction between migration, compatibility, deprecation, correction, and supersession
-- migration treatment across platform services, product services, economic systems, transparency surfaces, contracts, and payout-related structures
-- backward compatibility expectations for public APIs, internal APIs, events, webhooks, reports, registries, and user-facing platform behaviors
-- data migration, state migration, interface migration, contract migration, and product migration principles
-- migration safety rules for identity, credits, billing, governance, treasury, transparency, and payout-sensitive domains
-- rollout, coexistence, cutover, replay, reconciliation, and recovery considerations during migrations
-- auditability and lineage expectations for all material migration activity
+Those concerns belong in narrower domain specifications, implementation contracts, runbooks, and release artifacts, provided they remain consistent with this document.
 
-This specification does not define every migration script, every table-level conversion plan, or every contract redeployment procedure. Those are refined in:
+## Design Goals
+The design goals of the FUZE migration and backward compatibility architecture are to:
+1. allow the platform to evolve without silent fragmentation of ownership or truth
+2. preserve continuity where dependency and trust sensitivity justify continuity
+3. ensure that compatibility promises are explicit, bounded, and explainable
+4. protect public-trust, finance-sensitive, governance-sensitive, and chain-sensitive surfaces from unsafe migration shortcuts
+5. support coexistence, dual-run, cutover, and recovery without creating hidden dual ownership
+6. preserve historical interpretability even when live structures change
+7. make migration observable, auditable, reviewable, and governable rather than improvised
+8. provide a stable bridge from architectural intent into downstream implementation-contract work
 
+## Non-Goals
+This specification is not intended to:
+- freeze FUZE permanently in early forms
+- guarantee indefinite support for every legacy behavior
+- treat rollout flags as sufficient substitutes for migration truth
+- allow temporary coexistence to become indefinite ambiguity
+- let reporting or publication surfaces redefine canonical source meaning
+- let backwards compatibility become an excuse to preserve structurally unsafe semantics forever
+- hide breaking changes behind undocumented payload or meaning drift
+- make migration an operator-only concern divorced from architecture and contract governance
+
+If there is tension between convenience and ownership-preserving explicitness, the ownership-preserving interpretation wins.
+
+## Core Principles
+### 1. Canonical-Owner Preservation Principle
+A migration MUST preserve clear canonical ownership of every material truth family at all times, including during coexistence.
+
+### 2. Compatibility-Is-Bounded Principle
+Backward compatibility is a governed promise, not an accidental side effect. It MUST be explicit, scoped, and time-bounded where appropriate.
+
+### 3. Historical-Interpretability Principle
+Even when live structures change, historical artifacts, references, records, and public explanations MUST remain intelligible.
+
+### 4. Coexistence-Is-Temporary Principle
+Temporary coexistence MAY be necessary, but it MUST remain explicit, bounded, and non-ambiguous. Dual ownership is forbidden.
+
+### 5. Migration-Is-Not-Rollout Principle
+Rollout controls may gate exposure, but rollout state does not become canonical migration truth or lineage truth.
+
+### 6. Correction-Is-Not-Supersession Principle
+Correction, supersession, deprecation, and migration are related but distinct semantics and MUST remain explicitly distinguished.
+
+### 7. Public-Trust Restraint Principle
+Public APIs, public webhooks, transparency artifacts, registries, chain references, and other trust-sensitive surfaces require the strongest compatibility, notice, and lineage discipline.
+
+### 8. Replay-and-Recovery Principle
+Migration operations, notices, events, and version transitions MUST be safe under retry, replay, resumption, and controlled recovery conditions.
+
+### 9. Operator-Boundedness Principle
+Operator or admin control over migration MUST be narrow, reason-coded, policy-constrained, and durably auditable.
+
+### 10. Future-Safe Evolution Principle
+Migration posture MUST support future platform expansion, product admission, provider change, chain reference change, and public contract evolution without redefining the architectural model.
+
+## Canonical Definitions
+### Migration
+A controlled change in representation, contract, storage, topology, reference, or operational posture that moves live FUZE behavior from one governed state to another.
+
+### Backward Compatibility
+The bounded degree to which a new FUZE structure continues to support prior consumers, references, payload assumptions, or historical interpretation.
+
+### Coexistence Window
+A governed period in which old and new representations or contracts may both exist while one remains explicitly canonical for writes or authoritative interpretation.
+
+### Cutover
+The governed transition point at which primary write authority, canonical read authority, or supported contract posture shifts from old to new.
+
+### Supersession
+The controlled replacement of an artifact, reference, contract, or representation by a newer one with preserved lineage to the prior one.
+
+### Correction
+A governed repair of incorrect historical or current data, publication, or interpretation that preserves explicit lineage to what was corrected.
+
+### Deprecation
+A declared reduction in future support or preferred use of a contract or representation that does not itself mean immediate removal.
+
+### Sunset
+A declared end of supported use for a version, contract, or representation after required notice and compatibility obligations are satisfied or explicitly overridden under emergency policy.
+
+### Migration Truth
+The durable platform-governed record of migration identity, status, strategy, readiness, approvals, reconciliation, and lineage.
+
+### Compatibility Artifact
+A public or internal artifact that communicates version posture, deprecation status, replacement lineage, or migration guidance but does not itself own the underlying business meaning.
+
+## Truth Class Taxonomy
+This specification MUST preserve the following truth classes:
+1. **Semantic truth** — what changed, what remains equivalent, and which domain owns the meaning
+2. **Policy truth** — rules governing compatibility windows, deprecation, sunset, public notice, and override conditions
+3. **Runtime truth** — current migration execution status, staged state, active cutover state, rollback state, or validation progress
+4. **Ledger / storage truth** — durable migration records, approval linkage, contract version lineage, identifier mapping, supersession records, and reconciliation outcomes
+5. **Provider-input truth** — external or chain-originating data observed during migration before owner-domain acceptance
+6. **Implementation-adapter truth** — dual-read behavior, schema adapters, translation layers, and projection adapters used during coexistence
+7. **Projection / reporting truth** — dashboards, notices, public explanations, registry views, and transparency artifacts derived from canonical sources
+8. **Presentation truth** — product banners, user-facing warnings, SDK migration hints, or operator-visible labels
+
+These truth classes MUST remain distinct. Migration governance does not become business-domain truth, rollout truth, workflow truth, queue truth, or publication truth.
+
+## Architectural Position in the Spec Hierarchy
+This document sits below:
+- `REFINED_SYSTEM_SPEC_INDEX.md`
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
 - `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
+- `PRODUCT_BOUNDARY_AND_DOMAIN_OWNERSHIP_SPEC.md`
+
+and above or alongside:
 - `API_ARCHITECTURE_SPEC.md`
 - `PUBLIC_API_SPEC.md`
 - `INTERNAL_SERVICE_API_SPEC.md`
 - `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
 - `IDEMPOTENCY_AND_VERSIONING_SPEC.md`
-- `PLATFORM_CREDITS_SPEC.md`
-- `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md`
-- `PUBLIC_CONTRACT_AND_WALLET_REGISTRY_SPEC.md`
-- `TRANSPARENCY_REPORTING_SPEC.md`
-- `ROLLOUT_STRATEGY_SPEC.md`
-- `PRODUCT_ROLLOUT_DEPENDENCY_SPEC.md`
+- `FEATURE_FLAG_AND_ROLLOUT_CONTROL_SPEC.md`
+- `WORKFLOW_AND_AUTOMATION_SPEC.md`
+- `JOB_QUEUE_AND_WORKER_SPEC.md`
 - `DEPLOYMENT_AND_RUNTIME_OPERATIONS_SPEC.md`
 - `BUSINESS_CONTINUITY_AND_RECOVERY_SPEC.md`
-
----
-
-## Design Goals
-
-The design goals of the FUZE migration and backward compatibility architecture are:
-
-1. to allow the platform to evolve without corrupting canonical truth or undermining public trust
-2. to preserve stable behavior for users and integrators where continuity is required
-3. to make transitions explicit, auditable, and reversible where practical
-4. to prevent platform growth from creating silent fragmentation between old and new systems
-5. to support phased rollout, coexistence, and cutover across products and shared platform services
-6. to protect economic, governance, treasury, transparency, and payout-sensitive domains from unsafe migration shortcuts
-7. to ensure historical records remain interpretable across architecture evolution
-8. to make migration and compatibility part of source-of-truth platform design rather than emergency operational improvisation
-
----
-
-## Non-Goals
-
-This specification is not intended to:
-
-- freeze FUZE in its initial form
-- guarantee indefinite support for every legacy behavior
-- make backward compatibility more important than long-term platform correctness in every case
-- allow migration to bypass ownership boundaries or policy controls
-- treat public reporting corrections as equivalent to raw state migration
-- imply that every migration can be done without temporary coexistence or staged rollout
-- preserve harmful ambiguity merely because older behavior exists
-
----
-
-## Canonical Principle
-
-The primary principle of FUZE migration and backward compatibility is:
-
-> FUZE should evolve through explicit, ownership-respecting transitions in which canonical truth is preserved, legacy behavior is handled deliberately, and compatibility commitments are applied according to surface sensitivity and stakeholder impact rather than by accident or convenience.
-
-This means:
-
-- migrations should be planned around canonical owners of truth
-- compatibility promises should be strongest where external dependency and public trust are highest
-- historical records should remain intelligible even when live systems evolve
-- coexistence between old and new representations may be necessary, but ownership must remain clear throughout
-- migrations should preserve the distinction between token, credits, payouts, governance state, and transparency artifacts rather than collapsing them during change
-
-This principle is one of the strongest safeguards against architectural drift in a platform of FUZE’s scope.
-
----
-
-## Why FUZE Needs a Migration and Compatibility Architecture
-
-FUZE needs a formal migration and backward compatibility architecture because change is built into the platform model.
-
-The ecosystem will evolve through:
-- product rollout and product expansion
-- maturing shared platform services
-- evolving pricing, billing, and entitlements
-- improved AI and workflow systems
-- expanding transparency and registry surfaces
-- governance and policy maturation
-- profit participation lifecycle refinement
-- contract deployments, replacements, or superseding structures
-- schema and interface evolution
-- data-quality correction and state normalization
-
-Without migration discipline, these changes can create several classes of failure:
-
-### 1. Silent truth fragmentation
-Old and new systems both appear to own the same fact.
-
-### 2. Historical ambiguity
-Past records become hard to interpret after format or policy evolution.
-
-### 3. Broken integrations
-External or internal consumers mis-handle changed interfaces.
-
-### 4. Unsafe economic drift
-Credits, billing, entitlements, payout records, or transparency surfaces diverge during transition.
-
-### 5. Product inconsistency
-One product moves to a new platform layer while another depends on a legacy behavior that was not intentionally preserved.
-
-### 6. Public trust erosion
-Contracts, registry entries, payout cycles, or governance-facing artifacts change without clear lineage or explanation.
-
-A migration and compatibility architecture exists to ensure FUZE can change while remaining coherent. This matters especially because FUZE is a platform company. Platform companies do not avoid change. They become strong by changing in structured ways.
-
----
-
-## Migration vs Backward Compatibility vs Correction vs Supersession
-
-FUZE should distinguish clearly among several related concepts.
-
-### Migration
-The planned movement of data, state, behavior, or system responsibility from one structure, contract, service, or representation to another.
-
-### Backward Compatibility
-The degree to which an updated FUZE surface or system continues to support prior consumers, prior artifacts, or prior assumptions within a defined boundary.
-
-### Correction
-A repair or clarification of incorrect data, records, reporting, or outputs, while preserving lineage to what existed before.
-
-### Supersession
-The controlled replacement of a prior artifact, record, contract reference, or public representation by a newer one with preserved relationship to the old one.
-
-### Why the distinction matters
-
-A credits-balance rebuild from ledger truth is a migration or reconstruction action, not merely a compatibility issue.
-A corrected payout report is a correction event, not necessarily a data migration.
-A new public registry entry replacing an older contract reference is a supersession event with public trust implications.
-
-### Principle
-
-FUZE should not blur these concepts. Migration moves live structures. Compatibility preserves dependent behavior. Correction fixes errors. Supersession replaces prior artifacts while preserving meaning.
-
----
-
-## Migration Domains in FUZE
-
-FUZE should reason about migration by domain.
-
-### Identity and Access Migration
-Examples:
-- account schema evolution
-- linked-login normalization
-- permission model refinement
-- workspace-role model migration
-
-### Commerce and Credits Migration
-Examples:
-- credits ledger normalization
-- credit-class expansion
-- subscription model changes
-- billing-owner model migration
-- refund and reversal flow upgrades
-
-### Product Domain Migration
-Examples:
-- QTB object model evolution
-- AIMM workflow-state evolution
-- HerHelp generation-project model changes
-- Botmad workflow-supervision model changes
-
-### AI and Workflow Migration
-Examples:
-- task routing schema changes
-- job-state contract changes
-- workflow-step model changes
-- result artifact metadata changes
-
-### Transparency and Registry Migration
-Examples:
-- registry schema evolution
-- transparency report format changes
-- payout-ledger model upgrades
-- public reporting artifact supersession
-
-### Governance, Treasury, and Payout Migration
-Examples:
-- policy reference changes
-- vault registry updates
-- payout-cycle publication format evolution
-- contract reference replacement
-- eligibility pipeline improvements
-
-### Principle
-
-Migration planning should follow domain ownership. A multi-product platform cannot rely on one generic migration mentality for everything.
-
----
-
-## Canonical Ownership During Migration
-
-Migration in FUZE must respect canonical ownership even during transition.
-
-### Rule 1: the owning domain controls migration of its truth
-A reporting service may help reflect migrated state, but it must not own the migration of credits truth, payout truth, or governance records.
-
-### Rule 2: derived surfaces may lag, but canonical migration must remain explicit
-Read models, dashboards, and public surfaces may temporarily reflect old representation, but that lag must not redefine ownership.
-
-### Rule 3: temporary coexistence must not create permanent ambiguity
-If old and new representations coexist, one must be clearly canonical for writes and authoritative interpretation at every stage.
-
-### Rule 4: migration is not permission to bypass domain APIs
-Operational urgency does not justify undocumented direct mutation of canonical records from unrelated domains.
-
-### Principle
-
-Migration is a test of platform discipline. The owning domain should remain the authority during change, not lose authority because transition is inconvenient.
-
----
-
-## Compatibility Commitments by Surface Type
-
-FUZE should apply backward compatibility according to surface type.
-
-### Public APIs
-Strongest compatibility commitment.
-Breaking changes should be rare, deliberate, versioned, and documented.
-
-### Public Webhooks
-Strong compatibility commitment.
-Consumers should have a stable contract or explicit version transition path.
-
-### Public Reports and Registries
-High historical interpretability commitment.
-Even when structure changes, older artifacts should remain understandable.
-
-### Internal Service APIs
-Moderate to strong compatibility commitment depending on dependency breadth.
-Breaking changes should be coordinated, not silent.
-
-### Internal Events
-Compatibility discipline required where many consumers exist.
-Version changes should be explicit.
-
-### Product UI Behavior
-Compatibility should be user- and risk-sensitive.
-Not every UI change requires long legacy support, but user-facing economic or trust-sensitive behavior should not shift opaquely.
-
-### Contract and Chain References
-Highest trust-sensitive clarity commitment.
-Public contract changes, superseding addresses, or role changes must preserve lineage and public explanation.
-
-### Principle
-
-The stronger the external dependency and trust sensitivity, the stronger the compatibility and migration discipline FUZE should apply.
-
----
-
-## Migration Classes
-
-FUZE should classify migrations into several major types.
-
-### 1. Data Migration
-Changes in stored records, schema, identifiers, normalized relationships, or projections.
-
-### 2. Interface Migration
-Changes to APIs, events, webhooks, payloads, and public contracts.
-
-### 3. Product Behavior Migration
-Changes in how users experience features, pricing, credits use, or workflows.
-
-### 4. Economic Migration
-Changes affecting credits, billing, subscriptions, entitlements, payout-cycle structures, or financial interpretations.
-
-### 5. Contract and Registry Migration
-Changes to on-chain references, reserve/vault contracts, payout contracts, or registry entries.
-
-### 6. Governance and Policy Migration
-Changes in governed policies, role treatments, or structural control expectations.
-
-### Principle
-
-Migration planning should identify which class or classes are involved. A schema migration is not the same as a public contract migration, even if both involve identifiers and records.
-
----
-
-## Backward Compatibility Philosophy
-
-FUZE should follow a practical, explicit backward compatibility philosophy.
-
-### Core principles
-
-- preserve continuity where dependency is real and justified
-- prefer additive change over breaking change when feasible
-- deprecate intentionally rather than disappearing behavior silently
-- do not preserve structurally wrong or harmful ambiguity indefinitely
-- keep historical artifacts interpretable even when live behavior evolves
-- use versioning, supersession, and lineage instead of relying on user memory or tribal knowledge
-
-### Why this matters
-
-FUZE is building a platform, not a disposable prototype environment. Platform trust grows when change is visible and explainable. Compatibility is one of the ways FUZE proves it is serious about that responsibility.
-
----
-
-## Data Migration Principles
-
-FUZE data migration should follow several principles.
-
-### Preserve canonical identifiers where practical
-Where a conceptual entity remains the same, stable IDs should be preserved or mapped explicitly.
-
-### Preserve lineage
-If records are transformed, split, merged, or superseded, the platform should preserve traceable relationship to prior state.
-
-### Avoid destructive silent rewrites in trust-sensitive domains
-Economic, governance, payout, and public-reporting domains should prefer correction and supersession models where appropriate over undocumented historical overwrite.
-
-### Rebuild derived data from canonical truth where practical
-Derived views, dashboards, and indexes may be rebuilt rather than migrated one by one if canonical state remains clean.
-
-### Reconcile after migration
-A migration is not complete merely because data moved. The platform should validate that semantic meaning remains consistent.
-
-### Principle
-
-Data migration in FUZE must preserve both structure and meaning.
-
----
-
-## Interface Migration Principles
-
-FUZE interface migration should be explicit and version-aware.
-
-### Public interface migration
-Should use versioning, documentation, deprecation windows, and migration guidance.
-
-### Internal interface migration
-Should use coordinated rollout, dual-read/dual-write or coexistence strategies where needed, and dependency-aware cutover.
-
-### Event and webhook migration
-Should carry explicit version semantics, preserve event lineage, and avoid forcing consumers into silent schema breakage.
-
-### Async contract migration
-Status models, result references, and accepted/completed semantics should remain interpretable during transition.
-
-### Principle
-
-Interfaces are part of the trust surface of the platform. Their migration must be treated as a stakeholder-facing act, even when many stakeholders are internal.
-
----
-
-## Economic Migration Principles
-
-Economic migrations in FUZE require stronger discipline than many other migration types.
-
-Relevant areas include:
-- credit-class expansion
-- billing-owner model changes
-- subscription plan migration
-- entitlement reinterpretation
-- refund or reversal logic changes
-- payout-cycle reporting changes
-- credits projection rebuilds
-- commercial trust-state normalization
-
-### Core principles
-
-- never silently duplicate or erase economic meaning
-- preserve ledger truth where it exists
-- treat balance migrations as correctness-sensitive operations
-- preserve commercial references between payment, issuance, spend, reversal, and entitlement state
-- if interpretation changes, preserve clear before/after lineage
-- public or customer-facing economic meaning changes should be explainable, not inferred
-
-### Principle
-
-Economic migration should be designed for audit and support, not only for technical completion.
-
----
-
-## Product Migration Principles
-
-Products in FUZE may evolve independently, but product migration must still respect the shared platform.
-
-### Product migration may include:
-- moving a product from direct billing to Platform Credits
-- adding workspace support to an initially single-user product
-- moving product AI execution into shared orchestration
-- moving ad hoc async behavior into shared workflow infrastructure
-- changing product entitlements to align with broader platform logic
-
-### Product migration principles
-
-- preserve account continuity
-- preserve workspace continuity where relevant
-- do not create local identity or local credits exceptions as permanent shortcuts
-- use narrow launch and expansion logic honestly
-- align product migrations with platform-fit, not just local product convenience
-
-### Principle
-
-A product migration in FUZE should make the product more platform-native over time, not more isolated.
-
----
-
-## Transparency and Public Artifact Migration
-
-FUZE must apply strong migration discipline to public trust artifacts.
-
-Relevant artifacts include:
-- transparency reports
-- payout ledgers
-- public contract and wallet registry
-- whitepaper-linked reference materials
-- public structural explanations
-- investor and community reporting artifacts
-
-### Principles
-
-- public artifacts should preserve version or publication references
-- corrections should be visible
-- superseded contract references should remain traceable
-- historical reports should remain understandable in the context in which they were published
-- public migrations should not force stakeholders to guess what changed
-
-### Why this matters
-
-FUZE is transparency-first. That means migration of public visibility surfaces is itself a trust-bearing action. Historical intelligibility is part of the public value of these artifacts.
-
----
-
-## Contract and Chain Migration Principles
-
-FUZE also requires explicit principles for contract and chain-level migration.
-
-Relevant cases may include:
-- deploying a superseding reserve or utility contract
-- replacing a payout execution contract
-- migrating registry references
-- changing operational layer support around Base or Ethereum-linked services
-- changing how off-chain systems interpret on-chain state
-
-### Core principles
-
-- preserve canonical role clarity between Ethereum token layer and Base operational layers
-- publish superseding references through the public registry
-- preserve relationship between old and new contract addresses
-- avoid silent contract replacement in public trust-sensitive areas
-- where migration affects holder interpretation, explain the role change explicitly
-- maintain public and internal lineage between prior and current contract state
-
-### Principle
-
-A contract migration is not just a deployment event. In FUZE it is part of the public architecture and must be treated accordingly.
-
----
-
-## Coexistence, Dual-Run, and Cutover Strategy
-
-Many FUZE migrations will require temporary coexistence between old and new models.
-
-### Common transition patterns may include:
-
-#### Read-old / write-new
-Useful when new canonical truth is established but legacy reads are still needed.
-
-#### Dual-read
-Useful while validating semantic equivalence between old and new sources.
-
-#### Dual-write
-Should be used cautiously and temporarily only when operationally necessary, because it increases complexity and ambiguity risk.
-
-#### Shadow validation
-Useful when new outputs are compared silently before activation.
-
-#### Hard cutover
-Appropriate only when migration risk is low enough or trust sensitivity requires a clean boundary.
-
-### Principle
-
-Coexistence is acceptable when explicit and temporary. It becomes dangerous when it silently creates multi-owner truth or indefinite ambiguity.
-
----
-
-## Migration Safety in Governance, Treasury, and Payout Domains
-
-Governance-, treasury-, and payout-sensitive migrations require especially strong safety posture.
-
-### Relevant changes include:
-- policy reference migration
-- treasury action model updates
-- vault structure supersession
-- payout-cycle publication model changes
-- eligibility pipeline evolution
-- public reporting interpretation changes
-
-### Safety principles
-
-- use narrower approval and change-control posture
-- preserve audit lineage for every material migration step
-- avoid silent reinterpretation of prior public meaning
-- hold trust-sensitive publication if the new structure is not yet validated
-- preserve ability to explain old and new state together during transition
-- where ambiguity exists, prefer delay to unsafe publication
-
-### Principle
-
-Critical-domain migration in FUZE is part technical, part governance, and part trust management. It should be treated with that seriousness.
-
----
-
-## User and Integrator Migration Experience
-
-Migration quality in FUZE also depends on user and integrator experience.
-
-### Users should not be forced to infer:
-- whether balances changed meaning
-- whether features moved to credits
-- whether access rights changed due to plan migration
-- whether a product is in narrow launch or fully platform-native mode
-- whether a public contract reference was superseded
-
-### Integrators should not be forced to infer:
-- which API version is now current
-- whether a webhook payload changed structurally
-- whether public registry meaning changed
-- how old and new identifiers relate
-
-### Principle
-
-Migration communication is part of migration architecture. A technically correct migration that is opaque to users, partners, or holders can still damage trust.
-
----
-
-## Rollback, Recovery, and Failed Migration Handling
-
-FUZE should plan for failed or partially failed migrations.
-
-### Principles
-
-- migration should be observable and auditable
-- rollback should be available where technically and semantically safe
-- where rollback is not safe, forward-fix with correction lineage should be used
-- failed migrations must not leave dual-owner truth unresolved
-- economic and payout-sensitive migrations should prioritize containment before continuation
-- public trust artifacts should not be republished until correctness is revalidated
-
-### Important nuance
-
-Not every migration can be reversed without consequence. In such cases, the architecture should emphasize controlled recovery, correction, and transparent supersession rather than pretending rollback was trivial.
-
----
-
-## Migration Readiness and Approval Gates
-
-FUZE should use migration readiness gates for material changes.
-
-At minimum, readiness evaluation should consider:
-
-- ownership clarity
-- data lineage readiness
-- interface compatibility readiness
-- idempotency and replay safety
-- observability and audit readiness
-- rollback or recovery posture
-- public trust or reporting implications
-- dependent product and platform readiness
-- stakeholder communication readiness where relevant
-
-### Principle
-
-A migration should move forward because it is ready, not merely because development is complete.
-
----
-
-## Auditability and Migration Lineage
-
-Every material FUZE migration should leave durable lineage.
-
-At minimum, the platform should preserve:
-
-- migration identifier
-- owning domain
-- migration class
-- affected entities or surfaces
-- version references
-- supersession references
-- correction references where applicable
-- operator or governance approval linkage
-- deployment and activation linkage
-- reconciliation outcome linkage
-- public communication or registry linkage where relevant
-
-### Principle
-
-Migration history is part of platform memory. FUZE should be able to explain not only what the platform is now, but how it got there.
-
----
-
-## Minimum Architectural Entities
-
-At minimum, the FUZE migration and backward compatibility architecture should recognize the following conceptual entities:
-
-### Migration Entities
-- `migration_id`
-- `migration_class`
-- `owning_domain`
-- `migration_status`
-- `cutover_reference`
-- `rollback_reference` where applicable
-
-### Compatibility Entities
-- `compatibility_surface_type`
-- `version_reference`
-- `deprecation_reference`
-- `supported_legacy_behavior_reference`
-
-### Lineage Entities
-- `supersedes_reference`
-- `superseded_by_reference`
-- `correction_reference`
-- `mapping_reference`
-- `reconciliation_reference`
-
-### Trust-Sensitive Linkage Entities
-- `credits_reference`
-- `payment_reference`
-- `governance_action_reference`
-- `treasury_action_reference`
-- `payout_cycle_reference`
-- `registry_reference`
-- `transparency_report_reference`
-- `audit_lineage_reference`
-
-These are minimum conceptual entities. Detailed implementation is refined downstream by domain and migration class.
-
----
-
-## Open Items
-
-The following areas are intentionally refined in downstream implementation and planning:
-
-- exact migration runbook structure by domain
-- exact public deprecation windows by API family
-- exact contract supersession publication rules
-- exact data backfill and replay tooling
-- exact user and partner communication templates for material migrations
-- exact gating thresholds for narrow launch to full platform-native migration
-- exact rollback criteria by sensitivity tier
-
-These do not weaken the canonical migration and backward compatibility architecture established here.
-
----
-
-## Closing Summary
-
-The FUZE migration and backward compatibility architecture defines how the ecosystem evolves without losing coherence. It ensures that platform, product, economic, governance, transparency, and payout-sensitive structures can change through explicit, ownership-respecting transitions rather than through silent fragmentation. By distinguishing migration from correction and supersession, applying stronger compatibility discipline to public and trust-sensitive surfaces, preserving lineage across data, interfaces, contracts, and reports, and using coexistence and cutover strategies carefully, FUZE creates a model for platform evolution that is compatible with both long-term growth and long-term credibility.
+- `PUBLIC_CONTRACT_AND_WALLET_REGISTRY_SPEC.md`
+- `TRANSPARENCY_REPORTING_SPEC.md`
+- domain migration plans
+- contract catalogs and version registries
+- release-control runbooks
+
+This document governs migration and compatibility semantics. It does not replace adjacent specifications that own business meaning, API exposure semantics, event semantics, rollout controls, or public publication semantics.
+
+## System Boundaries
+The migration and compatibility layer spans multiple FUZE planes but does not own all truths inside those planes.
+
+It MUST be interpreted as follows:
+- the **application plane** owns canonical business-domain mutation and read semantics; migration may alter representation or contract posture but does not transfer business ownership away from the owning domain
+- the **execution plane** may coordinate staged migration work, backfills, replays, validation, and forward-fix procedures, but execution systems do not become owners of domain meaning
+- the **integration plane** may normalize old and new inputs, partner callbacks, or provider transitions during migration, but raw external inputs do not become canonical migration truth
+- the **reporting plane** may publish notices, supersession views, compatibility summaries, or migration readiness views, but those publications are downstream to canonical migration records and owner-domain truth
+- the **control plane** may approve, restrict, stage, activate, roll back, quarantine, or force forward-fix actions under policy, but control actions do not redefine underlying business meaning
+- the **on-chain contract layer** remains separately bounded; on-chain reference changes may require off-chain migration lineage and public explanation, but off-chain policy MUST NOT be misrepresented as chain-native fact
+
+## Adjacent Boundaries
+This specification interacts with adjacent domains as follows:
+- **API Architecture** governs shared surface-family rules; this specification governs how those surfaces evolve through coexistence, cutover, deprecation, and supersession
+- **Public API** governs external contract posture; this specification governs how public contracts migrate, deprecate, sunset, and preserve lineage
+- **Internal Service API** governs service-to-service contract posture; this specification governs internal compatibility windows, cutovers, and coordinated transition rules
+- **Event Model and Webhook** governs event and webhook semantics; this specification governs event version transitions, overlap periods, and replay-safe migration posture
+- **Idempotency and Versioning** governs replay safety and version classification; this specification governs broader migration execution, coexistence, and supersession posture across versions
+- **Feature Flag and Rollout Control** may gate exposure or route traffic, but does not replace canonical migration status, lineage, or compatibility records
+- **Workflow and Automation** owns workflow-instance semantics; this specification governs how workflow-related contracts migrate without redefining workflow truth
+- **Job Queue and Worker** owns queue execution semantics; this specification governs how queue-facing contracts, statuses, and outputs migrate safely across versions
+- **Security and Risk Control** governs change-risk posture, emergency withdrawal, and sensitive-path hardening
+- **Audit Log and Activity** governs immutable audit evidence for approval, override, cutover, rollback, and notice publication actions
+- **Deployment and Runtime Operations** governs release mechanics; this specification governs the semantic and compatibility meaning of transitions released through those mechanics
+- **Business Continuity and Recovery** governs resilience posture when migration fails, stalls, or must be contained
+- **Public Contract and Wallet Registry** and **Transparency Reporting** govern public trust artifacts whose replacement and historical readability this specification constrains
+
+## Conflict Resolution Rules
+When materials, implementations, or interpretations conflict, the following rules apply:
+1. the active refined registry and higher constitutional materials win over narrower documents
+2. `PLATFORM_ARCHITECTURE_SPEC.md` wins on plane separation and architectural role boundaries
+3. `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`, `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`, and `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md` win on canonical owner interpretation and mutation authority
+4. this document wins on migration classification, coexistence posture, cutover semantics, supersession lineage, deprecation/sunset governance, and historical interpretability rules
+5. `API_ARCHITECTURE_SPEC.md`, `PUBLIC_API_SPEC.md`, `INTERNAL_SERVICE_API_SPEC.md`, and `EVENT_MODEL_AND_WEBHOOK_SPEC.md` win on the meaning of their respective surface families inside an active compatibility posture
+6. `IDEMPOTENCY_AND_VERSIONING_SPEC.md` wins on version-surface classification and replay/idempotency semantics within its scope
+7. rollout flags, dashboards, reports, caches, publication artifacts, and SDK hints never win over canonical migration truth or owner-domain truth
+8. if ambiguity remains, FUZE MUST choose the more conservative architecture-consistent interpretation and escalate unresolved ambiguity into downstream refinement or recorded decision work
+
+## Default Decision Rules
+When ambiguity exists and no narrower approved exception is available, FUZE MUST default to the following:
+1. one domain remains canonical for a given truth throughout migration
+2. one representation remains canonical for writes at any given time, even if multiple representations coexist for reads
+3. additive and adapter-based evolution is preferred over silent semantic breakage
+4. public and trust-sensitive surfaces receive the strongest compatibility commitments and longest interpretability obligations
+5. internal surfaces default to coordinated coexistence and explicit cutover, not silent breakage
+6. projections, caches, reports, and public notices default to derived status, not canonical migration ownership
+7. rollback is allowed only when semantically safe; otherwise forward-fix with explicit lineage is required
+8. if a migration cannot name the owner domain, affected truth classes, coexistence rule, cutover authority, reconciliation method, and historical-lineage strategy, it is incomplete and MUST NOT proceed as production-grade
+
+## Roles / Actors / Entities
+### Human Actors
+- end users affected by product-visible transitions
+- partner integrators and external developers
+- support operators
+- product operators
+- security reviewers
+- finance/control-plane operators
+- governance or approval actors
+- public/community readers of trust-sensitive notices
+
+### System Actors
+- owner-domain services
+- release-control services
+- workflow engines and workers
+- validation and reconciliation jobs
+- reporting and publication services
+- public registry and transparency publication systems
+- API gateways and contract registries
+- control-plane tooling
+- chain-adjacent coordination services
+- SDK and machine-readable contract derivation pipelines
+
+### Core Entity Families
+- `migration_registry`
+- `compatibility_policy`
+- `contract_version_registry`
+- `supersession_registry`
+- `identifier_mapping_registry`
+- `migration_approval`
+- `migration_reconciliation_result`
+- `public_compatibility_notice`
+- migration readiness records
+- cutover references
+- rollback references
+- forward-fix references
+- public explanation references
+
+## Ownership Model
+### The Migration and Compatibility Governance Domain Owns
+- shared migration classification and lifecycle posture
+- compatibility policy structure and default commitments by surface family
+- migration status semantics and cutover-state semantics
+- cross-cutting coexistence, deprecation, sunset, and supersession rules
+- shared lineage requirements for identifiers, versions, and public references
+- readiness, approval, reconciliation, and override posture
+- architecture-level public notice and historical-interpretability rules
+
+### The Migration and Compatibility Governance Domain Does Not Own
+- business meaning of any domain entity
+- workflow semantics
+- queue mechanics
+- event semantics themselves
+- public publication content ownership
+- chain-native contract truth
+- rollout targeting logic
+
+### Owner Domains MUST
+- migrate their own canonical truth through explicit governed pathways
+- publish lineage for their owned resources, identifiers, and references
+- define semantic equivalence or non-equivalence when replacing representations
+- preserve correction and compensation lineage where migration affects domain correctness
+- avoid using migration as a license to bypass their own domain validation rules
+
+### Non-Owners MAY
+- coordinate with migration records and read compatibility metadata
+- consume derived notices or version posture
+- adapt their contracts during approved coexistence windows
+- display migration status or guidance downstream
+
+### Non-Owners MUST NOT
+- mutate foreign-domain canonical truth through migration convenience routes
+- treat publication artifacts as source truth
+- infer migration completion from rollout flags, cache shape, or frontend behavior alone
+- preserve obsolete semantics indefinitely without explicit compatibility authorization
+
+## Authority / Decision Model
+### Platform Migration Governance Authority
+Has final authority over cross-cutting migration posture, lifecycle semantics, compatibility commitments, coexistence rules, and required lineage fields.
+
+### Domain Authority
+Each owner domain has final authority over the meaning, lifecycle, validity, and correction of its own entities, identifiers, and business facts during migration.
+
+### Control / Governance Authority
+Control-plane systems and approval actors may approve, stage, restrict, roll back, or forward-fix material migrations under policy. They do not become owners of the underlying business meaning.
+
+### Publication Authority
+Public registry and transparency publication domains may publish compatibility and supersession artifacts, but they do so as derived publication layers downstream to canonical migration and owner-domain truth.
+
+### External Authority
+Partners, providers, and chain systems remain authorities only over their own inputs or contract-native state. Their observations become relevant to migration only after normalization and owner-domain validation.
+
+## State Model
+### Migration Lifecycle
+`draft -> planned -> approved -> staged -> active -> validating -> completed`
+
+Additional terminal or exceptional states:
+- `cancelled`
+- `rolled_back`
+- `failed_requires_forward_fix`
+- `superseded`
+
+### Version Lifecycle
+`proposed -> current -> deprecated -> sunset_scheduled -> sunset_complete`
+
+Additional state:
+- `historical_readable_only`
+
+### Supersession Lifecycle
+`declared -> published -> effective -> historical_lineage_only`
+
+### State Rules
+- no migration may move to `active` without explicit owner attribution, readiness posture, and required approval linkage
+- no version may move to `deprecated` without replacement reference or explicit deprecation rationale
+- no `sunset_complete` state may occur for a public or partner-visible surface without required prior notice unless emergency security or correctness policy explicitly overrides
+- no migration may move to `completed` until reconciliation succeeds or a governed override explicitly accepts residual risk
+- rollback may be used only when semantically safe for the owning domain
+- where rollback is unsafe, the migration MUST transition to `failed_requires_forward_fix` with preserved lineage
+- `historical_readable_only` means a prior version is no longer live for supported behavior but must remain interpretable for historical artifacts and audits
+
+## Lifecycle / Workflow Model
+1. a migration candidate is registered with owner domain, affected surface family, change scope, and intended strategy
+2. readiness data is attached, including dependency posture, compatibility impact, validation method, and recovery posture
+3. required approvals are collected according to sensitivity tier and affected domain class
+4. coexistence or staging preparations are activated, such as dual-read, dual-write, shadow validation, adapter deployment, or read-model rebuild plans
+5. cutover occurs under explicit authority and recorded effective time
+6. validation and reconciliation confirm semantic correctness, lineage correctness, and publication correctness
+7. compatibility notices, deprecation metadata, supersession records, and public explanations are published where applicable
+8. the migration is completed, rolled back, or moved to controlled forward-fix with explicit lineage
+
+## Invariants
+1. one owner domain remains canonical for a given truth at all times.
+2. one write representation remains canonical at any moment, even during coexistence.
+3. coexistence windows MUST be explicit and time-bounded.
+4. migration records MUST remain durable and auditable.
+5. supersession MUST preserve lineage rather than hide prior state.
+6. deprecation MUST remain distinct from sunset.
+7. correction MUST remain distinct from migration and supersession.
+8. public artifact replacement MUST preserve historical readability.
+9. webhook or event migration MUST be replay-safe and version-explicit.
+10. migration failure MUST never leave permanent ambiguous dual ownership unresolved.
+
+## Functional Rules
+### Rule 1: Migration Classification
+Every material migration MUST classify its scope across one or more of the following classes:
+- data migration
+- interface migration
+- event/webhook migration
+- product-behavior migration
+- economic or ledger-adjacent migration
+- registry or publication migration
+- contract or chain-reference migration
+- governance or policy migration
+
+### Rule 2: Coexistence Strategy Declaration
+Every material migration MUST declare its coexistence strategy when old and new forms may overlap.
+
+Allowed strategies include:
+- read-old / write-new
+- dual-read
+- dual-write (temporary and explicitly justified only)
+- shadow validation
+- hard cutover
+- rebuild-derived-from-canonical
+
+### Rule 3: Canonical Write Preservation
+Dual-write or adapter-based migration MUST NOT obscure which system remains canonical for writes.
+
+### Rule 4: Historical Lineage Preservation
+If identifiers, versions, contract references, or public artifacts change, lineage references MUST remain durable and queryable.
+
+### Rule 5: Public Notice Discipline
+Public or partner-visible breaking or meaning-changing transitions MUST publish explicit deprecation, replacement, or supersession artifacts where applicable.
+
+### Rule 6: Chain-Reference Discipline
+Contract address or wallet-registry replacement MUST preserve old-to-new reference lineage and public explanation posture where trust-sensitive.
+
+### Rule 7: Derived-Surface Discipline
+Reports, dashboards, transparency views, and public summaries MAY lag or rebuild during migration, but they MUST NOT silently redefine canonical source meaning.
+
+### Rule 8: Recovery Choice Explicitness
+When failure occurs, the migration path MUST explicitly choose rollback, containment, forward-fix, or manual hold. Silent undefined recovery is forbidden.
+
+### Rule 9: Compatibility Window Explicitness
+Breaking changes or semantically risky changes MUST carry explicit compatibility windows or explicit emergency-withdrawal justification.
+
+### Rule 10: Foreign-Domain Shortcut Prohibition
+No migration process may use foreign-domain private writes or undocumented shortcuts as a substitute for owner-domain controlled migration APIs.
+
+## Permission / Access Considerations
+- public reads are limited to explicitly published compatibility and lineage artifacts
+- authenticated end users MAY view migration metadata only where it directly affects their resources, entitlements, operations, or published artifacts
+- internal services MAY register progress, read compatibility state, and manage lineage only within authorized owner scope
+- admin/control-plane actors MAY approve, activate, roll back, or forward-fix only under narrower privilege and policy constraints
+- governance-sensitive, payout-sensitive, treasury-sensitive, and trust-sensitive migrations MAY require stronger dual-control or approval layers before activation
+
+## Entitlement Considerations
+- migration MUST NOT silently reinterpret entitlement, plan, or capability meaning through route shape or UI-only changes
+- if entitlement semantics or plan mapping change, the relevant owner domain MUST define explicit lineage and user-visible compatibility posture
+- rollout gating MAY narrow exposure during migration but MUST NOT replace canonical entitlement truth or migration truth
+- legacy entitlement interpretation MAY be temporarily supported only under explicit compatibility policy
+
+## API / Contract Implications
+Downstream API and contract specifications MUST preserve at minimum:
+- explicit contract-family lineage
+- explicit version status and replacement references
+- clear distinction between supported current, deprecated, and sunset states
+- accepted vs applied semantics through cutover windows
+- explicit compatibility windows for breaking changes where required
+- public-safe notice posture for public or partner-visible transitions
+- migration-safe idempotent mutation handling for activation, rollback, and status transitions
+- explicit rejection when callers use retired or blocked contracts under unsupported conditions
+
+## Event / Async Implications
+- migration actions SHOULD emit internal events when material states change, such as created, planned, approved, staged, activated, reconciled, completed, rolled_back, forward_fix_declared, deprecated, sunset_complete, and supersession_recorded
+- event and webhook version transitions MUST preserve lineage and replay safety
+- repeated migration-event delivery MUST not create duplicate migration meaning
+- long-running migration steps SHOULD expose accepted or in-progress status rather than pretending synchronous completion
+- webhook consumers MUST not be forced into silent schema breakage during migration; replacement paths MUST be explicit
+
+## Data Model / Storage Implications
+At minimum, the platform SHOULD preserve durable records for:
+- `migration_registry`
+- `compatibility_policy`
+- `contract_version_registry`
+- `supersession_registry`
+- `identifier_mapping_registry`
+- `migration_approval`
+- `migration_reconciliation_result`
+- `public_compatibility_notice`
+
+Minimum durable fields SHOULD include:
+- migration identity and class
+- owner domain
+- affected surface type and scope
+- strategy and readiness posture
+- status transition timestamps
+- approval references
+- replacement or supersession references
+- identifier mapping references
+- reconciliation summaries and result status
+- public explanation references where applicable
+- rollback or forward-fix references where applicable
+
+Rules:
+- these records govern migration and compatibility truth but do not replace owner-domain business truth
+- publication caches, dashboards, or derived summaries MUST remain downstream to these durable records
+- storage convenience or co-location MUST NOT change the ownership model
+
+## Read Model / Projection / Reporting Rules
+- dashboards and migration-health views MAY summarize migration status, but they remain derived views
+- public compatibility notices, registry supersession views, and transparency correction notices are derived publication artifacts, not canonical source truth
+- read models MAY be rebuilt from canonical truth where practical rather than migrated field-by-field
+- lagging reports or caches MUST represent lag explicitly rather than implying underlying truth changed
+- historical public artifacts SHOULD remain retrievable or at minimum explainable through lineage references after replacement
+
+## Security / Risk / Abuse Controls
+Migration and compatibility posture MUST preserve:
+- least-privilege control over activation, rollback, and forward-fix actions
+- stricter policy for finance-sensitive, governance-sensitive, payout-sensitive, and public-trust-sensitive migrations
+- replay safety and payload-conflict detection for mutation-sensitive migration operations
+- emergency disablement or withdrawal capability for unsafe public versions or webhook families
+- protection against hidden operator shortcuts that bypass owner-domain rules
+- explicit handling of sensitive migration notices so that private operational risk details do not leak onto public surfaces
+- restriction of external callbacks or provider-driven changes until normalization and owner approval occur
+
+## Boundary Violation Detection / Non-Canonical Patterns
+The following are non-canonical and forbidden unless a narrower approved exception explicitly allows them:
+- indefinite dual-write or indefinite dual-owner coexistence
+- using rollout flags as the only record of migration state
+- silent public breaking changes without deprecation or replacement posture
+- hidden remapping of identifiers without durable lineage
+- reports, dashboards, or transparency artifacts treated as owners of corrected historical meaning
+- foreign-domain private writes used to “speed up” migration
+- public registry or wallet reference replacement without supersession traceability
+- admin overrides without reason codes, actor attribution, and policy linkage
+- pretending rollback occurred when only forward-fix/correction was possible
+
+## Audit / Traceability Requirements
+Every material migration action MUST preserve sufficient audit lineage.
+
+At minimum, meaningful actions SHOULD preserve:
+- actor identity or service principal
+- initiating human actor where applicable
+- owner domain
+- migration identity and migration class
+- affected surface family
+- previous status and resulting status
+- approval linkage
+- correlation and trace identifiers
+- idempotency identity where relevant
+- replacement or supersession references where applicable
+- public notice or publication references where applicable
+- risk acknowledgement where override behavior is invoked
+
+Audit records are mandatory for:
+- migration creation
+- readiness approval
+- staging and activation
+- deprecation scheduling and sunset completion
+- rollback
+- forward-fix declaration
+- supersession publication
+- public notice publication and withdrawal
+- emergency override or emergency withdrawal
+
+## Failure Handling / Edge Cases
+### Semantic Non-Equivalence Discovered Late
+If old and new representations are found to be non-equivalent late in migration, the system MUST halt completion, preserve lineage, and choose rollback or forward-fix explicitly.
+
+### Rollback Not Safe
+If rollback would corrupt or ambiguate domain truth, the migration MUST transition to `failed_requires_forward_fix` and preserve public explanation and correction lineage where material.
+
+### Derived Surface Lag During Cutover
+Lagging reports, registries, or public views do not change source truth. Lag MUST be disclosed or traceable rather than silently treated as the new canonical state.
+
+### Public Contract Used After Sunset
+Calls to sunset versions SHOULD fail explicitly with clear migration guidance where that guidance is supportable.
+
+### Chain Reference Changed but Public Notice Missing
+A trust-sensitive chain or wallet reference replacement MUST be treated as incomplete until public supersession lineage and explanation posture are published where required.
+
+### Identifier Collision During Remapping
+Conflicting legacy-to-new identifier mapping MUST be rejected or quarantined until resolved by the owning domain.
+
+### Partial Completion
+A migration MAY be staged or active while downstream projections rebuild. The system MUST distinguish active cutover from full completion.
+
+## Operational Considerations
+Operators MUST be able to:
+- inventory active, planned, deprecated, and sunset migrations and versions
+- inspect readiness gaps, risk posture, and dependent systems before activation
+- correlate migration events with deployments, workflow runs, and public notice publication
+- distinguish rollback-safe vs forward-fix-only situations
+- observe reconciliation failure counts and unresolved warnings
+- quarantine unsafe public versions, endpoints, or projections under approved policy
+- trace chain-reference, registry, and transparency supersessions end to end
+- explain to internal teams and external consumers what changed, when, and what replaced it
+
+## Migration / Compatibility / Supersession Considerations
+- additive evolution is preferred where feasible, but additive change does not excuse semantic ambiguity
+- public APIs and public webhooks receive the strongest compatibility commitment
+- internal service APIs receive coordinated compatibility commitment and explicit cutover, not silent breakage
+- reports, registries, and trust-sensitive publications require historical readability even when formats evolve
+- old and new forms MAY coexist temporarily, but only one remains canonical for writes
+- a deprecation notice does not itself change semantics; it changes support posture and future expectations
+- a sunset state indicates end of supported use under declared policy or emergency override
+- correction of prior public artifacts MUST preserve correction lineage rather than overwrite history opaquely
+
+## Implementation-Contract Guardrails
+Downstream implementations MUST preserve:
+- explicit migration identity for material transitions
+- explicit owner-domain attribution
+- explicit version, replacement, and supersession references
+- explicit coexistence and cutover strategy
+- business-level idempotency for material migration mutations
+- audit and trace lineage
+- durable distinction between canonical migration truth and derived/public notice truth
+- explicit rollback vs forward-fix classification
+- public historical readability for trust-sensitive replaced artifacts
+- no hidden foreign-domain mutation shortcuts
+
+Downstream implementations MUST NOT optimize away:
+- lineage between old and new identifiers or references
+- accepted vs active vs completed migration states
+- replacement references for deprecated or sunset contracts where required
+- reason-coded override behavior
+- explicit reconciliation outcomes
+- classification of public notices as derived artifacts rather than source truth
+
+## Downstream Execution Staging
+This document should be consumed in the following order:
+1. shared public/internal/event/idempotency specifications
+2. domain API and event specifications
+3. migration-aware storage and identifier-mapping contracts
+4. release-control and operational runbooks
+5. public compatibility notice and registry/transparency publication layers
+6. SDK, OpenAPI, AsyncAPI, and consumer guidance derivation
+
+## Required Downstream Specs / Contract Layers
+The following downstream layers are expected where relevant:
+- domain-specific migration plans
+- contract version registries
+- deprecation and sunset policy schedules
+- identifier mapping schemas
+- cutover and reconciliation runbooks
+- public compatibility notice schemas
+- registry/transparency supersession publication contracts
+- consumer guidance and SDK migration metadata
+
+## Canonical Examples / Anti-Examples
+### Canonical Examples
+- a public API version is deprecated with a replacement reference, explicit sunset timing, and public migration guidance
+- an internal service contract moves through a dual-read coexistence window while one write owner remains canonical
+- a chain contract reference is superseded with old-to-new registry lineage and public explanation
+- a historical transparency report is corrected through explicit correction lineage rather than destructive replacement
+
+### Anti-Examples
+- deleting old public references without any supersession record
+- letting a dashboard become the de facto source of migration status because no durable migration record exists
+- using a feature flag as the only evidence that cutover occurred
+- supporting dual-write indefinitely because cutover ownership was never made explicit
+- changing a webhook payload meaning without explicit version or migration posture
+
+## Dependencies / Cross-Spec Links
+This document depends directly on:
+- `REFINED_SYSTEM_SPEC_INDEX.md`
+- `API_ARCHITECTURE_SPEC.md`
+- `PUBLIC_API_SPEC.md`
+- `INTERNAL_SERVICE_API_SPEC.md`
+- `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+- `IDEMPOTENCY_AND_VERSIONING_SPEC.md`
+- `FEATURE_FLAG_AND_ROLLOUT_CONTROL_SPEC.md`
+- `AUDIT_LOG_AND_ACTIVITY_SPEC.md`
+- `SECURITY_AND_RISK_CONTROL_SPEC.md`
+- `DEPLOYMENT_AND_RUNTIME_OPERATIONS_SPEC.md`
+- `BUSINESS_CONTINUITY_AND_RECOVERY_SPEC.md`
+- `PUBLIC_CONTRACT_AND_WALLET_REGISTRY_SPEC.md`
+- `TRANSPARENCY_REPORTING_SPEC.md`
+
+## Explicitly Deferred Items
+The following items are intentionally deferred to narrower specifications or runbooks:
+- exact cutover dates and release calendars
+- exact domain payload translation logic
+- exact SQL/DDL migration scripts
+- exact UI copy for user notices
+- exact per-surface notice windows by product family
+- exact chain deployment procedures and transaction details
+- exact reconciliation thresholds by domain and risk tier
+
+## Final Normative Summary
+FUZE MUST evolve through explicit, lineage-preserving, ownership-respecting migrations. Backward compatibility MUST be deliberate and bounded. Coexistence MUST be temporary and unambiguous. Public and trust-sensitive surfaces MUST preserve the strongest notice and interpretability posture. Rollout controls, reports, dashboards, and publication artifacts MUST NOT replace canonical migration truth. Every material transition MUST remain auditable, explainable, and safe to operate under retry, replay, degradation, and recovery conditions.
+
+## Quality Gate Checklist
+- Canonical owner explicit for every material truth family: **Yes**
+- Mutation boundaries explicit: **Yes**
+- Adjacent boundaries explicit: **Yes**
+- Truth classes explicit: **Yes**
+- Conflict-resolution rules explicit: **Yes**
+- Default decision rules explicit: **Yes**
+- Non-canonical patterns called out clearly: **Yes**
+- Operator/admin override paths bounded and audited: **Yes**
+- Read-model, cache, reporting, and projection rules explicit: **Yes**
+- On-chain vs off-chain responsibilities explicit where relevant: **Yes**
+- Failure and degraded-mode behaviors explicit: **Yes**
+- Downstream implementation guardrails explicit: **Yes**
+- Dependencies and downstream impacts explicit: **Yes**
+- Non-goals and deferred items explicit: **Yes**
+- Strong enough for backend/API/data/runtime implementation without contradictory semantics: **Yes**

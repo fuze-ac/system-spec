@@ -1,790 +1,730 @@
-# INTERNAL_SERVICE_API_SPEC
+# FUZE Internal Service API Specification
+
+## Document Metadata
+- **Document Name:** `INTERNAL_SERVICE_API_SPEC.md`
+- **Document Type:** Canonical refined system specification
+- **Status:** Active refined system spec
+- **Version:** 2.0.0
+- **Effective Date:** 2026-04-22
+- **Last Updated:** 2026-04-22
+- **Reviewed On:** 2026-04-22
+- **Document Owner:** FUZE Platform Internal API Governance Domain (canonical owner for shared service-to-service contract posture); named individual owner is not explicitly specified in the retrieved governing materials
+- **Approval Authority:** Not explicitly specified in the retrieved governing materials; constitutional approval authority remains governed by `REFINED_SYSTEM_SPEC_INDEX.md` and the active FUZE approval workflow
+- **Review Cadence:** Not explicitly specified in the retrieved governing materials; SHOULD be reviewed whenever platform plane boundaries, domain ownership assignments, internal identity posture, workflow/queue coupling, AI platform coupling, public-vs-internal boundary rules, control-plane restrictions, audit posture, or migration/versioning posture materially changes
+- **Governing Layer:** Shared platform interface governance / internal service contract layer
+- **Parent Registry:** `REFINED_SYSTEM_SPEC_INDEX.md`
+- **Primary Audience:** Platform architecture, backend engineering, product engineering, AI engineering, workflow/runtime engineering, API and contract authors, security, audit, operations, finance/control-plane engineering, implementation-contract authors
+- **Primary Purpose:** Define the canonical FUZE internal service API layer that governs service-to-service collaboration, owner-domain mutation discipline, internal read posture, accepted-state initiation, service identity, internal authorization, audit lineage, and contract-governance rules without collapsing internal APIs into public APIs, admin/control APIs, workflow meaning, queue truth, derived reporting, or product-local shortcuts
+- **Primary Upstream References:**
+  - `REFINED_SYSTEM_SPEC_INDEX.md`
+  - `DOCS_SPEC_INDEX.md`
+  - `SYSTEM_SPEC_INDEX.md`
+  - `API_SPEC_INDEX.md`
+  - `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+  - `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+  - `PLATFORM_ARCHITECTURE_SPEC.md`
+  - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+  - `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+  - `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
+  - `PRODUCT_BOUNDARY_AND_DOMAIN_OWNERSHIP_SPEC.md`
+  - `PRODUCT_ADMISSION_AND_EXPANSION_GATE_SPEC.md`
+  - `API_ARCHITECTURE_SPEC.md`
+  - `PUBLIC_API_SPEC.md`
+  - `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+  - `IDEMPOTENCY_AND_VERSIONING_SPEC.md`
+  - `MIGRATION_AND_BACKWARD_COMPATIBILITY_SPEC.md`
+  - `WORKFLOW_AND_AUTOMATION_SPEC.md`
+  - `JOB_QUEUE_AND_WORKER_SPEC.md`
+  - `AI_ORCHESTRATION_SPEC.md`
+  - `MODEL_ROUTING_AND_CONTEXT_SPEC.md`
+  - `AI_USAGE_METERING_SPEC.md`
+  - `FEATURE_FLAG_AND_ROLLOUT_CONTROL_SPEC.md`
+  - `AUDIT_LOG_AND_ACTIVITY_SPEC.md`
+  - `SECURITY_AND_RISK_CONTROL_SPEC.md`
+  - `MONITORING_ALERTING_AND_INCIDENT_RESPONSE_SPEC.md`
+  - `SECRETS_CONFIG_AND_ENVIRONMENT_SPEC.md`
+- **Primary Downstream Dependents:**
+  - `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+  - `IDEMPOTENCY_AND_VERSIONING_SPEC.md`
+  - `MIGRATION_AND_BACKWARD_COMPATIBILITY_SPEC.md`
+  - domain API specifications
+  - workflow integration contracts
+  - queue / worker API contracts
+  - AI platform API contracts
+  - admin/control backend integration contracts
+  - machine-readable internal OpenAPI / AsyncAPI derivation artifacts
+- **Supersedes:** Earlier or weaker interpretations that treat internal APIs as private convenience transport, allow hidden cross-domain writes or table coupling, conflate internal with public or admin surfaces, permit service identity to collapse into network trust, or let workflows/workers/reporting layers act as silent mutation owners
+- **Superseded By:** None currently defined
+- **Related Decision Records:** Not explicitly linked in the retrieved governing materials
+- **Canonical Status Note:** This document is the canonical governing system specification for FUZE internal service API posture. Downstream services, workflows, workers, product integrations, admin backends, queue runtimes, AI runtimes, events, versioning layers, and migration plans MUST preserve the ownership, truth-separation, caller-identity, and contract-discipline rules defined here.
+- **Implementation Status:** Normative source; downstream services, routes, envelopes, auth layers, retry behavior, audit hooks, and internal contract registries MUST align
+- **Approval Status:** Draft refined canonical specification pending explicit approval workflow
+- **Change Summary:** Refined the internal service API layer into a production-grade shared interface-governance specification; normalized the distinction between internal APIs and adjacent public/admin/event/workflow/queue layers; clarified service identity, internal authorization, owner-domain write rules, accepted-state semantics, internal derived-read posture, control-plane restrictions, auditability, compatibility windows, and implementation-contract guardrails
+
+## Title
+FUZE Internal Service API Specification
 
 ## Purpose
+This specification defines the canonical internal service API layer of FUZE.
 
-This document defines the canonical internal service API architecture of the FUZE ecosystem. Its purpose is to establish how FUZE services communicate with one another inside the platform boundary, how internal write and coordination paths align with domain ownership, how service-to-service contracts differ from public APIs, and how internal interfaces support a multi-product, transparency-first platform with shared identity, billing, credits, AI orchestration, workflows, governance, treasury, and payout-sensitive systems.
+Its purpose is to make explicit:
+- what the internal service API domain governs and what it does not govern
+- how FUZE services collaborate inside the platform boundary without weakening domain ownership
+- how internal write and read exposure must differ from public APIs, admin/control surfaces, events, workflow state, queue truth, reporting views, and frontend convenience layers
+- how authenticated service identity, service scope, contract versioning, idempotency, accepted-state semantics, audit lineage, and degraded-mode behavior must work for service-to-service contracts
+- what downstream domain APIs, workflow integrations, worker integrations, AI platform integrations, and control-plane backends MUST preserve
 
-This specification is foundational because FUZE is not a monolithic application. It is a multi-domain platform with shared services, product-specific services, async orchestration, policy-sensitive economic systems, and on-chain/off-chain coordination. In such an environment, internal APIs are not just implementation detail. They are one of the main ways entity ownership, write authority, side-effect handling, and operational safety become enforceable in practice.
-
----
+This specification is intentionally governing rather than descriptive. It does not merely list private routes or discuss implementation convenience. It defines the durable FUZE architecture for internal collaboration through explicit contracts.
 
 ## Scope
+This specification governs:
+- the shared internal service API layer across FUZE platform and product domains
+- service-to-service interface families and their allowed uses
+- owner-domain mutation and query exposure rules
+- internal request, response, correlation, and error architecture
+- accepted-state patterns for async initiation through internal APIs
+- explicit authenticated service identity and internal authorization posture
+- idempotency, replay-safety, and versioning obligations for internal contracts
+- internal event-emission implications when internal APIs trigger meaningful domain transitions
+- audit, traceability, and operational observability requirements for internal API calls
+- internal derived-read posture and its limits
+- control-plane restrictions and emergency blocking posture for internal routes
+- implementation-contract guardrails for downstream internal domain API specifications
 
-This specification covers:
+## Out of Scope
+This specification does not define:
+- public or partner-facing API contracts
+- exact endpoint-by-endpoint schemas for every domain
+- the complete event catalog or webhook delivery catalog
+- full workflow meaning or workflow-step semantics
+- full queue lease, heartbeat, or dead-letter implementation detail
+- complete AI routing, context, metering, or output-governance semantics
+- exact network-mesh, service-discovery, or infrastructure-vendor implementation
+- exact OpenAPI and AsyncAPI file structures
+- human admin screen behavior or operator console UX
+- direct database schemas for every owner domain entity
 
-- the canonical role of internal service APIs in FUZE
-- the distinction between internal service APIs, public APIs, first-party application APIs, and event-driven interfaces
-- how internal APIs align with canonical domain ownership and mutation authority
-- synchronous service-to-service interaction patterns
-- asynchronous coordination boundaries and when not to use direct internal APIs
-- internal API treatment for identity, workspace, wallet-aware, credits, billing, AI, workflow, governance, treasury, and payout-sensitive domains
-- internal authentication, authorization, traceability, error handling, and retry expectations
-- versioning, compatibility, and evolution rules for internal service contracts
-- security, observability, auditability, and failure-handling principles for internal API operations
+Those concerns belong in adjacent interface-family, execution, AI, commerce, security, and implementation documents, provided they remain consistent with this specification.
 
-This specification does not define every route, event schema, or deployment topology detail. Those are refined in:
+## Design Goals
+The design goals of FUZE internal service APIs are to:
+1. preserve owner-domain boundaries while enabling practical service collaboration
+2. make internal writes explicit, typed, and domain-owned rather than hidden table-level shortcuts
+3. support synchronous answers where appropriate and accepted-state async initiation where necessary
+4. distinguish internal service APIs from public APIs, control-plane APIs, events, workflows, queue semantics, and reporting views
+5. preserve strong internal identity, authorization, traceability, and retry safety
+6. keep sensitive commercial, governance, payout, and control-sensitive internal operations narrower than ordinary internal reads
+7. support future product and platform growth without semantic drift or soft co-ownership
+8. give downstream contract authors enough architecture to implement safely without inventing contradictory semantics
 
+## Non-Goals
+This specification is not intended to:
+- make all collaboration synchronous request/response
+- mirror public APIs internally or mirror internal APIs publicly
+- let internal APIs become a general escape hatch around domain ownership
+- let workflows, workers, dashboards, or AI runtimes mutate owner-domain truth through undocumented private paths
+- use network adjacency as sufficient proof of internal authority
+- treat internal dashboards or reporting queries as hidden write surfaces
+- collapse accepted async initiation into final business completion
+- create broad internal “root” routes for sensitive economic or governance-sensitive mutations
+
+If there is tension between convenience and ownership-preserving explicitness, the ownership-preserving interpretation wins.
+
+## Core Principles
+### 1. Ownership-Respecting Collaboration Principle
+Internal service APIs exist so that one domain may request or observe another domain’s behavior through explicit contracts without taking over that domain’s truth.
+
+### 2. Owner-Domain Mutation Principle
+Canonical writes MUST terminate in the owning domain’s boundary even when the request originated from another service, workflow, worker, or control-plane backend.
+
+### 3. Internal-Is-Not-Public Principle
+Internal service APIs are distinct from public APIs and MAY expose richer internal semantics, but they MUST remain non-public, service-authenticated, and platform-bounded.
+
+### 4. Internal-Is-Not-Control-Plane Principle
+A privileged control action is not an ordinary internal mutation. Governance-aware or emergency-sensitive actions require narrower control-plane posture and stronger policy and audit handling.
+
+### 5. Accepted-State Honesty Principle
+When an internal API only admits work for later execution, it MUST return accepted-state semantics rather than pretending the work has completed.
+
+### 6. Service-Identity Principle
+Being inside FUZE infrastructure is not sufficient authority. Internal callers MUST present explicit, auditable service identity.
+
+### 7. Bounded Non-Owner Rights Principle
+Non-owning services may read, derive, request mutation, or coordinate execution only to the degree explicitly granted by contract and policy.
+
+### 8. Derived-Read Discipline Principle
+Internal summaries, dashboards, and reconciliation views MAY be exposed through derived internal reads, but they MUST NOT become hidden source-of-truth or write owners.
+
+### 9. Retry-Safe Collaboration Principle
+Internal APIs MUST be designed for duplicate delivery, network retry, orchestration replay, and worker restarts without silently creating duplicate business effects.
+
+### 10. Future-Safe Interface Discipline Principle
+Internal contracts MAY evolve faster than public contracts, but they remain architecture-governed artifacts and MUST preserve explicit compatibility, deprecation, and migration discipline.
+
+## Canonical Definitions
+### Internal Service API
+A service-authenticated FUZE interface used for service-to-service collaboration within the platform boundary.
+
+### Owner-Domain Internal API
+An internal contract owned by the domain that owns the meaning and mutation of the underlying truth.
+
+### Internal Mutation API
+A contract by which an owning domain accepts a meaningful state change or accepted mutation intent from a service caller.
+
+### Internal Query API
+A contract by which another service requests current canonical or tightly owned read data from an owning domain.
+
+### Internal Derived Read API
+A read-only internal contract exposing a composed or operationally optimized projection that is explicitly downstream to canonical owner truth.
+
+### Control-Restricted Internal API
+A narrower internal or control-plane route family used for governance-sensitive, incident-sensitive, payout-sensitive, or commercially sensitive actions requiring stronger policy and audit posture.
+
+### Accepted Internal Intent
+A durable internal record that the target owner domain admitted a requested action for later execution. It is not equivalent to final business success.
+
+### Service Principal
+The authenticated identity of an internal caller, such as a platform core service, product domain service, worker class, workflow orchestrator, scheduler, reporting service, integration adapter, or control-plane backend.
+
+### Service Scope Grant
+A bounded grant allowing a service principal to call a specific internal route family or operation class under explicit domain and environment constraints.
+
+## Truth Class Taxonomy
+This specification MUST preserve the following truth classes:
+1. **Semantic truth** — what an internal contract means and which domain owns that meaning
+2. **Policy truth** — rules governing exposure, authorization, rollout restrictions, compatibility windows, and deprecation
+3. **Runtime truth** — current request processing, dependency state, accepted/pending status, and execution progress
+4. **Ledger / storage truth** — durable owner-domain records, request lineage, idempotency lineage, contract version lineage, and audit references
+5. **Provider-input truth** — raw external inputs before owner-domain normalization
+6. **Implementation-adapter truth** — gateways, auth adapters, protocol mediation, or service-level translation state
+7. **Execution truth** — workflow, queue, worker, retry, and scheduler state
+8. **Projection / reporting truth** — operational dashboards, reconciliation summaries, support views, and publication preparation views
+9. **Presentation truth** — labels, UI messages, or support/operator renderings
+
+These truth classes MUST remain distinct. Internal service API architecture does not absorb business-domain truth, workflow meaning, queue meaning, reporting ownership, or control-plane ownership.
+
+## Architectural Position in the Spec Hierarchy
+This document sits below:
+- `REFINED_SYSTEM_SPEC_INDEX.md`
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
 - `API_ARCHITECTURE_SPEC.md`
+
+and above or alongside:
 - `PUBLIC_API_SPEC.md`
 - `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
 - `IDEMPOTENCY_AND_VERSIONING_SPEC.md`
-- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `MIGRATION_AND_BACKWARD_COMPATIBILITY_SPEC.md`
 - `WORKFLOW_AND_AUTOMATION_SPEC.md`
 - `JOB_QUEUE_AND_WORKER_SPEC.md`
-- `PLATFORM_CREDITS_SPEC.md`
-- `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`
-- `PROFIT_PARTICIPATION_SYSTEM_SPEC.md`
-
----
-
-## Design Goals
-
-The design goals of the FUZE internal service API architecture are:
-
-1. to align service-to-service writes with canonical ownership boundaries
-2. to prevent hidden cross-domain mutation and private database coupling
-3. to support explicit synchronous coordination where it is appropriate
-4. to avoid misusing internal APIs for work better handled through async jobs or events
-5. to provide consistent internal request, response, and error semantics across services
-6. to support strong auditability and traceability for internal side effects
-7. to preserve tighter security and control discipline for governance-, treasury-, and payout-sensitive flows
-8. to make internal service contracts stable enough for platform scale without freezing internal evolution unnecessarily
-
----
-
-## Non-Goals
-
-This specification is not intended to:
-
-- force every cross-domain interaction to use synchronous APIs
-- make internal APIs identical to public APIs
-- collapse event-driven coordination into request/response convenience
-- allow one service to mutate another domain’s truth through undocumented private paths
-- expose governance-, treasury-, or payout-sensitive internal controls to broad internal callers without domain-specific restriction
-- require every internal read to go through an expensive cross-service call when a derived read model is more appropriate
-- define every service mesh or network control implementation detail in this document
-
----
-
-## Canonical Internal API Principle
-
-The primary principle of FUZE internal service APIs is:
-
-> internal service APIs must allow domains to collaborate without weakening canonical ownership, so that one service may request or observe another domain’s behavior through explicit contracts, but may not silently take over that domain’s truth or control responsibilities.
-
-This means:
-
-- internal APIs are ownership-respecting collaboration boundaries
-- the owning domain defines the mutation contract for its entities
-- service-to-service coordination should be explicit, typed, and traceable
-- cross-domain convenience must not become hidden write authority
-- trust-sensitive actions require narrower internal contracts and stronger controls than routine operational reads
-
-This principle is one of the main ways the FUZE architecture prevents platform sprawl from turning into hidden coupling.
-
----
-
-## Why FUZE Needs a Distinct Internal Service API Layer
-
-FUZE needs a distinct internal service API layer because the platform contains many collaborating domains that still must remain separately owned.
-
-Examples include:
-
-- identity and auth
-- workspace and membership management
-- wallet-aware participation logic
-- payment verification
-- Platform Credits issuance and mutation
-- subscriptions and entitlements
-- AI orchestration
-- workflow orchestration and job execution
-- product-domain services
-- governance, treasury, and vault logic
-- payout-cycle preparation and publication
-- transparency and reporting services
-
-If these domains communicate through ad hoc direct data access, several risks emerge:
-
-- ownership becomes ambiguous
-- correction and audit lineage weakens
-- cross-service changes become harder to reason about
-- product teams begin to depend on undocumented side effects
-- support and reconciliation become harder because no explicit contract explains what happened
-- governance- or economic-sensitive domains may be mutated from too many places
-
-A distinct internal service API layer solves this by ensuring that cross-domain behavior happens through defined contracts. These contracts make it clearer:
-
-- what one service may ask another service to do
-- what one service may read directly
-- what data is canonical versus derived
-- what failures are retryable
-- what side effects should be emitted as events instead of chained synchronous writes
-- what controls apply to sensitive domains
-
-This is especially important in FUZE because the platform grows by adding products and shared capabilities. Strong internal APIs are part of what makes that growth sustainable.
-
----
-
-## Internal Service APIs vs Public APIs
-
-FUZE should maintain a strong distinction between internal service APIs and public APIs.
-
-### Internal service APIs
-These are contracts between trusted FUZE services or control-plane components inside the platform boundary.
-
-They may:
-- expose richer domain semantics
-- assume stronger caller identity
-- operate within stricter service authorization models
-- include internal-only control or correction paths
-- support ownership-aligned writes not appropriate for public exposure
-
-### Public APIs
-These are externally supported contracts exposed to outside consumers, users, or partners under stricter compatibility and visibility rules.
-
-### Why the distinction matters
-
-If internal APIs are treated as public:
-- internal platform evolution slows unnecessarily
-- sensitive control surfaces risk accidental overexposure
-- product implementation details may harden into external contracts too early
-
-If public APIs are treated as internal:
-- external integrators may not get the stability, documentation, or safety guarantees they need
-
-### Principle
-
-Internal APIs are for controlled platform collaboration.  
-Public APIs are curated external contracts.  
-The platform should never confuse the two.
-
----
-
-## Internal Service APIs vs Event-Driven Coordination
-
-Internal request/response APIs are not the only internal coordination mechanism in FUZE.
-
-FUZE should distinguish clearly between:
-
-### Internal synchronous APIs
-Used when one service needs immediate answer or immediate domain-owned action result.
-
-### Event-driven coordination
-Used when cross-domain side effects, background execution, or durable multi-step behavior are better handled asynchronously.
-
-### Why this matters
-
-If synchronous internal APIs are overused:
-- latency chains grow
-- dependency coupling increases
-- retry behavior becomes fragile
-- cross-domain failures become harder to contain
-- async-capable domains get forced into artificial request/response behavior
-
-If events are overused indiscriminately:
-- immediate control paths may become too vague
-- simple reads may become harder than necessary
-
-### Principle
-
-Internal APIs should be used for explicit, bounded synchronous collaboration.  
-Events and jobs should be used for durable side effects, workflows, and async coordination.
-
-This balance is especially important in credits, billing, workflow, and payout domains.
-
----
-
-## Internal API Surface Families
-
-FUZE should recognize different families of internal service APIs.
-
-### 1. Canonical Domain Mutation APIs
-These are owned by the domain that owns the truth and are the only approved internal write surfaces for canonical entity mutation.
-
-Examples:
-- create or update workspace membership
-- issue credits after verified payment
-- mutate subscription state
-- publish payout-cycle business record
-- create governance action record
-
-### 2. Domain Query APIs
-These expose canonical or tightly owned domain reads to other services.
-
-Examples:
-- resolve account state
-- fetch workspace membership permissions
-- retrieve current entitlement state
-- retrieve credits owner balance projection
-- retrieve payout-cycle current status
-
-### 3. Control and Policy APIs
-These expose internal actions with stronger restrictions around trust-sensitive domains.
-
-Examples:
-- treasury action proposal submission
-- governance approval recording
-- vault action validation
-- payout-cycle publication gating
-- registry publication controls
-
-### 4. Orchestration Support APIs
-These help workflow engines, schedulers, or coordinators interact with owning domains.
-
-Examples:
-- start payout preparation
-- request AI task routing
-- mark workflow step outcome
-- finalize report artifact publication
-- trigger entitlement refresh
-
-### 5. Internal Derived Read APIs
-These expose composed views for internal operational use when a dedicated read model exists.
-
-Examples:
-- finance reconciliation summary
-- operator billing dashboard summary
-- payout review overview
-- governance queue overview
-
-### Principle
-
-Different internal API families should have different control expectations. A canonical mutation API is not the same thing as an internal dashboard query.
-
----
-
-## Domain-Aligned Internal API Ownership
-
-Internal APIs in FUZE must align with domain ownership.
-
-### Identity domain
-Owns internal mutation APIs for:
-- account lifecycle state
-- linked auth relationships
-- security posture changes
-- account restriction or restoration actions
-
-Owns internal query APIs for:
-- account existence and status
-- auth linkage state
-- security state
-
-### Workspace domain
-Owns internal mutation APIs for:
-- workspace creation
-- membership changes
-- workspace owner or billing-owner transitions
-- workspace-scoped access changes
-
-### Wallet-aware domain
-Owns internal mutation APIs for:
-- wallet link
-- wallet unlink
-- verification status changes
-- rank recalculation triggers where owned by this domain
-
-### Payment domain
-Owns internal mutation APIs for:
-- normalized payment record creation
-- verified payment outcome state
-- provider status reconciliation inputs
-
-### Credits domain
-Owns internal mutation APIs for:
-- issue
-- reserve
-- spend
-- release
-- reverse
-- adjust
-- correct ledger-linked balance state through owned pathways
-
-### Subscription and entitlement domain
-Owns internal mutation APIs for:
-- plan lifecycle transitions
-- entitlement creation and update
-- billing-state transitions
-- renewal state changes
-
-### Product domains
-Each product owns internal mutation APIs for its domain objects and outputs.
-
-### Governance / treasury / payout domains
-These own their trust-sensitive internal APIs and must not be bypassed by other services.
-
-### Principle
-
-An internal service may request change from the owning domain, but it may not take write ownership because service-to-service access happens to exist.
-
----
-
-## Canonical Mutation APIs
-
-Canonical mutation APIs are the most important internal service API class because they protect ownership boundaries.
-
-A canonical mutation API should have the following properties:
-
-- it belongs to the domain that owns the entity or state transition
-- it is the only approved internal write path for that mutation class
-- it performs domain-level validation and policy enforcement
-- it emits or records audit lineage
-- it returns explicit success, conflict, accepted, or failure semantics
-- it does not expose raw persistence internals to callers
-
-### Examples
-
-#### Payment verified -> credits issued
-The payment domain should not directly update credits tables. It should call the credits domain’s issuance API or emit the event path that leads to that API being invoked by the credits domain.
-
-#### Product usage -> credits spend
-A product may request a credits spend through the credits domain, but it must not decrement balance in product-owned data.
-
-#### Governance approval -> payout-cycle release
-A governance domain or orchestrator may call the payout domain’s publication/funding-preparation API, but it should not write payout-cycle truth directly.
-
-### Principle
-
-Canonical mutation APIs are one of the strongest implementation protections against ownership erosion in FUZE.
-
----
-
-## Internal Query APIs and Read Strategy
-
-FUZE should treat internal reads differently from internal writes.
-
-### Internal query APIs are appropriate when:
-- another service needs current canonical state owned elsewhere
-- derived data is insufficient or unsafe
-- the read is low enough latency and stable enough for service-to-service use
-- the caller should not own a local copy of the data as truth
-
-### Derived read models are preferable when:
-- the view is heavily aggregated
-- the data is needed at high volume
-- dashboard or operator views need many domains at once
-- the query load would create excessive synchronous dependency
-- eventual consistency is acceptable
-
-### Examples
-
-Appropriate internal queries:
-- fetch current workspace role for an account
-- fetch current subscription entitlement state
-- fetch current payout cycle publication status
-- resolve wallet-link verification state
-
-Prefer derived reads:
-- operator platform overview dashboard
-- finance reconciliation summary
-- cross-domain holder summary dashboard
-- multi-product commercial analytics views
-
-### Principle
-
-Internal reads should balance correctness and coupling. FUZE should not force every internal reader into either direct dependency or unsafe local truth duplication.
-
----
-
-## Synchronous Coordination Patterns
-
-Synchronous internal APIs are appropriate when immediate answer or state transition is required.
-
-### Good synchronous use cases
-- permission and role check before performing a product action
-- fetch current credits balance before presenting a UX decision
-- create canonical product request record
-- verify current entitlement before serving a premium path
-- create support-approved adjustment request in the owning domain
-
-### Poor synchronous use cases
-- multi-step long-running AI jobs
-- payout-cycle preparation pipelines
-- bulk reporting generation
-- large workflow replay or backfill
-- chained financial reconciliations across many systems
-
-### Pattern principle
-
-Use synchronous APIs for bounded domain actions and immediate answers.  
-Use async jobs or events where the work is durable, multi-step, retry-heavy, or latency-insensitive.
-
-This distinction keeps internal service APIs usable without turning them into a fragile orchestration web.
-
----
-
-## Async-Aware Internal API Design
-
-Even when an internal API is request/response, it may still represent the start of async work.
-
-FUZE should support internal APIs that return accepted-state rather than final-state when the operation is naturally asynchronous.
-
-### Typical pattern
-1. service submits domain-owned request
-2. owning domain validates and records request
-3. domain returns accepted + operation/job reference
-4. workflow or job system processes downstream work
-5. status is checked through domain or orchestration APIs
-6. final result becomes available through explicit read APIs or events
-
-### Internal async examples
-- start HerHelp generation project
-- start Botmad scan run
-- start payout entitlement preparation
-- request large export generation
-- request transparency report build/publish workflow
-
-### Principle
-
-Internal APIs should not force pretending that async work is synchronous. Accepted-state semantics are a first-class part of FUZE service architecture.
-
----
-
-## Internal Authentication and Service Identity
-
-Internal service APIs should use explicit service identity rather than implicit network trust alone.
-
-At minimum, internal callers should be distinguishable as:
-
-- product service
-- platform core service
-- workflow engine
-- scheduler/worker
-- support/admin control-plane service
-- reporting/publication service
-- governance or treasury control service
-
-### Why this matters
-
-Different services should not all look identical from an authorization perspective. A workflow engine should not automatically have the same powers as the credits service. A reporting service should not have mutation authority over governance truth. Service identity is necessary to enforce least privilege inside the platform.
-
-### Principle
-
-Being inside the FUZE infrastructure boundary does not itself grant broad internal authority. Internal APIs should still authenticate and classify callers.
-
----
-
-## Internal Authorization and Domain Scoping
-
-Internal service APIs should apply authorization rules even for trusted internal callers.
-
-Authorization should consider:
-
-- calling service identity
-- domain relationship
-- operation type
-- scope reference
-- environment and control-plane posture
-- policy restriction for trust-sensitive actions
-
-### Examples
-
-#### Product service calling credits service
-Allowed to request spend under approved business action flow, but not allowed to issue arbitrary credits.
-
-#### Reporting service calling payout domain
-Allowed to read published cycle state, but not allowed to mutate entitlement or funding state.
-
-#### Workflow engine calling governance domain
-May be allowed to advance workflow state around approval processing, but not to invent approvals or bypass role checks.
-
-### Principle
-
-Internal authorization should be narrow, operation-specific, and domain-aware. This is one of the most important protections in a platform with many services and sensitive economic flows.
-
----
-
-## Internal APIs for Credits, Billing, and Economic Domains
-
-Economic domains need especially strong internal API discipline.
-
-### Payment domain internal APIs
-Should own normalized payment record creation, provider status reconciliation, and verified outcome publication.
-
-### Credits domain internal APIs
-Should own:
-- issue
-- reserve
-- spend
-- release
-- reverse
-- adjust
-- current balance queries
-- mutation history queries for controlled internal use
-
-### Subscription domain internal APIs
-Should own:
-- subscription create/renew/cancel paths
-- entitlement refresh
-- plan transitions
-- billing-state mutation
-
-### Important rule
-
-No product or reporting service should directly mutate credits or billing truth through private database access or “temporary” internal shortcuts.
-
-### Principle
-
-Economic domains are central to platform coherence. Internal APIs here must be explicit, narrow, and strongly audited.
-
----
-
-## Internal APIs for AI, Workflow, and Product Orchestration
-
-FUZE products rely on shared AI and workflow systems, so internal APIs must support orchestration without collapsing boundaries.
-
-### AI orchestration internal APIs may own:
-- AI task submission
-- route determination
-- result status
-- output release or retrieval references
-- usage metering hooks
-
-### Workflow internal APIs may own:
-- workflow creation
-- step progression
-- approval request submission
-- retry scheduling
-- cancellation
-- execution status reads
-
-### Product orchestration principle
-
-Shared AI/workflow services should coordinate execution, but product domains should still own product meaning. An orchestration service may run work on behalf of a product, but it should not silently redefine the product’s canonical domain objects.
-
-This distinction is essential in QTB, AIMM, HerHelp, and Botmad flows.
-
----
-
-## Internal APIs for Governance, Treasury, and Payout Domains
-
-Governance-, treasury-, and payout-sensitive internal APIs must be narrower and more explicit than ordinary service contracts.
-
-### Governance internal APIs should support:
-- action proposal creation
-- approval state recording
-- policy validation references
-- execution state linkage
-- audit and reporting references
-
-### Treasury / vault internal APIs should support:
-- category-aware action proposal
-- validation against policy class
-- destination classification
-- execution-path preparation
-- status and review reads
-
-### Payout internal APIs should support:
-- payout-cycle business record creation
-- snapshot/eligibility reference attachment
-- publication state transitions
-- funding linkage recording
-- payout-ledger publication inputs
-- status and correction flows
-
-### Principle
-
-Sensitive internal APIs should use explicit domain language, narrow operation sets, and stronger authorization. Generic mutation endpoints are especially dangerous in these domains.
-
----
-
-## Internal Error Architecture
-
-Internal service APIs should use structured errors that are useful both to machines and to operators.
-
-At minimum, internal errors should distinguish among:
-
-- validation failure
-- authorization denial
-- state conflict
-- dependency failure
-- retryable transient failure
-- non-retryable business rule failure
-- accepted-for-async-processing
-- policy denial
-- internal invariant violation
-
-Each internal error should preserve:
-- machine-readable code
-- short human-readable explanation
-- domain context
-- correlation ID
-- retry guidance or retryability classification
-
-### Why this matters
-
-Internal callers frequently need to decide:
-- whether to retry
-- whether to escalate
-- whether to record business failure
-- whether to trigger compensation flow
-- whether to open incident or support workflow
-
-A vague internal error model causes cascading fragility across services.
-
----
-
-## Idempotency and Safe Retries for Internal APIs
-
-Many internal service operations in FUZE will be retried due to network failures, worker retries, or orchestration replay. Internal APIs must therefore support idempotency for appropriate mutation classes.
-
-### Internal operations that should generally support idempotency
-- credits issuance after verified payment
-- credits reversal requests
-- subscription renewal transitions
-- payout-cycle publication steps
-- registry publication actions
-- support compensation issuance through owned domain APIs
-- governance action creation where duplicate submission is possible
-
-### Principle
-
-If an operation can plausibly be retried by infrastructure, it should have a clear strategy for preventing duplicate business mutation.
-
-This is especially important in economic and payout-sensitive domains.
-
----
-
-## Auditability and Traceability of Internal API Operations
-
-Internal service API operations should be traceable end to end.
-
-At minimum, important internal API calls should support:
-
-- request or operation ID
-- correlation ID
-- calling service identity
-- actor reference where human-initiated
-- workspace/account scope where relevant
-- business reason or action type
-- resulting domain object reference
-- async job reference where applicable
-- audit event linkage
-- governance or payout-cycle reference where applicable
-
-### Principle
-
-Internal APIs are part of platform truth production. FUZE should be able to reconstruct which service requested which mutation, why it happened, and what outcome occurred.
-
-This is particularly important in support, billing, treasury, and governance investigations.
-
----
-
-## Internal API Security Principles
-
-FUZE internal service APIs should follow several security principles.
-
-### Principle 1: Least privilege
-Each service should have only the internal powers it requires.
-
-### Principle 2: Explicit trust-sensitive segmentation
-Governance, treasury, payout, and support-correction APIs should be more restricted than ordinary product read APIs.
-
-### Principle 3: No implicit broad trust by network location
-Being “inside the cluster” should not be enough to gain sensitive access.
-
-### Principle 4: Sensitive mutation hardening
-High-impact mutations should require stronger caller identity, stronger authorization checks, and stronger audit generation.
-
-### Principle 5: Safe degradation
-If an internal domain is degraded, dependent services should fail clearly or move to accepted/pending states rather than attempt unsafe local mutation.
-
-These principles keep internal APIs from becoming hidden platform-wide root access.
-
----
-
-## Compatibility and Evolution of Internal APIs
-
-Internal APIs should evolve with discipline, but they do not need the exact same stability model as public APIs.
-
-### Internal evolution principles
-- preserve explicit ownership boundaries even as endpoint shapes evolve
-- prefer additive change where practical
-- deprecate intentionally rather than silently
-- coordinate breaking changes across dependent services
-- keep old and new contracts parallel where migration risk is high
-- update audit and observability expectations when interface semantics change
-
-### Important principle
-
-Internal does not mean unstable by default. FUZE is a platform, so internal contracts should still be treated seriously, especially when many products or control-plane services depend on them.
-
----
-
-## Failure Handling and Degraded Modes
-
-Internal service APIs should support clear degraded-mode behavior.
-
-### Examples
-- identity reads fail closed for sensitive auth decisions
-- credits domain temporarily unavailable causes pending/failed spend decision rather than local product-side deduction
-- payout publication service degraded does not redefine payout truth; it delays publication flow
-- reporting service degraded does not block canonical economic mutation flows
-- AI orchestration degraded may leave product request accepted but not yet completed
-
-### Principle
-
-Internal degraded modes should preserve canonical ownership and truth boundaries. A dependent service should not take over another domain’s truth because the owning domain is temporarily unhealthy.
-
----
-
-## Minimum Architectural Entities
-
-At minimum, the FUZE internal service API architecture should recognize the following conceptual entities:
-
-### Internal Surface Entities
-- `internal_api_surface_id`
-- `surface_family`
-- `owning_domain`
-- `service_identity_scope`
-- `version_reference`
-
-### Request/Response Entities
-- `request_id`
-- `correlation_id`
-- `caller_service_reference`
-- `actor_reference` where applicable
-- `scope_reference`
-- `operation_type`
-- `response_status`
-- `error_code` where applicable
-
-### Async Internal Operation Entities
-- `job_id`
-- `operation_status`
-- `accepted_at`
-- `started_at`
-- `completed_at`
-- `failed_at`
-- `result_reference`
-
-### Integrity and Audit Entities
-- `idempotency_key` where applicable
-- `audit_lineage_reference`
-- `workflow_reference`
-- `governance_action_reference` where applicable
-- `payout_cycle_reference` where applicable
-- `policy_reference` where applicable
-
-These are minimum conceptual entities. Detailed schemas and route patterns are refined downstream.
-
----
-
-## Open Items
-
-The following areas are intentionally refined in downstream implementation and domain-specific API design:
-
-- exact service topology and ownership map by deployed service
-- exact internal auth credential model
-- exact request/response envelope schema for internal APIs
-- exact retry and timeout policies by domain
-- exact split between synchronous internal APIs and event-driven coordination by workflow family
-- exact internal control-plane route families for governance and treasury
-- exact service discovery and network-layer policy model
-
-These do not weaken the canonical internal service API architecture established here.
-
----
-
-## Closing Summary
-
-The FUZE internal service API architecture is the service-to-service collaboration layer of a multi-product, ownership-driven platform. It exists so that domains can coordinate through explicit contracts without weakening canonical ownership, auditability, or trust-sensitive control boundaries. By distinguishing internal APIs from public APIs, balancing synchronous coordination with async orchestration, narrowing sensitive domain contracts, and enforcing service identity and least privilege, FUZE creates an internal interface model that supports platform scale without sacrificing architectural discipline.
+- `AI_ORCHESTRATION_SPEC.md`
+- `MODEL_ROUTING_AND_CONTEXT_SPEC.md`
+- `AI_USAGE_METERING_SPEC.md`
+- domain-specific internal API specifications
+
+This document governs internal service contract posture. It does not replace adjacent public, event, workflow, queue, AI, security, or migration specifications.
+
+## System Boundaries
+Internal service APIs sit primarily across the FUZE **application plane** and **execution plane**, with bounded interaction into the **integration plane**, **control plane**, and **reporting plane**, as defined by `PLATFORM_ARCHITECTURE_SPEC.md`.
+
+They MUST be interpreted as follows:
+- the **application plane** is the default home for owner-domain internal mutations and canonical domain reads
+- the **execution plane** may invoke internal APIs to continue accepted work, but does not become the owner of business-domain semantics
+- the **integration plane** may use internal APIs after normalization boundaries have been crossed; raw provider inputs do not become owner truth by bypassing those boundaries
+- the **control plane** may invoke narrower internal/control routes for approvals, restrictions, overrides, or emergency actions, but does not convert ordinary internal APIs into broad privileged shortcuts
+- the **reporting plane** may consume internal query or derived-read APIs but MUST NOT mutate canonical business truth through reporting surfaces
+- the **experience / edge layer** and public clients MUST NOT call internal service APIs directly
+
+## Adjacent Boundaries
+This specification interacts with adjacent domains as follows:
+- **API Architecture** governs shared interface-family structure; this specification refines the internal service family
+- **Public API** governs external contracts; authenticated external contracts remain public/external, not internal
+- **Event Model and Webhook** governs durable event and webhook semantics; events complement internal APIs and do not replace owner-domain internal contracts
+- **Idempotency and Versioning** governs replay-safety and contract evolution rules that internal APIs must apply
+- **Migration and Backward Compatibility** governs coexistence, cutover, and supersession of internal contracts
+- **Workflow and Automation** owns workflow-state meaning and cross-domain progression semantics; internal APIs expose workflow-related actions without redefining workflow truth
+- **Job Queue and Worker** owns deferred execution substrate semantics; internal APIs may submit or continue owner-domain work without redefining queue or worker meaning
+- **AI Orchestration** owns AI run lifecycle meaning; internal APIs expose orchestration actions without collapsing orchestration into product or queue truth
+- **Model Routing and Context** owns routing/context meaning; internal APIs may request routing/context decisions without owning them
+- **AI Usage Metering** owns metering truth; internal APIs may initiate or retrieve metering-relevant outcomes without becoming metering owners
+- **Feature Flag and Rollout Control** may constrain internal route exposure or accepted behavior but does not change domain ownership or authorization meaning
+- **Security and Risk Control** governs least-privilege, service trust, and sensitive-path hardening; internal APIs must preserve those controls
+- **Audit Log and Activity** governs immutable audit lineage; internal APIs must emit and preserve sufficient request and outcome references
+
+## Conflict Resolution Rules
+When materials, implementations, or interpretations conflict, the following rules apply:
+1. the active refined registry and higher constitutional materials win over narrower documents
+2. `PLATFORM_ARCHITECTURE_SPEC.md` wins on plane separation and runtime-surface roles
+3. `DOMAIN_OWNERSHIP_MATRIX_SPEC.md` and top-level ownership documents win on canonical owner interpretation and mutation boundaries
+4. `API_ARCHITECTURE_SPEC.md` wins on shared interface-family structure, accepted-state posture, and cross-family differentiation
+5. this document wins on service-to-service contract specifics, explicit service identity, internal mutation/query family rules, and internal authorization posture
+6. `EVENT_MODEL_AND_WEBHOOK_SPEC.md` wins on event and webhook semantics within its scope
+7. `WORKFLOW_AND_AUTOMATION_SPEC.md` wins on workflow meaning and progression semantics
+8. `JOB_QUEUE_AND_WORKER_SPEC.md` wins on execution-plane queue, lease, retry, and dead-letter semantics
+9. domain owner specifications win on domain meaning, lifecycle, and mutation rules even when exposed via internal APIs
+10. reporting, dashboards, workers, workflows, and caches never win over canonical owner-domain internal contracts
+11. when ambiguity remains, FUZE MUST choose the more conservative architecture-consistent interpretation and escalate the ambiguity into downstream refinement or recorded decision work
+
+## Default Decision Rules
+When ambiguity exists and no narrower approved exception is available, FUZE MUST default to the following:
+1. canonical writes default to owner-domain internal APIs in the application plane
+2. service-to-service access defaults to non-public, explicitly authenticated, and scope-limited
+3. privileged control or remediation actions default to separate control-restricted routes rather than ordinary internal mutation routes
+4. accepted async work defaults to explicit accepted-state responses rather than false synchronous completion
+5. derived and reporting internal APIs default to read-only posture
+6. workflows and workers default to using owner-domain APIs rather than table-level coupling
+7. products default to consuming shared platform internal APIs rather than reinventing shared primitives locally
+8. if an internal interface cannot name its owner domain, caller class, scope model, compatibility posture, and mutation boundary, the design is incomplete and MUST NOT proceed as production-grade
+
+## Roles / Actors / Entities
+### Human Actors
+- support operators
+- product operators
+- security reviewers
+- governance or approval actors
+- finance/control-plane operators
+
+### System Actors
+- platform core services
+- product domain services
+- workflow orchestrators
+- job workers
+- schedulers
+- reporting and publication services
+- control-plane / admin backends
+- integration adapter services
+- chain-adjacent services
+
+### Core Entity Families
+- internal API surfaces
+- internal route families
+- service principals
+- service scope grants
+- internal request lineage records
+- internal mutation intents
+- internal accepted operation references
+- internal contract versions
+- internal error/result codes
+- audit linkage references
+- workflow/job correlation references
+- derived internal view references
+
+## Ownership Model
+### The Internal Service API Governance Domain Owns
+- internal surface-family taxonomy
+- architecture-level rules for internal mutation, query, derived-read, orchestration-support, chain-adjacent, and control-restricted route families
+- explicit internal caller identity and authorization posture
+- architecture-level accepted-state semantics for service-to-service operations
+- internal request/response/error posture at interface-governance level
+- compatibility, deprecation, and contract-version expectations for internal contracts
+- architectural request-lineage and traceability requirements for internal APIs
+
+### The Internal Service API Governance Domain Does Not Own
+- business truth of any application domain
+- workflow-state meaning
+- queue, lease, retry, or dead-letter semantics
+- AI run, routing/context, or metering meaning
+- billing, credits, entitlement, governance, or payout semantics
+- reporting or publication truth
+- on-chain contract-native truth
+
+### Owner Domains MUST
+- expose canonical mutations and tightly owned reads through explicit internal contracts where cross-domain collaboration is required
+- validate domain rules and policy before applying mutation or accepting intent
+- emit sufficient lineage for audit, event, workflow, or status correlation
+- prevent non-owner services from mutating domain truth through undocumented shortcuts
+
+### Non-Owners MAY
+- request owner-domain actions through approved internal contracts
+- query current owner-domain state through approved internal query APIs
+- consume accepted-state references, events, and status APIs for async progression
+- consume derived internal views where those views are explicitly classified as derived
+
+### Non-Owners MUST NOT
+- directly mutate owner-domain tables or private storage
+- infer broad internal authority from infrastructure location
+- treat derived internal reads as mutation authority
+- turn workflow, worker, dashboard, or reporting surfaces into hidden owner-domain write paths
+
+## Authority / Decision Model
+### Platform Internal API Governance Authority
+Has final authority over shared internal interface-family rules, internal caller-identity posture, and architecture-level contract governance.
+
+### Domain Authority
+Each owner domain has final authority over the meaning, lifecycle, validation rules, and mutation semantics of its own business entities and state transitions.
+
+### Product Authority
+Products may define product-local internal contracts within platform rules, but they do not own shared platform internal semantics.
+
+### Control / Governance Authority
+Control-plane systems may approve, restrict, override, or suspend sensitive actions through narrower privileged routes. They do not become ordinary owners of business truth.
+
+### External Authority
+Provider or chain systems remain external authorities over their own input or contract-native state only. Their data becomes relevant to internal APIs only after normalization and owner validation.
+
+## State Model
+At architecture level, meaningful internal requests and operations MUST recognize the following semantic state classes:
+- `received`
+- `validated`
+- `accepted`
+- `applied`
+- `previously_applied`
+- `rejected`
+- `conflicted`
+- `failed_retryable`
+- `failed_terminal`
+- `compensated`
+
+Contract families SHOULD also support lifecycle posture such as:
+- `draft`
+- `active`
+- `deprecated`
+- `retired`
+- `blocked`
+
+Service principals SHOULD support:
+- `provisioned`
+- `active`
+- `restricted`
+- `rotating`
+- `revoked`
+
+### State Rules
+- `accepted` MUST remain distinct from `applied`
+- `previously_applied` MUST remain distinct from new mutation
+- `conflicted` MUST remain distinct from generic failure
+- `failed_retryable` MUST remain distinct from terminal policy denial
+- `compensated` MUST preserve linkage to the original accepted or applied action
+- `blocked` MUST be available for emergency control or security posture when correctness or safety requires it
+
+## Lifecycle / Workflow Model
+### 1. Request Initiation
+An internal caller submits a request through a classified internal route family with explicit service identity, scope context, correlation data, and operation intent.
+
+### 2. Authentication and Authorization
+The receiving boundary authenticates the caller as a `service_principal` and evaluates service-scope grants, target domain, environment posture, operation class, and any trust-sensitive restrictions.
+
+### 3. Domain Validation
+The owner domain validates schema, business preconditions, policy posture, idempotency posture, and expected current state where relevant.
+
+### 4. Immediate Application or Accepted Intent
+The owner domain either:
+- returns a current read,
+- applies a mutation immediately,
+- or records accepted intent for later execution via workflow, queue, or scheduler mechanisms.
+
+### 5. Async Continuation
+If work is deferred, workflow and queue systems may continue execution through owner-domain contracts, preserving original business reference identity and idempotency semantics.
+
+### 6. Event, Audit, and Status Propagation
+Meaningful domain changes produce audit lineage and, where appropriate, events and status references consistent with adjacent specifications.
+
+### 7. Correction, Compensation, or Supersession
+Corrections, compensations, and contract supersession preserve explicit lineage rather than destructive rewrite.
+
+## Invariants
+1. Internal service APIs are ownership-respecting collaboration boundaries.
+2. Canonical writes terminate in owner domains.
+3. Internal APIs are not public APIs.
+4. Internal APIs are not ordinary control-plane shortcuts.
+5. Accepted async intent is not final business completion.
+6. Derived internal reads are not hidden write owners.
+7. Explicit service identity is required; network location alone is never sufficient.
+8. Workflows, workers, dashboards, and reports do not acquire owner-domain mutation rights merely because they are internal.
+9. Retry handling must not create duplicate business effects.
+10. Sensitive internal actions require stronger scope, policy, and audit posture than routine queries.
+
+## Functional Rules
+### Rule 1: Internal Surface Family Identification
+Every meaningful internal contract MUST declare a surface family and operation class.
+
+Canonical internal surface families are:
+- canonical domain mutation APIs
+- domain query APIs
+- control-restricted APIs
+- orchestration-support APIs
+- internal derived-read APIs
+- chain-adjacent coordination APIs
+
+### Rule 2: Domain-Owned Mutation Exposure
+Internal mutation routes MUST express business action or explicit domain transition and MUST terminate in the owner domain.
+
+### Rule 3: Query and Mutation Separation
+Internal query APIs MAY expose current canonical state; they MUST NOT create hidden side effects.
+
+### Rule 4: Accepted-State Semantics
+Long-running or retry-heavy operations MUST return accepted-state references rather than claiming immediate business completion.
+
+### Rule 5: Service Identity and Scope
+Every internal request MUST include authenticated service identity and MUST be evaluated against explicit service scope grants.
+
+### Rule 6: Narrow Sensitive Actions
+Governance-sensitive, treasury-sensitive, payout-sensitive, commercially sensitive, and other high-impact routes MUST be narrower and more explicitly authorized than routine internal reads.
+
+### Rule 7: No Private Storage Shortcut
+Private database access, raw persistence patching, or undocumented cross-domain writes MUST NOT be used as substitutes for owner-domain internal APIs.
+
+### Rule 8: Derived-Read Discipline
+Derived internal read APIs MAY aggregate and optimize, but they MUST identify themselves as derived and MUST remain read-only.
+
+### Rule 9: Control-Restricted Segmentation
+Admin or control-plane backends MUST invoke narrower control-restricted families for remediation, override, approval, quarantine, or emergency restriction rather than using generic internal mutation routes.
+
+### Rule 10: Chain-Adjacent Boundary Discipline
+Chain-adjacent coordination APIs MAY normalize and prepare chain-related actions, but they MUST NOT misrepresent contract-native truth or broader off-chain policy ownership.
+
+## Permission / Access Considerations
+- internal callers require explicit authentication as service principals
+- internal authorization MUST consider caller class, target domain, operation class, environment posture, trust tier, and owner scope where relevant
+- product services may request domain-owned actions they are authorized to request, but they MUST NOT gain broad shared-primitive powers
+- reporting services generally receive read/derive rights, not broad mutation rights
+- workflow orchestrators and workers may invoke only the operations they are explicitly allowed to coordinate
+- internal query rights do not imply broad cross-domain data visibility beyond approved needs
+
+## Entitlement Considerations
+- internal APIs may consume entitlement results where capability eligibility matters, but internal API governance does not own entitlement meaning
+- entitlement-related internal reads and mutations MUST remain owner-domain aligned
+- a route being internal does not weaken the need to preserve the distinction among entitlement, authorization, rollout, workflow, and business-domain state
+- internal APIs MUST NOT encode plan or entitlement meaning merely through route naming or product-local assumptions
+
+## API / Contract Implications
+Downstream internal contracts MUST preserve at minimum:
+- explicit owner domain
+- explicit internal surface family
+- stable business-reference identity for meaningful mutations
+- accepted-state behavior where work is async
+- structured internal result and error classes
+- explicit version and deprecation posture
+- idempotency support where replay risk exists
+- correlation and trace references
+- distinction between canonical and derived internal reads
+- explicit service-principal and service-scope evaluation
+- separate control-restricted routes for privileged actions
+- no hidden exposure of raw persistence primitives
+
+## Event / Async Implications
+- internal APIs initiate, validate, and admit actions; events communicate durable owner-domain outcomes or accepted progression outward
+- internal API acceptance MUST correlate to workflows, jobs, and events where later progression depends on them
+- retries of accepted internal submissions MUST preserve business-level idempotency
+- workflows and queues MUST continue work through owner-domain contracts rather than by rewriting owner-domain state directly
+- external webhook delivery is downstream to internal business events and MUST remain distinct from internal request identity
+
+## Data Model / Storage Implications
+Internal API architecture requires durable support records for:
+- `service_principal`
+- `service_scope_grant`
+- `internal_request_log`
+- `internal_mutation_intent`
+- `internal_contract_version_registry`
+
+At minimum these support records SHOULD preserve:
+- service identity and trust tier
+- granted scope and environment posture
+- request identity, correlation, and trace references
+- route family and operation class
+- idempotency identity where relevant
+- owner scope and business reference
+- response/result status
+- contract version and compatibility windows
+- audit linkage and workflow/job references where relevant
+
+Rules:
+- these records do not own business truth
+- owner-domain entities remain in owner-domain storage
+- reporting or dashboard tables MUST NOT replace these governance records as the interpretation layer for meaningful internal operations
+- storage convenience or co-location MUST NOT change domain ownership
+
+## Read Model / Projection / Reporting Rules
+- internal dashboards, reconciliation views, governance queues, support overviews, and publication-readiness views MAY be exposed through internal derived-read APIs
+- derived internal reads MUST remain read-only
+- derived views SHOULD preserve lineage hints to canonical domains where practical
+- stale derived views MUST be treated as lag, not as proof that source truth changed
+- derived reads MUST NOT silently correct source truth by mutating owner-domain state through reporting paths
+
+## Security / Risk / Abuse Controls
+Internal service API posture MUST preserve:
+- explicit authenticated service identity
+- least privilege for service scopes
+- no broad trust from network adjacency alone
+- stronger restrictions for governance-, treasury-, payout-, billing-, credits-, and control-sensitive routes
+- safe degradation when owner domains are unavailable
+- replay safety and conflict handling for retry-prone writes
+- auditability for sensitive and non-routine actions
+- emergency block or restriction capability for contract versions or internal route families when correctness or security requires it
+- separation between internal collaboration and control-plane override powers
+
+## Boundary Violation Detection / Non-Canonical Patterns
+The following are non-canonical and forbidden unless a narrower approved exception explicitly allows them:
+- direct table-to-table mutation across domain boundaries
+- product-local services issuing, adjusting, or reversing shared economic truth without the owner domain’s API
+- workflow or worker components mutating owner-domain state through private persistence shortcuts
+- internal dashboards or reporting surfaces acting as write owners
+- broad internal “god routes” or generic patch endpoints for sensitive domains
+- treating network position or cluster membership as sufficient sensitive access
+- using internal APIs to hide control-plane overrides without reason codes or audit lineage
+- allowing accepted async work to be interpreted as completed business success when finalization has not occurred
+
+## Audit / Traceability Requirements
+Meaningful internal API operations MUST be reconstructible.
+
+At minimum, significant internal requests SHOULD preserve:
+- authenticated service principal
+- impersonated or initiating human actor where applicable
+- route family and operation class
+- trace ID and correlation ID
+- idempotency identity where relevant
+- owner scope and business reference
+- outcome class and result code
+- linked workflow, job, event, and audit references where relevant
+- policy or control references where relevant
+
+Audit records for internal APIs MUST remain distinct from generic application logs or user-facing activity feeds.
+
+## Failure Handling / Edge Cases
+### Dependency Failure
+If a downstream owner domain is unavailable, dependent services MUST fail clearly or remain in accepted/pending posture rather than performing unsafe local mutation.
+
+### Duplicate Submission
+If the same business action is retried, the target owner domain MUST return `previously_applied`, the same accepted reference, or an explicit conflict rather than duplicate mutation.
+
+### Payload Mismatch on Same Idempotency Key
+If the same idempotency identity is reused for materially different intent, the target MUST return conflict rather than silently reinterpret the request.
+
+### Accepted But Not Completed
+If a request has been admitted for later processing, consumers MUST receive explicit accepted-state posture and a stable reference for later status resolution.
+
+### Reporting Service Degradation
+If reporting or publication services degrade, canonical domain mutation MUST continue according to owner-domain truth; reporting services do not become blockers unless a narrower specification explicitly requires publication gating.
+
+### Workflow or Worker Degradation
+If workflow or worker infrastructure degrades, owner-domain truth remains authoritative. Internal APIs may admit work into pending posture, but workers and workflows MUST NOT fabricate final domain outcomes.
+
+### Contract Version Restriction
+If a contract version is blocked or deprecated, callers MUST receive explicit rejection or migration guidance rather than silent semantic drift.
+
+## Operational Considerations
+Operators MUST be able to:
+- inventory internal route families and contract versions
+- identify active and restricted service principals
+- distinguish owner-domain failures from orchestration or worker failures
+- trace internal requests end to end through correlation and audit lineage
+- observe accepted-state backlogs and async progression health
+- identify deprecated or blocked internal contract versions
+- restrict or quarantine unsafe internal routes through approved control mechanisms
+- monitor sensitive internal mutation classes with greater scrutiny than routine queries
+
+## Migration / Compatibility / Supersession Considerations
+- internal APIs may evolve faster than public APIs, but they still require explicit compatibility and deprecation discipline
+- additive evolution is preferred over silent semantic mutation
+- breaking changes require explicit coexistence windows, migration paths, or controlled cutover for dependent internal callers
+- async and accepted-state contracts MUST remain stable enough for workflows and workers to resume correctly across deployments
+- contract supersession MUST preserve lineage and interpretability of prior contracts
+- migration MUST NOT use temporary private storage shortcuts that bypass owner-domain boundaries
+
+## Implementation-Contract Guardrails
+Downstream internal implementations MUST preserve:
+- explicit owner-domain mutation boundaries
+- explicit internal surface-family classification
+- accepted-state semantics for async work
+- business-level idempotency where replay matters
+- explicit service identity and service-scope evaluation
+- correlation and audit lineage
+- distinction between canonical and derived reads
+- separation between ordinary internal routes and control-restricted routes
+- version and deprecation posture
+- no hidden cross-domain table coupling
+
+Downstream implementations MUST NOT optimize away:
+- owner-domain identity
+- accepted vs applied semantics
+- service-principal attribution
+- reason-coded and auditable privileged controls where material
+- lineage among internal request, workflow, job, event, and audit references
+- compatibility windows where breaking change risk exists
+- derived-read labeling where source truth and internal projection differ
+
+## Downstream Execution Staging
+This document should be consumed in the following order:
+1. shared event, idempotency, and migration specifications
+2. domain-specific internal API specifications
+3. workflow, queue, AI, and control-plane integration contracts
+4. machine-readable internal contract derivation
+5. operational and observability implementation layers
+
+## Required Downstream Specs / Contract Layers
+This specification materially informs:
+- `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+- `IDEMPOTENCY_AND_VERSIONING_SPEC.md`
+- `MIGRATION_AND_BACKWARD_COMPATIBILITY_SPEC.md`
+- identity, session, workspace, access-control, entitlement, billing, credits, payment, invoicing, AI, workflow, queue, audit, reporting, governance, and payout internal API specifications
+- machine-readable internal OpenAPI / AsyncAPI derivation
+- workflow, worker, scheduler, and admin-backend integration contracts
+- internal service identity and scope-governance documents when created
+
+## Canonical Examples / Anti-Examples
+### Canonical Examples
+- A payment-normalization service requests a credits issuance through the credits domain’s internal mutation API rather than writing credits tables directly.
+- A product service requests a credits spend through the credits domain using a business reference and idempotency key rather than decrementing local balance state.
+- A workflow engine advances product execution by calling owner-domain APIs and preserving workflow and mutation lineage instead of directly rewriting product tables.
+- A reporting service consumes a derived reconciliation API that is explicitly read-only and linked back to canonical domains.
+
+### Anti-Examples
+- A worker writes directly into a billing table because it already holds the relevant payload.
+- A support dashboard exposes a generic internal adjustment endpoint without owner-domain semantics, reason codes, or audit lineage.
+- A product service treats cluster locality as sufficient authority to call sensitive internal payout or treasury operations.
+- A derived operational dashboard mutates payout or governance state because it already aggregates the relevant records.
+
+## Dependencies / Cross-Spec Links
+This document depends especially on:
+- `PLATFORM_ARCHITECTURE_SPEC.md` for plane separation and shared-core runtime posture
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md` for canonical owner interpretation
+- `API_ARCHITECTURE_SPEC.md` for shared interface-family posture and accepted-state semantics
+- `PUBLIC_API_SPEC.md` for preserving the public/internal distinction
+- `WORKFLOW_AND_AUTOMATION_SPEC.md` for workflow meaning and progression boundaries
+- `JOB_QUEUE_AND_WORKER_SPEC.md` for execution-plane and retry semantics
+- `AI_ORCHESTRATION_SPEC.md`, `MODEL_ROUTING_AND_CONTEXT_SPEC.md`, and `AI_USAGE_METERING_SPEC.md` for AI-related internal contract implications
+- `FEATURE_FLAG_AND_ROLLOUT_CONTROL_SPEC.md` for internal route restriction and emergency block posture
+- `AUDIT_LOG_AND_ACTIVITY_SPEC.md`, `SECURITY_AND_RISK_CONTROL_SPEC.md`, and `MONITORING_ALERTING_AND_INCIDENT_RESPONSE_SPEC.md` for audit, security, and operational controls
+
+## Explicitly Deferred Items
+The following are intentionally deferred to narrower specifications:
+- exact route inventories by domain
+- exact request and response field schemas
+- exact credential issuance or rotation implementation
+- exact network and service-mesh posture
+- exact rate limits for internal callers
+- exact event and webhook catalogs
+- exact OpenAPI tag structures and AsyncAPI channel structures
+- exact queue-broker or scheduler technology choices
+
+## Final Normative Summary
+FUZE MUST treat internal service APIs as the ownership-respecting collaboration layer inside the platform boundary.
+
+Accordingly:
+- internal service APIs MUST preserve canonical owner-domain mutation boundaries
+- internal APIs MUST remain distinct from public APIs, control-plane routes, workflow meaning, queue semantics, and reporting projections
+- explicit authenticated service identity and bounded service-scope evaluation MUST be required
+- accepted async intent MUST remain distinct from final business completion
+- workflows, workers, reporting services, and products MUST use owner-domain contracts rather than private storage shortcuts
+- derived internal reads MUST remain read-only and clearly downstream to canonical truth
+- sensitive internal actions MUST use narrower, more explicit, more auditable contract posture than routine internal queries
+
+This document is the canonical governing source for FUZE internal service API posture. Downstream contracts and implementations MUST preserve these rules.
+
+## Quality Gate Checklist
+- [x] Canonical owner is explicit for internal interface-governance truth families
+- [x] Mutation boundaries are explicit
+- [x] Adjacent boundaries are explicit
+- [x] Truth classes are explicit
+- [x] Conflict-resolution rules are explicit
+- [x] Default decision rules are explicit
+- [x] Non-canonical patterns are called out clearly
+- [x] Service identity, authorization, and privileged control posture are explicit
+- [x] Read-model and derived-view rules are explicit
+- [x] Failure and degraded-mode behavior are explicit
+- [x] Downstream implementation guardrails are explicit
+- [x] Dependencies and downstream impacts are explicit
+- [x] Non-goals and deferred items are explicit
+- [x] The document is strong enough to support downstream service-to-service, workflow, queue, AI, and control-plane implementation without inventing contradictory semantics
