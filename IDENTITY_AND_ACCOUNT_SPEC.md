@@ -5,11 +5,22 @@
 - Document Name: `IDENTITY_AND_ACCOUNT_SPEC.md`
 - Document Type: Canonical refined system specification
 - Status: Active refined system spec
+- Version: 1.0.0
+- Effective Date: 2026-04-21
+- Last Updated: 2026-04-21
+- Reviewed On: 2026-04-21
+- Document Owner: FUZE Platform Identity and Account Domain
+- Approval Authority: FUZE Platform Architecture and Governance Authority
+- Review Cadence: Quarterly or upon material identity-model change
 - Governing Layer: Platform core / identity and account
 - Parent Registry: `REFINED_SYSTEM_SPEC_INDEX.md`
-- Primary Audience: Platform architecture, backend engineering, product engineering, security, support operations, audit, governance, API design, reporting
+- Primary Audience: Platform architecture, backend engineering, product engineering, security engineering, support operations, audit, governance, API design, reporting, platform operations
 - Primary Purpose: Define the canonical identity and account architecture of FUZE, including what the account is, what the identity domain owns, how canonical identity continuity works across products and providers, how account lifecycle and recovery must behave, and how identity must remain distinct from authentication, sessions, workspaces, wallets, authorization, and product-local profiles
 - Primary Upstream References:
+  - `REFINED_SYSTEM_SPEC_INDEX.md`
+  - `DOCS_SPEC_INDEX.md`
+  - `SYSTEM_SPEC_INDEX.md`
+  - `API_SPEC_INDEX.md`
   - `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
   - `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
   - `PLATFORM_ARCHITECTURE_SPEC.md`
@@ -17,14 +28,13 @@
   - `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
   - `FUZE_ACCOUNT_ACCESS_AND_SESSION_THESIS_FINAL_SPEC.md`
   - `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
-  - `SYSTEM_SPEC_INDEX.md`
-  - `API_SPEC_INDEX.md`
-  - `DOCS_SPEC_INDEX.md`
 - Primary Downstream Dependents:
   - `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
   - `FUZE_ACCOUNT_ACCESS_CONTINUITY_SPEC.md`
   - `FUZE_PROVIDER_RESOLUTION_AND_LINKING_SPEC.md`
+  - `FUZE_SESSION_LIFECYCLE_AND_SECURITY_SPEC.md`
   - `FUZE_ACCOUNT_RECOVERY_AND_CONFLICT_HANDLING_SPEC.md`
+  - `KEY_MANAGEMENT_AND_USER_RECOVERY_SPEC.md`
   - `WORKSPACE_AND_ORGANIZATION_SPEC.md`
   - `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
   - `WALLET_AWARE_USER_SPEC.md`
@@ -32,6 +42,18 @@
   - `SESSION_AND_LINKED_LOGIN_API_SPEC.md`
   - `SECURITY_AND_RISK_CONTROL_SPEC.md`
   - product integration specifications
+- Supersedes: Earlier non-refined or less explicit identity/account writeups to the extent they conflict within this document’s scope
+- Superseded By: Not yet known
+- Related Decision Records: Not yet known
+- Canonical Status Note: This document is the governing FUZE identity-domain system specification for canonical account identity and identity-domain ownership. Downstream specs MUST NOT redefine the semantics established here.
+- Implementation Status: Normative architecture baseline; downstream API, workflow, and service contracts must conform
+- Approval Status: Drafted for refined-system inclusion; formal approval record not yet attached
+- Change Summary:
+  - normalized identity-domain ownership and mutation boundaries
+  - tightened truth-class taxonomy and conflict-resolution rules
+  - clarified identity versus auth/session versus workspace versus wallet boundaries
+  - strengthened lifecycle, recovery, remediation, and audit requirements
+  - added explicit implementation-contract guardrails and non-canonical patterns
 
 ---
 
@@ -39,16 +61,16 @@
 
 This specification defines the canonical identity and account architecture of the FUZE platform.
 
-Its purpose is to establish the durable source-of-truth model for identity across the FUZE ecosystem by answering the following questions clearly:
+Its purpose is to establish the durable source-of-truth model for identity across the FUZE ecosystem by answering the following questions clearly and normatively:
 
 - what is the canonical identity of a person or actor in FUZE
 - what does the identity and account domain own
-- how does canonical identity remain continuous across products, providers, workspaces, wallets, and future platform capabilities
-- how should account lifecycle, recovery, merge/remediation, and restriction behave
-- what is identity, and what is explicitly not identity
+- how canonical identity remains continuous across products, providers, workspaces, wallets, and future platform capabilities
+- how account lifecycle, recovery, merge/remediation, and restriction behave
+- what identity is, and what is explicitly not identity
 - how downstream APIs, products, workspaces, reports, and security controls must consume identity without redefining it
 
-This document is foundational because FUZE is a multi-product platform. Identity therefore cannot be product-local, provider-local, wallet-local, or frontend-owned. It must be one shared platform capability with durable lifecycle rules and explicit ownership.
+This document is foundational because FUZE is a multi-product platform. Identity therefore cannot be product-local, provider-local, wallet-local, reporting-owned, or frontend-owned. It must be one shared platform capability with durable lifecycle rules, explicit ownership, strong auditability, and constrained correction paths.
 
 ---
 
@@ -61,23 +83,24 @@ This specification governs:
 - account lifecycle and canonical account states
 - account continuity across products and provider changes
 - identity-domain ownership, authority, and mutation boundaries
-- the distinction between identity, authentication methods, sessions, workspaces, wallets, authorization, and product-local profiles
+- the distinction between identity, authentication methods, sessions, workspaces, wallets, authorization, entitlements, and product-local profiles
 - duplicate-account prevention, merge/remediation posture, and recovery posture
 - identity-level security-sensitive actions
 - the minimum canonical entity and state-model requirements for identity
-- downstream integration rules for products, APIs, reporting, and control-plane operations
+- downstream integration rules for products, APIs, reporting, control-plane operations, and security systems
 
 This specification does not define:
 
-- detailed session issuance, refresh, or revocation mechanics
+- detailed session issuance, refresh, rotation, or revocation mechanics
 - detailed workspace membership or role semantics
 - detailed wallet verification mechanics
-- detailed provider-specific auth protocol implementation
-- detailed MFA architecture
+- detailed provider-specific protocol implementation
+- detailed MFA orchestration
 - detailed support workflow procedures
-- detailed legal-identity, KYC, or compliance frameworks unless explicitly added later
+- detailed legal-identity, KYC, or compliance frameworks unless later added explicitly
+- exact database topology, service split, or token transport model
 
-Those are refined in downstream specifications.
+Those areas belong in downstream specifications.
 
 ---
 
@@ -86,13 +109,13 @@ Those are refined in downstream specifications.
 This specification is explicitly out of scope for:
 
 - product-local profile schemas
-- UI login experience design
-- exact OAuth / OIDC callback implementation details
-- exact password or credential storage implementation
+- UI login-experience design
+- exact OAuth, OIDC, or messaging-provider callback implementation detail
+- exact password or credential-storage implementation detail
 - exact role matrices and permission catalogs
-- exact wallet-signature authentication mechanics
-- exact service decomposition or database topology
-- detailed retention/redaction policy text
+- exact wallet-signature challenge mechanics
+- exact retention, redaction, or privacy-policy text
+- exact public profile rendering rules beyond ownership constraints
 - marketing or community education language beyond architectural meaning
 
 ---
@@ -101,16 +124,16 @@ This specification is explicitly out of scope for:
 
 The design goals of the FUZE identity and account model are:
 
-1. Create one canonical user identity across the FUZE ecosystem.
-2. Preserve continuity across all current and future products.
-3. Separate identity truth from authentication method mechanics.
-4. Support multiple approved linked login methods without fragmenting identity.
-5. Support workspaces, wallet-aware participation, billing, and product entitlements without collapsing those concepts into one identity layer.
-6. Make identity durable enough for auditability, commercial continuity, security controls, and governance-aware actions.
-7. Make recovery, restriction, merge/remediation, and closure explicit and controlled.
-8. Prevent products from redefining platform identity semantics.
-9. Preserve future provider flexibility without changing the core identity rule.
-10. Keep identity easy to reason about across APIs, reports, support operations, and security workflows.
+1. create one canonical actor identity across the FUZE ecosystem
+2. preserve continuity across all current and future products
+3. separate identity truth from authentication method mechanics
+4. support multiple approved linked login methods without fragmenting identity
+5. support workspaces, wallet-aware participation, billing, credits, and entitlements without collapsing them into one ambiguous identity layer
+6. make identity durable enough for auditability, commercial continuity, security controls, and governance-aware actions
+7. make recovery, restriction, merge/remediation, and closure explicit and controlled
+8. prevent products from redefining platform identity semantics
+9. preserve future provider flexibility without changing the core identity rule
+10. keep identity easy to reason about across APIs, reports, support operations, and security workflows
 
 ---
 
@@ -123,37 +146,37 @@ This specification is not intended to:
 - treat sessions as durable identity truth
 - treat workspaces as replacements for user identity
 - make wallet addresses the sole identity model
-- let products create hidden alternate canonical user IDs
-- let reports, dashboards, exports, or caches become identity owners
-- define full compliance or legal-person identity regimes unless later added formally
+- let products create hidden alternate canonical actor IDs
+- let reports, dashboards, exports, caches, or search indexes become identity owners
+- define a generalized legal-person identity framework beyond the current platform account model
 
 ---
 
 ## Core Principles
 
 ### 1. Canonical Account Principle
-One human or system actor should map to one canonical FUZE account identity, except during explicit operator-managed remediation or conflict resolution.
+One human or system actor MUST map to one canonical FUZE account identity, except during explicit operator-managed remediation or conflict review.
 
 ### 2. Identity Versus Access Principle
 Identity belongs to the account. Access belongs to linked authentication methods. Runtime presence belongs to the session.
 
 ### 3. Product Consumption Principle
-Products consume canonical identity and may extend it locally, but they may not redefine it.
+Products consume canonical identity and MAY extend it locally, but they MUST NOT redefine it.
 
 ### 4. Workspace Separation Principle
 An account is the actor identity. A workspace is a collaborative and operational context layered on top of the account, not a replacement for it.
 
 ### 5. Wallet Boundary Principle
-Wallets may be linked to an account for participation-aware behavior, but wallet linkage does not become canonical identity truth.
+Wallets MAY be linked to an account for participation-aware behavior, but wallet linkage does not become canonical identity truth.
 
 ### 6. Continuity Principle
-A person should remain the same person in FUZE even when their preferred login method, workspace relationship, product usage, or wallet-aware participation changes over time.
+A person SHOULD remain the same person in FUZE even when their preferred login method, workspace relationship, product usage, or wallet-aware participation changes over time.
 
 ### 7. Controlled Recovery Principle
-Recovery restores access to the same canonical account. It must not silently create a second account or orphan linked platform relationships.
+Recovery restores access to the same canonical account. It MUST NOT silently create a second account or orphan linked platform relationships.
 
 ### 8. Explicit Remediation Principle
-Conflict, duplicate-account, or merge cases must be explicit, auditable, and policy-controlled rather than hidden inside product logic or provider callbacks.
+Conflict, duplicate-account, or merge cases MUST be explicit, auditable, and policy-controlled rather than hidden inside product logic, provider callbacks, or support shortcuts.
 
 ---
 
@@ -187,10 +210,46 @@ A product-local representation derived from the canonical account for product UX
 The property that FUZE can continue recognizing the same actor across provider changes, product usage changes, workspace changes, and wallet-link changes.
 
 ### Identity Conflict
-A case in which available provider, email, wallet, or support evidence does not safely and automatically resolve to a unique canonical account.
+A case in which available provider, email, wallet, support, or historical evidence does not safely and automatically resolve to a unique canonical account.
 
 ### Recovery Case
 A controlled process for restoring access to a canonical account without redefining identity ownership.
+
+### Identity Remediation
+A bounded operator-managed or workflow-managed corrective process used when identity continuity, provider binding, recovery, or duplicate-account handling cannot safely be resolved through ordinary user flows.
+
+---
+
+## Truth Class Taxonomy
+
+This domain MUST distinguish the following truth classes.
+
+### 1. Canonical Identity Truth
+The `account` and its identity-domain-governed lifecycle, uniqueness, and continuity semantics are canonical identity truth.
+
+### 2. Policy Truth
+Approval policies, risk rules, provider onboarding policy, recovery policy, and admin-control policy are policy truth. They constrain identity actions but are not themselves the identity record.
+
+### 3. Runtime Truth
+Session state, recent-auth posture, active authentication state, and transient login workflow state are runtime truth. Runtime truth is subordinate to canonical identity truth and policy truth.
+
+### 4. Storage Truth
+Durable identity-domain records such as account, linked auth method, recovery case, conflict case, and identity-operation lineage are storage truth for the identity domain.
+
+### 5. Provider-Input Truth
+Provider claims, callback payloads, issuer-subject pairs, messaging-provider subjects, and similar external inputs are provider inputs. They are evidence and mapping inputs, not canonical identity truth.
+
+### 6. Derived Read-Model Truth
+Read models, support views, analytics views, public profile projections, and search projections are derived. They MAY summarize canonical identity state but MUST NOT become the write owner.
+
+### 7. Reporting Truth
+Reporting exports and analytical summaries may reflect identity-related counts or attributes but MUST remain downstream and correctable from canonical identity truth.
+
+### 8. Wallet-Linked Context Truth
+Wallet links are canonical within the wallet-aware domain, but they remain attached participation context, not canonical identity truth.
+
+### 9. Authorization Truth
+Workspace membership, organization scope, role assignment, permission evaluation, and entitlement state are separate truths owned by adjacent domains. Identity supplies the subject anchor.
 
 ---
 
@@ -210,7 +269,9 @@ and above:
 - `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
 - `FUZE_ACCOUNT_ACCESS_CONTINUITY_SPEC.md`
 - `FUZE_PROVIDER_RESOLUTION_AND_LINKING_SPEC.md`
+- `FUZE_SESSION_LIFECYCLE_AND_SECURITY_SPEC.md`
 - `FUZE_ACCOUNT_RECOVERY_AND_CONFLICT_HANDLING_SPEC.md`
+- `KEY_MANAGEMENT_AND_USER_RECOVERY_SPEC.md`
 - `AUTH_IDENTITY_API_SPEC.md`
 - `SESSION_AND_LINKED_LOGIN_API_SPEC.md`
 - `WORKSPACE_AND_ORGANIZATION_SPEC.md`
@@ -221,157 +282,207 @@ This document defines the identity domain and the account model. It does not abs
 
 ---
 
-## Canonical Identity Rule
+## System Boundaries
 
-The permanent platform rule for FUZE identity is:
+The identity and account domain MUST own:
 
-> one canonical `account_id` anchors identity continuity across products, workspaces, billing relationships, wallet-aware participation, audit lineage, and future platform capabilities.
-
-Secondary identifiers such as provider subjects, email addresses, wallet addresses, usernames, and product-local profile references are attached relationships or attributes. They are not replacements for `account_id`.
-
-This rule is mandatory because FUZE must remain one coherent platform rather than a set of disconnected product identities.
-
----
-
-## Canonical Identity Model
-
-FUZE identity is centered on the **Account**.
-
-The account is the root user object of the ecosystem. It represents the persistent actor-level identity that may:
-
-- authenticate through one or more linked authentication methods
-- belong to or create workspaces
-- hold account-scoped platform relationships
-- link one or more wallets
-- access multiple FUZE products
-- accumulate audit, billing, and usage history
-- participate in token-aware features and payout-related contexts through wallet relationships
-
-### Identity Object Hierarchy
-
-The canonical hierarchy is:
-
-1. **Account**
-2. **Linked Authentication Method(s)**
-3. **Session(s)**
-4. **Workspace Membership(s)**
-5. **Wallet Link(s)**
-6. **Product Profile / Product Access Extensions**
-
-This hierarchy must be preserved by all downstream designs.
-
----
-
-## Identity Domain Ownership and Authority
-
-The canonical owner of identity in FUZE is the **Platform Identity and Account Domain**.
-
-This domain owns:
-
-- account creation rules
+- canonical account creation
 - canonical account identifiers
-- account uniqueness rules
-- account lifecycle states and transitions
-- linked-auth relationships at the identity layer
+- account uniqueness and anti-fragmentation rules
+- account lifecycle states and lifecycle transitions
+- linked-auth durability at the identity layer
 - identity conflict and remediation state
 - recovery-case ownership at the identity layer
 - canonical identity read models
-- identity merge and deactivation semantics
+- merge, closure, deactivation, and restriction semantics for identity-domain truth
 - identity-related audit lineage generation in coordination with the audit domain
 
-### The Identity Domain may:
+The identity and account domain MUST NOT own:
+
+- session issuance and active-session runtime truth
+- workspace membership truth
+- role or permission truth
+- entitlement truth
+- wallet-link truth or token-balance truth
+- billing, credits, payout, or governance truth
+- product-local profile truth beyond any fields explicitly designated as identity-domain-owned
+
+---
+
+## Adjacent Boundaries
+
+### Identity versus Authentication
+Identity answers who the actor is. Authentication answers how the actor proved access. Authentication MUST NOT become canonical identity.
+
+### Identity versus Session
+Sessions are temporary runtime state. They are revocable, expirable, and subordinate to account state, auth-method state, and security/risk posture.
+
+### Identity versus Workspace
+An account exists independently of any one workspace. Workspace existence MUST NOT be required for canonical account identity to exist.
+
+### Identity versus Authorization and Entitlements
+Authorization, role evaluation, permission evaluation, and entitlements are resolved after authentication succeeds and after account and workspace context are known. The identity layer provides the subject; it does not own those downstream decisions.
+
+### Identity versus Wallet
+A wallet link is attached to an account. Token-balance truth comes from chain truth, not from the account record. Wallet-aware participation MAY influence product behavior but MUST NOT replace identity.
+
+### Identity versus Product Profiles
+Products MAY maintain product-local profile data, settings, or local extensions. These remain downstream of the canonical account and MUST NOT redefine platform identity.
+
+### Identity versus Reporting and Support Views
+Reporting, analytics, support views, and search indexes MAY summarize identity state. They MUST NOT become identity mutation owners or hidden sources of truth.
+
+---
+
+## Conflict Resolution Rules
+
+When multiple layers disagree, the platform MUST resolve conflicts in the following order unless a higher-order platform policy explicitly states otherwise:
+
+1. canonical identity-domain records
+2. explicit policy and security constraints
+3. validated provider-input evidence within approved resolution rules
+4. runtime session state
+5. derived views, projections, dashboards, or product-local caches
+
+Specific conflict rules:
+
+- provider profile data MUST NOT override canonical account ownership
+- email similarity MUST NOT justify silent account merge
+- wallet linkage MUST NOT justify identity reassignment
+- stale session presence MUST NOT override account suspension or restriction
+- product-local user tables MUST NOT override canonical account identity
+- support tooling displays MUST NOT be treated as authoritative if they diverge from canonical identity records
+
+---
+
+## Default Decision Rules
+
+Where ambiguity exists, the following defaults apply:
+
+1. default owner of person-level identity semantics: Identity and Account Domain
+2. default actor anchor: `account_id`
+3. default interpretation of provider subject: evidence for mapping, not canonical identity
+4. default interpretation of email: contact and hint, not sole canonical resolution key
+5. default interpretation of session: temporary runtime access, not durable identity
+6. default interpretation of wallet: linked participation context, not identity root
+7. default interpretation of product-local profile: extension artifact, not platform identity
+8. default interpretation of reporting mismatch: canonical identity domain remains authoritative
+9. default resolution for ambiguous duplicate-account evidence: create explicit conflict/remediation path rather than silently merging or silently fragmenting
+10. default resolution for high-risk admin action: require reason code, audit, and policy-bound workflow
+
+---
+
+## Roles / Actors / Entities
+
+### Human Actor
+A natural person using one or more FUZE products.
+
+### System Actor
+An internal service or automated workflow acting under explicit service identity and policy scope.
+
+### Platform Identity and Account Domain
+The canonical owner of identity semantics, account records, identity lifecycle, durable linked-auth relationships at the identity layer, recovery posture, and conflict/remediation posture.
+
+### Auth / Session Domain
+The owner of session issuance, runtime authenticated state, refresh/rotation, revocation, and related runtime access mechanics.
+
+### Workspace / Organization Domain
+The owner of collaborative scope, workspace membership, organization structure, and related context.
+
+### Role / Permission / Access-Control Domain
+The owner of authorization truth after identity and context resolution.
+
+### Wallet-Aware User Domain
+The owner of wallet-link truth and wallet-aware participation context.
+
+### Product Domains
+Consumers of canonical identity that MAY create product-local extensions but MUST NOT redefine identity semantics.
+
+### Support / Admin Control Plane
+Privileged operational surfaces that MAY initiate policy-bound corrective actions but MUST NOT become identity truth owners.
+
+---
+
+## Ownership Model
+
+### Canonical Owner
+The canonical owner of identity in FUZE is the Platform Identity and Account Domain.
+
+### Domain-Owned Truth Families
+The identity domain owns:
+
+- `account`
+- identity-level lifecycle state
+- identity uniqueness rules
+- durable linked-auth relationship ownership at the identity layer
+- identity conflict cases
+- recovery cases at the identity layer
+- merge and closure semantics
+- canonical identity read models
+
+### Non-Owned Adjacent Truth Families
+The identity domain does not own:
+
+- `auth_session`
+- workspace membership records
+- role and permission records
+- wallet-link records
+- token balances
+- commercial ledgers
+- payout records
+
+### Mutation Ownership
+Only owner-controlled domain pathways MAY mutate canonical identity truth. Products, frontends, reports, caches, search indexes, and general-purpose support tooling MUST NOT mutate identity truth directly.
+
+---
+
+## Authority / Decision Model
+
+### Identity Domain Authority
+The identity domain MAY:
+
 - create accounts
 - mutate account lifecycle state through explicit owner-controlled pathways
-- attach and detach linked auth methods where the identity domain is the canonical owner of the durable link
+- attach and detach linked auth methods where the identity domain is the canonical owner of the durable relationship
 - expose canonical identity reads
 - coordinate recovery and merge/remediation flows
 - publish identity-domain events after canonical commits
 
-### The Identity Domain may not:
-- redefine workspace ownership
-- redefine role and permission truth
-- redefine session runtime truth
-- redefine wallet ownership or token balance truth
-- redefine billing, credits, or payout policy truth
-- let products bypass identity lifecycle rules
+### Product Authority Limits
+Products MAY:
 
-### Products may:
 - read canonical identity
 - create product-local profile extensions
 - create product-local preferences
 - request access checks against canonical identity and workspace state
 
-### Products may not:
+Products MUST NOT:
+
 - create alternate platform user IDs
 - treat product-local user tables as platform identity truth
 - attach provider identities outside owner-controlled identity boundaries
-- reinterpret wallet addresses as the full identity model
+- reinterpret wallet addresses as full identity
 - mutate canonical account lifecycle directly
 
----
-
-## Identity Versus Adjacent Layers
-
-### Identity Versus Authentication
-Identity answers:
-- who is this actor in FUZE
-- what account owns this platform history
-- what products, workspaces, wallet links, and audit trails connect to this actor
-
-Authentication answers:
-- how did this actor prove access right now
-- which provider or secret was used
-- whether a session should be issued
-
-The system must not confuse the two.
-
-### Identity Versus Session
-Sessions are temporary authenticated runtime state. They are revocable, expirable, reviewable, and subordinate to account state, auth-method state, and security/risk posture. Sessions are not the permanent identity source of truth.
-
-### Identity Versus Workspace
-An account exists independently of any one workspace. An account may create a workspace, join multiple workspaces, leave workspaces, or retain platform identity without a workspace. Workspace context affects collaboration, billing, and access, but does not replace the account as identity.
-
-### Identity Versus Wallet
-A wallet link is attached to an account. It is not the whole account. Token-balance truth comes from Ethereum, not from the account table. Wallet-aware participation may influence product behavior, but it does not replace identity.
-
-### Identity Versus Authorization and Entitlements
-Authorization, role evaluation, permission evaluation, and entitlements are resolved after authentication succeeds and after account and workspace context are known. The identity layer provides the subject; it does not own those downstream decisions.
-
-### Identity Versus Product Profiles
-Products may maintain product-local profile data, settings, or local extensions. These remain downstream of the canonical account and must not redefine platform identity.
+### Admin / Operator Authority Limits
+Admin and support systems MAY trigger reviewable identity actions through bounded control-plane pathways. They MUST NOT bypass domain validation, audit, reason-code, policy, or idempotency requirements.
 
 ---
 
-## Account Lifecycle
+## State Model
 
-The account lifecycle in FUZE must remain explicit, durable, and auditable.
+### Canonical Entities
+At minimum, the canonical model SHOULD include durable representations for:
 
-### Canonical Lifecycle Stages
-
-1. **Pending Bootstrap / Pending Setup**  
-   The account has entered the platform through an approved identity-entry path but is not yet fully active.
-
-2. **Active**  
-   The account is active and may authenticate, join workspaces, use products, link wallets, and participate according to policy.
-
-3. **Restricted**  
-   The account remains present but is limited due to security, abuse, payment risk, policy, or controlled platform restrictions.
-
-4. **Suspended**  
-   The account is suspended from normal use pending review, recovery, abuse handling, compliance handling, or administrative action.
-
-5. **Deactivated / Closed**  
-   The account is no longer available for normal use, subject to retention, audit, legal, and recovery policies.
-
-6. **Merged**  
-   An account has been merged into another canonical account as an exceptional, controlled remediation outcome.
-
-7. **Deleted / Hard-Removed**  
-   If supported at all, this must be exceptional, policy-bound, and subordinate to retention, audit, and legal constraints.
+- `account`
+- `account_auth_method` or equivalent canonical auth-link entity
+- `account_recovery_case`
+- `identity_conflict_case`
+- `identity_operation_request`
+- `identity_audit_lineage_reference` or equivalent audit relationship
 
 ### Minimum Expressible Account States
-
-At minimum, the platform must support the semantic states:
+At minimum, the platform MUST support the semantic states:
 
 - `pending_setup`
 - `active`
@@ -381,352 +492,98 @@ At minimum, the platform must support the semantic states:
 - `merged`
 - `closed`
 
-Implementation detail may include more granular internal states, but these meanings must remain expressible.
+Implementation detail MAY include more granular internal states, but these meanings must remain expressible.
 
-### Lifecycle Rules
+### Linked Auth States
+At minimum, linked auth methods SHOULD support states such as:
 
-- lifecycle transitions must be durable and auditable
-- products may not create parallel lifecycle semantics for platform identity
-- status transitions must occur only through owner-controlled domain pathways
-- deactivation, closure, restriction, recovery, and merge/remediation must preserve audit continuity
-- account-state, risk-state, and auth-method state must take precedence over session continuation
+- `pending_verification`
+- `active`
+- `disabled`
+- `removed`
 
----
-
-## Identity Entry Paths
-
-FUZE must support multiple entry paths into the same canonical account system.
-
-Approved or anticipated identity entry paths may include:
-
-- email + password
-- Google
-- Telegram
-- Line
-- Facebook
-- future federation or enterprise identity methods
-- wallet-based proof only if explicitly approved by policy and implementation scope
-
-The purpose of multiple entry paths is access flexibility, not identity fragmentation.
-
-Every entry path must ultimately resolve to a canonical account object. A person adding a new provider to an existing account must remain the same actor in FUZE.
+### Recovery / Conflict States
+Recovery and conflict/remediation records MUST have explicit durable states. Hidden manual notes, one-off support fields, or implicit transient logic are non-canonical.
 
 ---
 
-## Linked Authentication Model at the Identity Layer
+## Lifecycle / Workflow Model
 
-Authentication methods are linked to the account as durable access relationships.
+### Account Lifecycle
+1. pending bootstrap or pending setup
+2. active
+3. restricted
+4. suspended
+5. deactivated or closed
+6. merged as an exceptional remediation outcome
 
-### Rules
+### Identity Entry Flow
+An actor enters through an approved identity-entry path, such as email/password, Google, Telegram, Line, Facebook, future federation, or future approved wallet-based proof. Every entry path MUST ultimately resolve to a canonical account object.
 
-1. An account may have multiple linked authentication methods.
-2. A linked method does not create a new canonical account if attached to an existing one.
-3. Each provider-backed method must use a provider-scoped stable subject identifier as the durable mapping key.
-4. Provider-specific identifiers must be stored separately from the canonical account ID.
-5. Email may be used as a hint, recovery contact, or review signal, but should not be the sole canonical matching key for provider login resolution.
-6. Each active authentication method must be durably linked to exactly one canonical account unless an operator-managed remediation flow is underway.
-7. A linked auth method is a security-sensitive asset. It is not a second identity root, a workspace membership record, or an authorization source of truth.
+### Linked Access Flow
+A linked authentication method is attached to the account as a durable access relationship. It is a security-sensitive asset, not a second identity.
 
-Detailed login and session mechanics are owned downstream by the auth/session domain, but the identity domain remains the canonical owner of the durable relationship between account and approved auth method.
+### Recovery Flow
+Recovery restores access to the same canonical account. It MUST verify sufficient proof, remain auditable, and preserve workspaces, wallet links, product relationships, commercial continuity, and audit lineage.
 
----
+### Conflict / Remediation Flow
+If evidence does not safely resolve to a unique canonical account, the platform MUST open an explicit reviewable conflict/remediation path. It MUST NOT silently merge or silently fragment.
 
-## Account Continuity Across Products
-
-FUZE is a multi-product platform. Account continuity is therefore mandatory.
-
-A single canonical account must be able to:
-
-- log into multiple FUZE products
-- preserve workspace membership continuity across products
-- preserve wallet links and wallet-aware context across products
-- preserve billing and credits continuity where account-scoped
-- preserve audit continuity across products
-- preserve product extension relationships without duplicating identity
-
-### Product Rule
-
-Products may create product-specific settings or product-local profiles, but these must remain child or extension artifacts of the canonical account, not replacements for it.
-
-### Continuity Rule
-
-No product-specific login choice, onboarding choice, or UX flow may create product-specific identity truth for the same actor.
+### Restriction / Suspension Flow
+Identity restriction or suspension MAY occur due to security, abuse, payment risk, policy, or controlled administrative action. Such state MUST take precedence over ordinary session continuation.
 
 ---
 
-## Relationship to Workspace and Organization Layer
+## Invariants
 
-The account exists independently of any one workspace.
-
-An account may:
-- create a workspace
-- join one or more workspaces
-- leave a workspace while retaining platform identity
-- belong to multiple collaborative contexts
-- have account-scoped and workspace-scoped relationships depending on policy
-
-The workspace is a collaboration and billing context layered on top of the account. Workspace existence must not become required for canonical account identity to exist.
-
----
-
-## Relationship to Wallet-Aware Participation Layer
-
-The account is distinct from wallet identity.
-
-A wallet link is a relationship attached to the account. This distinction matters because:
-
-- an account may have multiple wallets
-- wallets may change over time
-- token balance truth comes from Ethereum, not from the account table
-- the same account may use products that do not require wallet context
-- the same account may need both traditional SaaS continuity and Web3 participation continuity
-
-The identity model must therefore support wallet-aware participation without becoming wallet-only identity.
+1. each actor MUST resolve to exactly one canonical `account_id` except during explicit operator-managed remediation
+2. products MUST NOT create alternative canonical identity layers
+3. linked auth methods MUST be modeled as access paths to the canonical account
+4. sessions MUST be treated as temporary authenticated runtime state and MUST NOT be treated as permanent identity truth
+5. provider flows MUST normalize into one backend-owned account-resolution model
+6. product-specific login choice MUST NOT create product-specific identity truth
+7. wallet-aware context MAY attach to the account but MUST NOT replace canonical account identity
+8. account state, risk state, and auth-method state MUST take precedence over session continuation
+9. lifecycle transitions MUST be durable and auditable
+10. reports, dashboards, exports, caches, and projections MUST NOT become identity owners
 
 ---
 
-## Relationship to Billing, Credits, and Entitlements
+## Functional Rules
 
-The account is one of the possible holders or subjects of commercial relationships in FUZE.
+### Canonical Identity Rule
+The platform MUST use `account_id` as the only durable internal anchor for cross-product identity continuity.
 
-This means the identity layer must support:
-- account-scoped billing history where applicable
-- account-scoped credits context where applicable
-- account-level payment method or receipt visibility where supported
-- account-level usage traceability
-- entitlement evaluation against the canonical account and/or workspace context
+Secondary identifiers such as provider subjects, email addresses, wallet addresses, usernames, and product-local profile references MUST be treated as attached relationships or attributes, not as replacements for `account_id`.
 
-However, the account does not own billing policy, credits policy, or entitlement logic. Those remain separate platform domains. The account is the identity anchor through which those relationships are expressed.
+### Identity Entry Rule
+Every approved entry path MUST resolve into the shared identity model rather than creating product-local identity variants.
 
----
+### Provider Subject Rule
+Each provider-backed method MUST use a provider-scoped stable subject identifier as the durable mapping key.
 
-## Account Security Model
+### Email Non-Canonical Rule
+Email MAY be used as a hint, recovery contact, or review signal, but SHOULD NOT be the sole canonical matching key for provider login resolution.
 
-The account system must support a platform-grade identity security model.
+### No Silent Fragmentation Rule
+The platform MUST NOT silently:
 
-### Minimum security concerns include:
+- create duplicate identities for the same actor
+- merge accounts without explicit controlled rules
+- overwrite provider links into a different account
+- reassign an access method in a way that breaks audit continuity
 
-- provider validation and provider-subject integrity
-- credential protection where password-based auth exists
-- linked-method addition/removal controls
-- suspicious-login and takeover handling
-- account restriction and suspension controls
-- recovery-channel validation
-- sensitive-change verification
-- session invalidation hooks through the auth/session domain
-- auditable handling of high-impact identity actions
-
-### High-Impact Identity Actions
-
-At minimum, the following should be treated as security-sensitive:
-
-- primary email change
-- password reset
-- linked-provider add/remove
-- wallet-auth enablement if supported
-- wallet-link changes where policy treats them as identity-sensitive
-- account merge
-- recovery completion
-- account deactivation/reactivation
-- operator-driven identity remediation
-- global session revoke request triggered from identity-side recovery or restriction events
-
-These actions must be policy-controlled and auditable.
-
----
-
-## Account Recovery Principles
-
-Recovery must be supported without weakening the identity model.
-
-### Recovery Principles
-
-1. Recovery restores access to the same canonical account. It does not create a new account.
-2. Recovery must verify enough proof to reduce unauthorized takeover risk.
-3. Recovery flows must be auditable.
-4. Recovery flows must not silently orphan linked workspaces, credits context, wallet contexts, or product relationships.
-5. Recovery methods may vary by linked login paths, but the restored identity must remain the same canonical account.
-6. Self-service mutation should not leave an account stranded without another viable active authentication method, an approved recovery path, or an operator-reviewed remediation path.
-7. Recovery may require operator review or step-up verification when automated certainty is insufficient.
-
-Support-assisted recovery is a sensitive action and must generate durable audit lineage.
-
----
-
-## Duplicate-Account Prevention, Conflict Handling, and Merge Policy
-
-Because FUZE supports multiple login methods and future provider growth, duplicate-account risk must be handled explicitly.
-
-### Prevention Goals
-
-- reduce accidental duplicate accounts
-- detect conflicts between provider identities and existing accounts
-- support safe linking when the same actor legitimately owns multiple auth paths
-- avoid email-only false matches
-- avoid silent reassignment of provider links between accounts
-
-### Conflict-Handling Principles
-
-- ambiguous identity resolution must create an explicit conflict/remediation path
-- provider callback success does not automatically justify account merge
-- similar profile data is not sufficient proof of same identity
-- no silent fragmentation and no silent merge are both mandatory rules
-
-### Merge Policy Principles
-
-- merging accounts is exceptional, not normal
-- merges must be support/admin-controlled or policy-controlled
-- merges must preserve audit continuity
-- merges must handle linked methods, workspace memberships, wallet links, credits context, and product entitlements carefully
-- merged-from identities must remain traceable in audit records
-- products must not implement hidden merge logic
-
-Detailed recovery and conflict mechanics belong in downstream recovery and provider-resolution specs.
-
----
-
-## Canonical Entity Model for Identity
-
-At minimum, the identity domain must be able to represent the following durable semantic structures.
-
-### Account
-Representative semantic fields:
-- `account_id`
-- stable public-safe account reference if used
-- `account_status`
-- `identity_state`
-- `risk_state`
-- `display_name`
-- primary email or contact relationship where identity-domain-owned
-- creation time
-- update time
-- lifecycle markers
-- review / restriction / closure markers
-
-### Linked Authentication Method
-Representative semantic fields:
-- `auth_method_id`
-- `account_id`
-- `provider_type`
-- `provider_subject_id`
-- verification state
-- auth-method status
-- linked time
-- last-used time where relevant
-- disable/remove state where supported
-
-### Account Recovery Case
-Representative semantic fields:
-- `recovery_case_id`
-- `account_id`
-- recovery type
-- recovery status
-- initiation time
-- expiry time
-- closure time
-- resolution code
-- support or review reference
-
-### Identity Conflict / Remediation Case
-Representative semantic fields:
-- conflict or remediation case ID
-- related provider subject or lookup reference
-- affected candidate account references
-- case state
-- reviewer/operator reference where applicable
-- resulting action reference
-
-### Identity Audit Events
-Representative semantic events:
-- account creation
-- account activation
-- linked method added
-- linked method removed
-- account restricted/suspended
-- recovery initiated
-- recovery completed or rejected
-- merge executed
-- deactivation or closure action
-- operator remediation action
-
-Downstream schema and API specs may refine exact fields, but these structures are required.
-
----
-
-## Identity State and Mutation Rules
-
-### Deterministic Mutation Rule
-Canonical identity truth may be changed only through the identity domain’s explicit mutation boundary, including approved synchronous commands, governed async flows, or approved administrative pathways.
-
-### Product Mutation Rule
-Products may not directly mutate canonical account lifecycle, linked-auth relationships, or identity-remediation state.
-
-### Reporting Rule
-Reporting, analytics, and support views may summarize identity state but may not redefine identity truth.
+### Product Extension Rule
+Product-local settings and profiles MUST remain child or extension artifacts of the canonical account, not replacements for it.
 
 ### Frontend Boundary Rule
-Frontend applications may initiate identity flows and render outcomes, but they must not own canonical truth for:
+Frontend applications MAY initiate identity flows and render outcomes, but they MUST NOT own canonical truth for:
+
 - account identity
 - provider identity resolution
 - recovery completion
 - restriction state
 - linked-provider durability
-
-### API Boundary Rule
-The identity domain owns canonical account truth, durable auth-method relationships at the identity layer, account lifecycle state, recovery posture, and provider-to-account resolution outputs. Session issuance and session lifecycle remain downstream to the auth/session domain.
-
----
-
-## Identity Integration Points
-
-The identity and account domain integrates with:
-
-- auth/session service
-- workspace and organization service
-- role and access-control service
-- wallet-aware participation service
-- billing and credits services
-- entitlement and capability-gating service
-- audit log service
-- product domain services
-- control-plane / support operations
-- reporting services
-
-Every integration must treat the identity domain as canonical for account truth.
-
----
-
-## Failure Handling and Edge Cases
-
-### Provider Outage
-If a provider is temporarily unavailable, the canonical account still exists. Only that access path is impaired.
-
-### User Loses One Linked Method
-The user may still access the same canonical account through another viable linked method if policy allows.
-
-### Duplicate Sign-Up Attempt via Another Provider
-The platform must determine whether to link to an existing account, create a new account, or open an explicit conflict/remediation path. It must not silently merge or silently fragment.
-
-### Workspace Removed but Account Remains Valid
-The account remains canonical and active unless separately restricted.
-
-### Wallet Unlinked or Changed
-The account remains canonical. Wallet-aware participation context changes, not account identity.
-
-### Product-Local Profile Corruption
-The canonical platform account remains authoritative even if a product extension profile is broken or missing.
-
-### Suspicious Security Event
-The account may be restricted or suspended without deleting the underlying identity.
-
-### Reporting Mismatch
-If a reporting surface shows stale identity information, the platform identity domain remains canonical.
-
-### Provider Subject Already Linked Elsewhere
-This must be treated as a conflict/remediation condition, not silently reassigned.
-
-### Recovery Changes Access Paths
-Recovery may restore access or replace viable auth paths according to policy, but it must preserve the same canonical account and the related audit lineage.
 
 ---
 
@@ -738,8 +595,59 @@ This specification does not replace the authorization model, but it imposes the 
 - successful authentication does not prove role or permission grants
 - successful authentication does not prove entitlement
 - account identity is the subject against which later scoped access decisions are made
-- identity-domain admin/control actions require stronger authorization and audit posture than ordinary user flows
+- identity-domain admin and control actions require stronger authorization and audit posture than ordinary user flows
 - internal service access to identity mutation paths must be explicit, least-privileged, and policy-scoped
+
+---
+
+## Entitlement Considerations
+
+Identity anchors entitlement evaluation but does not own entitlement semantics.
+
+- entitlement systems MUST consume canonical account identity and any required workspace context
+- entitlement systems MUST NOT redefine identity ownership
+- identity correction or recovery MUST preserve entitlement subject continuity unless a controlled policy says otherwise
+- product entitlements derived from identity and workspace context remain downstream and reversible from canonical truth
+
+---
+
+## API / Contract Implications
+
+Downstream API specifications MUST preserve the following:
+
+- identity APIs own canonical account creation, lifecycle state, provider-link durability at the identity layer, recovery posture, and provider-to-account resolution outputs
+- session APIs own session issuance, refresh, revocation, and runtime authenticated state
+- authorization APIs own workspace scope resolution, role evaluation, permission evaluation, and capability grants
+- wallet-aware APIs own wallet-link truth and wallet verification
+
+No API surface may blur these boundaries.
+
+Sensitive identity APIs MUST require:
+
+- explicit actor identity
+- correlation IDs
+- idempotency where side effects could repeat
+- reason codes for privileged mutations
+- auditable state transitions
+- policy-version or policy-reference capture where applicable
+
+---
+
+## Event / Async Implications
+
+The identity domain SHOULD publish durable events after canonical commits for material actions such as:
+
+- account created
+- account activated
+- account restricted or suspended
+- linked auth method added, disabled, restored, or removed
+- recovery initiated, approved, completed, rejected, or cancelled
+- conflict detected, escalated, or resolved
+- account merged, closed, or deactivated
+
+Event consumers MUST treat these events as downstream notifications, not as permission to redefine canonical identity truth.
+
+Async identity workflows MUST remain deterministic, auditable, idempotent, and replay-safe.
 
 ---
 
@@ -758,9 +666,66 @@ This specification requires the following identity data-model discipline:
 
 ---
 
+## Read Model / Projection / Reporting Rules
+
+Read models, support views, analytics views, exports, dashboards, and search projections MAY summarize identity state. They are allowed only if they preserve the following rules:
+
+- they must be clearly marked as derived
+- they must be regenerable from canonical truth
+- they must not become mutation owners
+- they must not invent identity states that cannot map back to canonical semantics
+- they must not silently coalesce multiple accounts into one identity without explicit governed rules
+- they must not hide conflict or remediation posture where that posture materially affects interpretation
+
+---
+
+## Security / Risk / Abuse Controls
+
+This identity model is also a security boundary.
+
+At minimum, the following actions SHOULD be treated as security-sensitive:
+
+- primary email change
+- password reset
+- linked-provider add or remove
+- wallet-auth enablement if supported
+- recovery completion
+- account merge
+- account deactivation or reactivation
+- operator-driven identity remediation
+- global session revoke request triggered from identity-side recovery or restriction events
+
+Security and risk controls MAY suspend, restrict, or invalidate ordinary session continuation when the platform determines that additional protection is required. Identity-domain decisions and session-domain containment MUST remain coordinated but distinct.
+
+---
+
+## Boundary Violation Detection / Non-Canonical Patterns
+
+The following patterns are non-canonical and forbidden unless a future approved spec explicitly and narrowly permits them:
+
+- one account model per product
+- one identity model for Web2 flows and another unrelated model for wallet-aware flows
+- using provider profile data as canonical identity truth
+- treating login success as automatic authorization success
+- allowing sessions to outrank account or risk state
+- allowing frontend logic to become source of truth for auth or identity state
+- adding new providers through product-local one-off exceptions that bypass the shared model
+- silently reassigning provider subjects between accounts
+- using reports, exports, or support dashboards as hidden identity write surfaces
+- letting support operators perform undocumented identity surgery outside policy-bound pathways
+
+Boundary-violation detection SHOULD include alerting or reviewable evidence when:
+
+- a provider subject appears linked to multiple accounts
+- a product attempts to create alternate actor IDs that appear to mirror account identity
+- derived views materially diverge from canonical records
+- recovery or remediation actions occur without reason codes or audit lineage
+
+---
+
 ## Audit / Traceability Requirements
 
-FUZE must be able to determine:
+FUZE MUST be able to determine:
 
 - which canonical account represents the actor
 - which auth methods are or were linked to that account
@@ -772,22 +737,63 @@ FUZE must be able to determine:
 
 Auditability is a first-class property of the identity system, not an afterthought.
 
+Identity-sensitive operator actions MUST be:
+
+- reason-coded
+- actor-attributed
+- timestamped
+- correlation-linked
+- policy-referenced where applicable
+- non-repudiably recorded in durable audit lineage
+
 ---
 
-## Security / Risk / Abuse Controls
+## Failure Handling / Edge Cases
 
-This identity model is also a security boundary.
+### Provider Outage
+If a provider is temporarily unavailable, the canonical account still exists. Only that access path is impaired.
 
-If identity ownership is weak:
-- products can fragment user identity
-- provider subjects can be misbound
-- sessions can become overtrusted
-- wallet linkage can be mistaken for full identity
-- recovery can become unsafe
-- support operations can create hidden ownership changes
-- billing, credits, workspace, and audit continuity can break across products
+### User Loses One Linked Method
+The user MAY still access the same canonical account through another viable linked method if policy allows.
 
-All downstream security, risk, abuse-prevention, and monitoring specs must preserve this identity boundary.
+### Duplicate Sign-Up Attempt via Another Provider
+The platform must determine whether to link to an existing account, create a new account, or open an explicit conflict/remediation path. It must not silently merge or silently fragment.
+
+### Workspace Removed but Account Remains Valid
+The account remains canonical and active unless separately restricted.
+
+### Wallet Unlinked or Changed
+The account remains canonical. Wallet-aware participation context changes, not account identity.
+
+### Product-Local Profile Corruption
+The canonical platform account remains authoritative even if a product extension profile is broken or missing.
+
+### Suspicious Security Event
+The account MAY be restricted or suspended without deleting the underlying identity.
+
+### Reporting Mismatch
+If a reporting surface shows stale or wrong identity information, the platform identity domain remains canonical.
+
+### Provider Subject Already Linked Elsewhere
+This MUST be treated as a conflict/remediation condition, not silently reassigned.
+
+### Recovery Changes Access Paths
+Recovery MAY restore access or replace viable auth paths according to policy, but it must preserve the same canonical account and the related audit lineage.
+
+---
+
+## Operational Considerations
+
+Operational implementations MUST preserve:
+
+- high-confidence account-resolution determinism
+- strong correlation and request tracing for sensitive mutations
+- replay safety for provider-callback and recovery transitions
+- operator workflow containment for high-risk identity changes
+- audit durability even during degraded runtime conditions
+- safe fallback behavior when adjacent domains are unavailable
+
+If a downstream service needed for enrichment is degraded, the identity domain MUST still preserve canonical identity semantics and MUST avoid inventing fallback identity truth from derived or stale sources.
 
 ---
 
@@ -798,6 +804,88 @@ All downstream security, risk, abuse-prevention, and monitoring specs must prese
 - renamed or split identity-related entities must preserve continuity of authority and auditability
 - if older implementations or documents imply looser product-local identity ownership, this refined specification supersedes them within its scope
 - future provider expansion must occur through the shared identity model rather than product-local special cases
+
+Migration plans MUST include replay-safe mapping, lineage preservation, and explicit rollback posture where account resolution or auth-link migration could affect continuity.
+
+---
+
+## Implementation-Contract Guardrails
+
+Downstream implementations MUST preserve the following guardrails:
+
+1. `account_id` remains the durable canonical actor anchor
+2. identity mutations occur only through owner-controlled domain pathways
+3. provider resolution is deterministic, auditable, and idempotent
+4. sessions remain distinct from identity truth
+5. account-state and risk-state precedence over session continuity is preserved
+6. recovery restores access to the same canonical account rather than creating substitutes
+7. product-local user abstractions remain downstream of the canonical account
+8. admin or support overrides are bounded, reason-coded, policy-constrained, and audited
+9. derived views remain derived and regenerable
+10. ambiguous duplicate or merge cases default to explicit review rather than silent auto-resolution
+
+These guardrails are mandatory and MUST NOT be optimized away for convenience.
+
+---
+
+## Downstream Execution Staging
+
+Typical downstream staging SHOULD follow this order:
+
+1. identity-domain canonical model and mutation boundaries
+2. identity API contracts
+3. provider-resolution and linked-login workflow contracts
+4. session lifecycle and containment behavior
+5. recovery and remediation workflows
+6. workspace and authorization integrations
+7. wallet-aware integrations
+8. reporting, analytics, and support read models
+
+This sequencing exists to keep identity semantics stable before downstream adaptation layers are finalized.
+
+---
+
+## Required Downstream Specs / Contract Layers
+
+This specification requires compatible downstream refinement in at least the following areas:
+
+- `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
+- `FUZE_ACCOUNT_ACCESS_CONTINUITY_SPEC.md`
+- `FUZE_PROVIDER_RESOLUTION_AND_LINKING_SPEC.md`
+- `FUZE_SESSION_LIFECYCLE_AND_SECURITY_SPEC.md`
+- `FUZE_ACCOUNT_RECOVERY_AND_CONFLICT_HANDLING_SPEC.md`
+- `KEY_MANAGEMENT_AND_USER_RECOVERY_SPEC.md`
+- `AUTH_IDENTITY_API_SPEC.md`
+- `SESSION_AND_LINKED_LOGIN_API_SPEC.md`
+- `WORKSPACE_AND_ORGANIZATION_SPEC.md`
+- `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
+- `WALLET_AWARE_USER_SPEC.md`
+- `SECURITY_AND_RISK_CONTROL_SPEC.md`
+
+---
+
+## Canonical Examples / Anti-Examples
+
+### Canonical Example 1
+A user signs into one FUZE product with Google, later adds Telegram in another FUZE product, and still resolves to the same `account_id`. This is canonical.
+
+### Canonical Example 2
+A user leaves one workspace but retains platform identity and can later join another workspace. This is canonical.
+
+### Canonical Example 3
+A user links a wallet for holder-aware participation without replacing their canonical account identity. This is canonical.
+
+### Anti-Example 1
+A product creates a product-local `user_id` and treats it as the platform’s identity root. This is forbidden.
+
+### Anti-Example 2
+A provider callback with a matching email silently merges two previously separate accounts. This is forbidden.
+
+### Anti-Example 3
+A support tool directly edits identity records without reason codes, policy reference, and durable audit lineage. This is forbidden.
+
+### Anti-Example 4
+A stale reporting table is treated as authoritative when it disagrees with canonical identity records. This is forbidden.
 
 ---
 
@@ -822,7 +910,9 @@ This specification directly governs or materially informs:
 - `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
 - `FUZE_ACCOUNT_ACCESS_CONTINUITY_SPEC.md`
 - `FUZE_PROVIDER_RESOLUTION_AND_LINKING_SPEC.md`
+- `FUZE_SESSION_LIFECYCLE_AND_SECURITY_SPEC.md`
 - `FUZE_ACCOUNT_RECOVERY_AND_CONFLICT_HANDLING_SPEC.md`
+- `KEY_MANAGEMENT_AND_USER_RECOVERY_SPEC.md`
 - `WORKSPACE_AND_ORGANIZATION_SPEC.md`
 - `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
 - `WALLET_AWARE_USER_SPEC.md`
@@ -837,13 +927,14 @@ This specification directly governs or materially informs:
 
 The following are intentionally deferred to downstream specifications:
 
-- exact provider list and provider-specific resolution rules
+- exact provider list and provider-specific resolution heuristics
 - exact session token model and runtime session schema
 - exact password, MFA, and step-up implementation detail
-- exact support workflow for recovery, merge, and remediation
+- exact support workflow procedures for recovery, merge, and remediation
 - exact PII minimization and retention rules
 - exact user-profile versus account-profile field boundaries
-- exact admin and control-plane workflow procedures
+- exact admin console workflow design
+- exact legal-identity or compliance-specific identity overlays
 
 These do not weaken the canonical identity and account model established here.
 
@@ -851,6 +942,35 @@ These do not weaken the canonical identity and account model established here.
 
 ## Final Normative Summary
 
-FUZE identity is built around one canonical account model that persists across products, linked login methods, workspaces, wallets, billing contexts, and product entitlements. The account is the root identity object of the ecosystem. Authentication methods are approved access paths to that account, not separate identities. Sessions are temporary runtime state, not identity truth. Workspaces are collaborative contexts, not user identity. Wallets are participation-linked artifacts, not the whole identity model. Products may extend canonical identity locally, but they may not redefine it.
+FUZE MUST operate one canonical account-centered identity model for the entire platform.
 
-This structure is what allows FUZE to operate as one coherent platform ecosystem rather than a disconnected set of applications. Any downstream design that weakens this rule is inconsistent with the FUZE identity foundation.
+That model requires:
+
+- one canonical `account_id` as the durable actor anchor
+- linked authentication methods as access paths rather than identities
+- sessions as temporary runtime presence rather than durable identity truth
+- workspaces, authorization, entitlements, wallets, and products as adjacent layers rather than replacements for identity
+- explicit and auditable handling of recovery, conflict, merge, restriction, and closure
+- strict prohibition on silent fragmentation, silent merge, and hidden alternate identity roots
+
+Any downstream implementation, API, workflow, product, or support surface that weakens these rules is non-compliant with the FUZE canonical identity architecture.
+
+---
+
+## Quality Gate Checklist
+
+- [x] canonical owner is explicit for every material identity truth family
+- [x] mutation boundaries are explicit
+- [x] adjacent boundaries are explicit
+- [x] truth classes are explicit
+- [x] conflict-resolution rules are explicit where needed
+- [x] default decision rules are explicit where ambiguity could arise
+- [x] non-canonical patterns are called out clearly
+- [x] operator and admin override paths are bounded and audited
+- [x] read-model, cache, reporting, and projection rules are explicit
+- [x] wallet and adjacent domain responsibilities are explicit where relevant
+- [x] failure and degraded-mode behaviors are explicit
+- [x] downstream implementation guardrails are explicit
+- [x] dependencies and downstream impacts are explicit
+- [x] non-goals and deferred items are explicit
+- [x] the document is strong enough to support backend, API, data, runtime, support, and audit implementation without inventing contradictory semantics

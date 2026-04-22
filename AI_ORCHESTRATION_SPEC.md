@@ -1,743 +1,677 @@
-# AI_ORCHESTRATION_SPEC
+# FUZE AI Orchestration Specification
+
+## Document Metadata
+- **Document Name:** `AI_ORCHESTRATION_SPEC.md`
+- **Document Type:** Canonical refined system specification
+- **Status:** Active refined system spec
+- **Version:** 1.0
+- **Effective Date:** 2026-04-22
+- **Last Updated:** 2026-04-22
+- **Reviewed On:** 2026-04-22
+- **Document Owner:** FUZE AI Orchestration Domain (canonical owner); named individual owner is not explicitly specified in the retrieved source material
+- **Approval Authority:** Not explicitly specified in the retrieved source material; constitutional approval authority remains governed by `REFINED_SYSTEM_SPEC_INDEX.md` and the active FUZE approval workflow
+- **Review Cadence:** Not explicitly specified in the retrieved source material; SHOULD be reviewed whenever orchestration lifecycle semantics, AI execution controls, routing/context boundaries, async execution posture, metering integration, workflow coupling, tool-governance rules, control-plane intervention rules, or platform AI product scope materially change
+- **Governing Layer:** Shared platform execution / AI orchestration
+- **Parent Registry:** `REFINED_SYSTEM_SPEC_INDEX.md`
+- **Primary Audience:** Platform architecture, backend engineering, AI engineering, product engineering, workflow/runtime engineering, API and contract authors, security, audit, operations, support, governance/control-plane operators
+- **Primary Purpose:** Define the canonical FUZE orchestration layer that accepts AI execution intent, binds governed context and policy, coordinates model and tool execution, manages run lifecycle and async execution lineage, validates bounded outputs, and preserves the separation between AI behavior and canonical business truth across the FUZE platform
+- **Primary Upstream References:**
+  - `REFINED_SYSTEM_SPEC_INDEX.md`
+  - `DOCS_SPEC_INDEX.md`
+  - `SYSTEM_SPEC_INDEX.md`
+  - `API_SPEC_INDEX.md`
+  - `PLATFORM_ARCHITECTURE_SPEC.md`
+  - `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+  - `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+  - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+  - `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+  - `PRODUCT_BOUNDARY_AND_DOMAIN_OWNERSHIP_SPEC.md`
+  - `PRODUCT_ADMISSION_AND_EXPANSION_GATE_SPEC.md`
+  - `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_THESIS_FINAL_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
+  - `FUZE_WORKSPACE_ACCESS_CONTROL_BASICS_THESIS_FINAL_SPEC.md`
+  - `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
+  - `SCOPED_AUTHORIZATION_MODEL_SPEC.md`
+  - `ACCESS_EVALUATION_AND_EFFECTIVE_PERMISSION_SPEC.md`
+  - `ENTITLEMENT_AND_CAPABILITY_GATING_SPEC.md`
+  - `MODEL_ROUTING_AND_CONTEXT_SPEC.md`
+  - `AI_USAGE_METERING_SPEC.md`
+  - `WORKFLOW_AND_AUTOMATION_SPEC.md`
+  - `JOB_QUEUE_AND_WORKER_SPEC.md`
+  - `FEATURE_FLAG_AND_ROLLOUT_CONTROL_SPEC.md`
+  - `API_ARCHITECTURE_SPEC.md`
+  - `PUBLIC_API_SPEC.md`
+  - `INTERNAL_SERVICE_API_SPEC.md`
+  - `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+  - `IDEMPOTENCY_AND_VERSIONING_SPEC.md`
+  - `MIGRATION_AND_BACKWARD_COMPATIBILITY_SPEC.md`
+  - `AUDIT_LOG_AND_ACTIVITY_SPEC.md`
+  - `SECURITY_AND_RISK_CONTROL_SPEC.md`
+  - `MONITORING_ALERTING_AND_INCIDENT_RESPONSE_SPEC.md`
+  - `SECRETS_CONFIG_AND_ENVIRONMENT_SPEC.md`
+- **Primary Downstream Dependents:**
+  - `MODEL_ROUTING_AND_CONTEXT_SPEC.md`
+  - `AI_USAGE_METERING_SPEC.md`
+  - `WORKFLOW_AND_AUTOMATION_SPEC.md`
+  - `JOB_QUEUE_AND_WORKER_SPEC.md`
+  - `FEATURE_FLAG_AND_ROLLOUT_CONTROL_SPEC.md`
+  - `API_ARCHITECTURE_SPEC.md`
+  - `PUBLIC_API_SPEC.md`
+  - `INTERNAL_SERVICE_API_SPEC.md`
+  - `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+  - `IDEMPOTENCY_AND_VERSIONING_SPEC.md`
+  - product integration specifications
+  - downstream AI API contracts
+  - tool-registry, prompt-contract, eval, safety, and runtime policy specifications when created
+- **Supersedes:** Earlier or weaker interpretations that treat AI as product-local helper code, allow direct unmanaged model/provider calls from product surfaces, collapse orchestration into routing, metering, workflow, or job truth, let AI output become canonical business truth without owning-domain validation, or hide async/tool behavior behind untracked runtime shortcuts
+- **Superseded By:** None currently defined
+- **Related Decision Records:** Not explicitly linked in the retrieved source material
+- **Canonical Status Note:** This document is the canonical governing system specification for AI orchestration in FUZE. Downstream API, workflow, queue, metering, product integration, security, audit, and operational layers MUST preserve the ownership, truth-separation, lifecycle, and control rules defined here.
+- **Implementation Status:** Normative source; downstream services, APIs, jobs, event contracts, read models, runtime policies, and operator tooling MUST align
+- **Approval Status:** Draft refined canonical specification pending explicit approval workflow
+- **Change Summary:** Refined the AI orchestration domain into a production-grade platform control-plane specification; normalized the distinction between orchestration truth and adjacent domains; clarified lifecycle, async execution, tool-call lineage, authorization and entitlement gates, output validation, operator intervention, read-model limits, auditability, degraded-mode behavior, and implementation-contract guardrails
+
+## Title
+FUZE AI Orchestration Specification
 
 ## Purpose
+This specification defines the canonical AI orchestration layer of FUZE.
 
-This document defines the canonical AI orchestration architecture of the FUZE platform. Its purpose is to establish how FUZE routes, executes, governs, meters, and operationalizes AI-driven work across the ecosystem, including product-facing AI actions, internal platform AI services, workflow-triggered AI tasks, and policy-sensitive AI execution paths.
+Its purpose is to make explicit:
+- what the orchestration domain owns and what it does not own
+- how AI execution requests are accepted, normalized, and governed across products and shared platform services
+- how scope, policy, context, model/tool access, runtime mode, validation, and fallback behavior are coordinated
+- how synchronous, streaming, hybrid, and asynchronous AI execution must be represented and controlled
+- how AI execution remains commercially measurable, operationally observable, auditable, and safe without becoming the owner of product or platform business truth
+- what downstream APIs, workers, workflows, metering systems, and product integrations MUST preserve
 
-This specification is foundational because FUZE is not a conventional SaaS platform that only embeds isolated AI features. FUZE is designed as a multi-product AI-powered platform ecosystem. That means AI is not a decorative add-on. It is one of the shared operating layers of the platform. The AI orchestration layer is what allows multiple products to reuse common execution logic, shared context policy, usage metering, model-routing controls, and reliability patterns instead of building disconnected AI stacks product by product.
-
----
+This specification is intentionally governing rather than descriptive. It does not merely describe existing assistant features or prompt patterns. It defines the durable FUZE architecture for using AI as a shared platform execution capability.
 
 ## Scope
+This specification governs:
+- the shared AI orchestration domain across FUZE products and shared services
+- orchestration request intake and normalization
+- orchestration lifecycle and run-state management
+- execution-mode selection and async coupling rules
+- orchestration ownership of context bindings, routing lineage, tool-use lineage, and bounded outputs
+- orchestration integration with authorization, entitlement, workflow, job, metering, audit, monitoring, and control-plane systems
+- output validation, action gating, and publication rules
+- degraded-mode, kill-switch, retry, cancellation, and restriction behavior
+- implementation-contract guardrails for public, internal, admin, and event-driven interfaces
 
-This specification covers:
+## Out of Scope
+This specification does not define:
+- the full model-routing policy matrix in complete detail
+- the full context-pack schema or retrieval implementation details in complete detail
+- the full tool registry, tool adapter contract catalog, or provider SDK implementation
+- detailed prompt templates for every product flow
+- full usage metering formulas, billing logic, credits semantics, or pricing policy
+- full workflow DAG definitions or job-queue implementation internals
+- full product-local AI experience designs or UI behavior for each surface
+- the complete evaluation methodology, safety taxonomy, or moderation model for every task class
 
-- the canonical role of AI orchestration inside the FUZE platform
-- the distinction between product intelligence logic and platform AI orchestration
-- model routing and execution governance
-- AI task lifecycle and orchestration states
-- synchronous versus asynchronous AI execution paths
-- account, workspace, and product context handling for AI tasks
-- usage metering hooks and commercial attribution
-- policy and safety controls for AI task execution
-- interaction with workflows, jobs, credits, entitlements, and reporting
-- audit, observability, and failure-handling requirements for AI execution
-
-This specification does not fully define detailed model pricing, provider-specific APIs, deep prompt template inventories, or all context-packing rules. Those are refined in downstream specifications such as:
-
-- `MODEL_ROUTING_AND_CONTEXT_SPEC.md`
-- `WORKFLOW_AND_AUTOMATION_SPEC.md`
-- `JOB_QUEUE_AND_WORKER_SPEC.md`
-- `AI_USAGE_METERING_SPEC.md`
-- `PRODUCT_INTEGRATION_ARCHITECTURE_SPEC.md`
-
----
+Those concerns are refined in adjacent or downstream specifications and MUST remain compatible with this document.
 
 ## Design Goals
-
-The design goals of the FUZE AI orchestration layer are:
-
-1. to provide one shared AI execution layer across the FUZE ecosystem
-2. to separate platform AI infrastructure from product-specific AI behaviors
-3. to support reusable AI orchestration across current and future products
-4. to make AI execution commercially measurable and policy-controlled
-5. to support both low-latency and long-running AI workflows
-6. to preserve strong context discipline across account, workspace, wallet-aware, product, and workflow scopes
-7. to make AI execution observable, auditable, and failure-tolerant
-8. to reduce duplication, inconsistency, and hidden provider lock-in across products
-
----
+The design goals of FUZE AI orchestration are to:
+1. provide one shared, governed AI execution layer across the FUZE ecosystem
+2. preserve platform-wide consistency for context policy, tool governance, execution state, fallback behavior, and cost visibility
+3. keep product and workflow domains expressive without allowing them to invent incompatible AI stacks
+4. support low-latency, streaming, hybrid, and long-running AI execution safely
+5. preserve explicit ownership and truth separation between AI behavior and business-domain state
+6. ensure AI execution is attributable to actor, scope, product, policy, and runtime lineage
+7. make orchestration observable, auditable, failure-tolerant, and operator-manageable
+8. support future products and future AI capability expansion without semantic drift
 
 ## Non-Goals
-
 This specification is not intended to:
+- make AI the owner of business, financial, access, governance, or workflow truth
+- allow products to select providers, tools, or prompts in an unmanaged way in production
+- permit frontend, bot, or dashboard surfaces to construct privileged AI behavior independently
+- collapse orchestration into model routing, usage metering, workflow truth, or queue truth
+- treat AI output as authoritative merely because it is structured or plausible
+- define a generic unbounded autonomous-agent model for FUZE
+- hide degraded-mode or operator intervention behind opaque runtime behavior
 
-- make every AI task use the same prompt strategy
-- collapse product intelligence logic into one generic assistant behavior
-- define every product-specific AI prompt or output schema
-- let products call external AI providers directly without shared platform control
-- treat AI output as automatically correct, authoritative, or permission-granting
-- define generalized AGI-like behavior or unconstrained autonomous agents
-- replace downstream product-specific decision layers where domain-specific logic is required
+## Core Principles
+### 1. Platform-Owned AI Principle
+AI execution in FUZE is a shared platform capability. Products and workflows may request it, but they do not redefine its platform semantics.
 
----
+### 2. Backend-Truth Principle
+Backend-owned orchestration state is canonical. Frontend, bot, dashboard, and public-helper surfaces render or invoke orchestration; they do not own orchestration truth.
 
-## Canonical AI Orchestration Principle
+### 3. Orchestration-Is-Control-Plane Principle
+The orchestration layer is the runtime control plane that binds request intent to policy, context, routing, tool access, execution, validation, and fallback.
 
-The primary principle of FUZE AI orchestration is:
+### 4. Business-Truth Separation Principle
+AI output is not canonical business truth unless an owning domain explicitly validates and commits it.
 
-> AI execution should be treated as a shared platform capability that receives structured context, applies policy-governed routing and execution logic, produces bounded outputs, and returns those outputs to products, workflows, or platform services without redefining domain ownership.
+### 5. Context-Discipline Principle
+Only the minimum appropriate context may be released into an AI run, and context release must respect ownership and access boundaries.
 
-This means:
+### 6. Tool-Governance Principle
+Tool exposure is request-scoped and policy-governed. Tools are never globally or implicitly available because a model could use them.
 
-- products define why AI is needed and what domain task is being performed
-- the platform defines how AI is routed, executed, measured, and governed
-- AI providers are execution dependencies, not the source of product or platform truth
-- AI tasks must remain attributable to scope, product, action, and policy context
-- AI execution should strengthen platform coherence rather than fragment it
+### 7. Validation-Before-Effect Principle
+Any AI output that could influence durable behavior, user trust, access, money, workflow progression, or high-impact messaging must pass deterministic downstream validation before it has effect.
 
-This principle is one of the clearest ways FUZE operationalizes its platform-first architecture.
+### 8. Async-Explicit Principle
+Long-running AI work must be represented explicitly through canonical orchestration and backend-tracked async execution lineage. Hidden background AI behavior is forbidden.
 
----
+### 9. Degradation-Enforcement Principle
+The orchestration domain is a runtime enforcement point for fail-safe, downgrade, disablement, and fallback policy.
 
-## Why FUZE Needs a Shared AI Orchestration Layer
+### 10. Auditability Principle
+Meaningful AI execution, especially sensitive or high-cost execution, must be reconstructible through durable lineage and audit records.
 
-FUZE needs a shared AI orchestration layer because multiple products in the ecosystem depend on AI-driven execution, and those products should not each invent isolated infrastructure for model routing, context assembly, metering, provider failover, policy enforcement, and workflow integration.
+## Canonical Definitions
+### AI Orchestration Domain
+The FUZE platform domain that owns the lifecycle of governed AI execution requests, runs, steps, tool-use lineage, output publication state, and related policy-bound runtime behavior.
 
-Without shared AI orchestration, the platform would accumulate:
+### AI Orchestration Request
+A normalized request for AI execution accepted into the orchestration domain with bound scope, actor, capability, and policy context.
 
-- inconsistent context quality
-- fragmented provider usage
-- weak cost visibility
-- duplicated safety logic
-- poor usage metering
-- product-specific AI silos
-- support and audit blind spots
+### AI Run
+A canonical orchestration record representing one governed AI execution attempt or bounded execution sequence.
 
-A shared orchestration layer solves this by turning AI from a scattered implementation detail into structured platform infrastructure.
+### AI Run Step
+A durable orchestration lineage record representing one bounded execution step within a run.
 
-This is especially important because FUZE products span several AI-relevant categories, including:
+### Execution Policy
+A named policy bundle controlling permitted execution mode, tool exposure, context classes, model families, retry behavior, output constraints, and control rules.
 
-- trading intelligence
-- market-operations support
-- token-utility logic
-- event intelligence
-- SME software generation and transformation
-- workflow execution assistance
-- AI-supported automation and task handling
+### Context Binding
+A durable reference to approved context sources or context packs released into a run.
 
-These domains differ in what they ask AI to do, but they still benefit from a common execution framework.
+### Bounded Output
+An AI-produced output that is stored and exposed under explicit class, validation state, audience rules, and publication constraints.
 
----
+### Proposed Action
+A structured AI-produced suggestion intended for deterministic backend validation by an owning domain before any commit occurs.
 
-## Canonical Role of the AI Orchestration Layer
+### Restricted Run
+A run whose execution or output visibility is constrained by policy, security, control-plane action, or safety handling.
 
-The AI orchestration layer exists to do the following:
+## Truth Class Taxonomy
+This specification MUST preserve the following truth classes:
+1. **Semantic truth** — what orchestration concepts mean and which domain owns them
+2. **Policy truth** — execution policy, tool policy, gating policy, and restriction rules
+3. **Runtime truth** — current execution state and transient runtime posture
+4. **Ledger / storage truth** — durable orchestration entities and lineage records
+5. **Execution truth** — queues, attempts, retries, steps, and deferred progression state
+6. **Provider-input truth** — model/provider responses prior to downstream validation
+7. **Implementation-adapter truth** — tool-adapter and provider-adapter translation state
+8. **Projection / reporting truth** — user-visible run summaries, dashboards, analytics, and cost/reporting views
+9. **Presentation truth** — AI wording or UI composition shown to a user
 
-1. receive AI task requests from platform or product domains
-2. resolve required execution context
-3. select the appropriate model or model class
-4. enforce applicable policy and control rules
-5. route execution synchronously or asynchronously
-6. capture usage and cost attribution signals
-7. return or persist structured outputs
-8. expose execution state for workflow, reporting, and operational handling
+These truth classes MUST remain distinct. Orchestration truth does not absorb workflow truth, metering truth, product truth, or provider truth.
 
-This means the AI orchestration layer is neither:
-- a consumer-facing chatbot layer only, nor
-- a product-local helper module, nor
-- a generic unbounded agent runtime
+## Architectural Position in the Spec Hierarchy
+This document sits below:
+- `REFINED_SYSTEM_SPEC_INDEX.md`
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
 
-It is a controlled execution fabric for AI-powered platform and product behavior.
+and above or alongside:
+- `MODEL_ROUTING_AND_CONTEXT_SPEC.md`
+- `AI_USAGE_METERING_SPEC.md`
+- `WORKFLOW_AND_AUTOMATION_SPEC.md`
+- `JOB_QUEUE_AND_WORKER_SPEC.md`
+- `FEATURE_FLAG_AND_ROLLOUT_CONTROL_SPEC.md`
+- `API_ARCHITECTURE_SPEC.md`
+- `PUBLIC_API_SPEC.md`
+- `INTERNAL_SERVICE_API_SPEC.md`
+- `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+- `IDEMPOTENCY_AND_VERSIONING_SPEC.md`
+- product integration specifications
 
----
+This document governs orchestration semantics. It does not replace the adjacent documents listed above.
 
-## Core Concepts
+## System Boundaries
+AI orchestration sits primarily in the FUZE **application plane** and coordinates explicitly with the **execution plane**, **integration plane**, **control plane**, and bounded **reporting plane** views defined by `PLATFORM_ARCHITECTURE_SPEC.md`.
 
-### AI Task
-A structured unit of AI work requested by a product, platform service, or workflow.
+It MUST be interpreted as follows:
+- the **experience / edge layer** may initiate or display runs but does not own orchestration truth
+- the **application plane** owns orchestration acceptance, policy binding, validation gates, and durable run meaning
+- the **execution plane** may execute async work, retries, and deferred continuation but does not redefine orchestration business meaning
+- the **integration plane** mediates model-provider and tool-provider boundaries but does not own orchestration semantics
+- the **control plane** may restrict, cancel, or remediate under policy but does not become ordinary run owner
+- the **reporting plane** may project orchestration summaries but is never authoritative for canonical orchestration state
 
-### Orchestration
-The process of preparing, routing, executing, and finalizing an AI task under platform rules.
+## Adjacent Boundaries
+This specification interacts with adjacent domains as follows:
+- **Model Routing and Context** owns routing-resolution and context-governance semantics; orchestration consumes those governed decisions and bindings rather than redefining them
+- **AI Usage Metering** owns normalized usage-accounting truth; orchestration must emit enough lineage for metering but MUST NOT redefine metering semantics
+- **Workflow and Automation** owns multi-step business workflow coordination; orchestration may be invoked by workflows or emit results to workflows, but does not own general workflow meaning
+- **Job Queue and Worker** owns deferred execution mechanics; orchestration owns the meaning of AI run progression but not the general queue substrate
+- **Feature Flag and Rollout Control** owns platform rollout and disablement governance; orchestration enforces those decisions at runtime
+- **Authorization and Entitlement** domains own permission truth and capability eligibility; orchestration must gate initiation and output release against them but must not redefine them
+- **Audit** owns immutable audit records; orchestration must source the required event lineage
+- **Security** owns cross-platform security posture and risk controls; orchestration must implement the subset relevant to AI execution
 
-### Model Routing
-The decision process that selects which model, provider, or execution class should be used for a given task.
+## Conflict Resolution Rules
+When materials, implementations, or interpretations conflict, the following rules apply:
+1. the active refined registry and higher constitutional materials win over narrower documents
+2. `PLATFORM_ARCHITECTURE_SPEC.md` wins on plane separation and cross-plane posture
+3. this document wins on orchestration semantics, run lifecycle meaning, output class boundaries, and orchestration-specific control rules
+4. `MODEL_ROUTING_AND_CONTEXT_SPEC.md` wins on routing-resolution and context-governance specifics
+5. `AI_USAGE_METERING_SPEC.md` wins on usage-accounting truth, usage corrections, and commercial measurement semantics
+6. `WORKFLOW_AND_AUTOMATION_SPEC.md` wins on workflow-state meaning and cross-domain workflow progression semantics
+7. `JOB_QUEUE_AND_WORKER_SPEC.md` wins on queue mechanics, worker execution substrate, and retry infrastructure mechanics
+8. canonical business domains win over AI output whenever AI output conflicts with owned business truth
+9. provider output never wins by itself; verified and owner-approved consequences win
+10. when ambiguity remains, FUZE MUST prefer the more conservative platform-consistent interpretation and escalate the ambiguity into downstream refinement or a recorded decision
 
-### Context Assembly
-The process of collecting the scoped information required for the AI task, such as user context, workspace context, product data, tool state, policy state, and prompt structure.
+## Default Decision Rules
+When ambiguity exists and no narrower approved exception is available, FUZE MUST default to the following:
+1. AI execution requests with product or workflow effect MUST pass through orchestration
+2. product surfaces default to initiators and presenters only, not orchestration owners
+3. orchestration output defaults to advisory or proposed state until owning-domain validation succeeds
+4. async continuation defaults to backend-tracked run lineage, not detached background execution
+5. tool access defaults to denied unless explicitly allowed by execution policy
+6. context release defaults to least privilege and minimum necessary scope
+7. missing identity, scope, or entitlement defaults to narrower capability, degraded behavior, or denial rather than silent expansion
+8. operator intervention defaults to bounded, reason-coded, and auditable control actions rather than silent state mutation
+9. if no clear owner for run state, output validity, or downstream effect can be named, the design is incomplete and MUST NOT ship
 
-### Execution Mode
-The operational class of the AI task, such as synchronous, asynchronous, streaming, batch, or workflow-coupled execution.
+## Roles / Actors / Entities
+### Human Actors
+- end users
+- workspace members and owners
+- internal staff users
+- support and operations staff
+- security and trust reviewers
+- product engineers and AI engineers
+- privileged control-plane operators
 
-### AI Output
-The structured or unstructured result produced by the AI task.
+### System Actors
+- `fuze-frontend-webapp`
+- `fuze-frontend-admin`
+- first-party bot or messaging adapters
+- product domain services
+- workflow and automation services
+- job queue and worker runtime
+- routing/context services
+- tool adapters and provider adapters
+- audit, metering, and monitoring services
 
-### AI Usage Record
-The platform record representing measurable usage, cost attribution, and commercial classification of an AI task.
+### Core Entity Families
+- orchestration requests
+- runs
+- run steps
+- context bindings
+- routing decisions
+- execution policy references
+- tool invocation lineage
+- bounded outputs
+- action proposals
+- cancellation / retry / restriction actions
+- audit event linkage
+- read-model summaries and capability views
 
-### Policy Gate
-A rule or control that determines whether a requested AI task may proceed, under what constraints, and with which routing or resource limits.
+## Ownership Model
+The orchestration domain requires explicit separation among the following ownership dimensions:
+1. **semantic ownership** — AI Orchestration Domain defines what orchestration requests, runs, steps, and bounded outputs mean
+2. **mutation ownership** — AI Orchestration Domain accepts writes that create, advance, cancel, restrict, complete, or fail runs
+3. **runtime execution ownership** — worker or service runtimes may execute model calls or tool calls but do not own orchestration semantics
+4. **presentation ownership** — product surfaces render bounded orchestration state but do not author canonical orchestration meaning
+5. **control/governance ownership** — privileged operators may intervene under policy but do not become normal owners of run truth
 
----
+## Authority / Decision Model
+### Platform Authority
+The platform has final authority over orchestration semantics, execution policy structure, shared AI capability posture, and cross-product runtime consistency.
 
-## AI Task Categories
+### Product Authority
+Products have authority over the business purpose of a task, product-local interpretation of outputs, product-local UX, and owning-domain validation logic. Products do not have authority to redefine orchestration semantics.
 
-The AI orchestration layer should support several classes of AI tasks.
+### Workflow Authority
+Workflow systems may trigger or consume orchestration results but do not own orchestration run meaning.
 
-### 1. Interactive Inference Task
+### Routing/Context Authority
+Routing and context services determine governed routing choices and context release boundaries. Orchestration must consume those results and preserve their lineage.
 
-Low-latency user-facing tasks where the product needs a direct response.
+### Metering Authority
+Metering systems own usage-accounting truth. Orchestration must provide lineage but must not redefine charging semantics.
 
-Examples:
-- summary generation
-- recommendation output
-- guided analysis
-- assistant response
-- structured explanation
+### Control-Plane Authority
+Privileged operators may restrict, cancel, retry, suppress, or remediate within policy. Those interventions must be explicit and auditable.
 
-### 2. Workflow-Coupled Task
+## State Model
+### Durable Canonical Entities
+At minimum, the orchestration domain MUST support semantic equivalents of:
+- `ai_orchestration_requests`
+- `ai_runs`
+- `ai_run_steps`
+- `ai_context_bindings`
+- `ai_model_routing_decisions`
+- `ai_tool_invocations`
+- `ai_execution_policies`
+- `ai_run_outputs`
+- `ai_mutation_actions`
+- linkage into audit events
 
-AI work triggered as part of a larger application workflow.
+### Derived Entities
+At minimum, the platform MAY expose derived equivalents of:
+- `ai_run_status_views`
+- `ai_capability_views`
+- `ai_output_views`
+- operational summaries
+- cost or quota overlays supplied by adjacent domains
 
-Examples:
-- AI-assisted routing
-- classification
-- enrichment
-- extraction
-- content transformation
-- decision support inside a workflow step
+Derived entities MUST NOT replace the durable source-of-truth entities above.
 
-### 3. Heavy Async Task
+## Lifecycle / Workflow Model
+### Canonical Request Lifecycle
+An orchestration request SHOULD conceptually move through:
+1. `created`
+2. `validated`
+3. `rejected` or `enqueued`
+4. `started`
+5. `completed` / `failed` / `cancelled` / `restricted`
 
-Longer-running AI work delegated to workers or background execution.
-
-Examples:
-- large summarization jobs
-- batch report generation
-- multi-document reasoning
-- expensive analysis runs
-- multi-stage generation tasks
-
-### 4. Platform Utility Task
-
-Shared internal AI services not exposed as a product feature directly.
-
-Examples:
-- support-assist flows
-- internal moderation or tagging support
-- report drafting assistance
-- system-generated explanation support
-
-### 5. Product-Specific Domain Intelligence Task
-
-AI work that remains domain-specific to a product while still using the shared orchestration layer.
-
-Examples:
-- QTB market signal explanation
-- AIMM operational interpretation
-- ZAGA utility recommendation
-- AIE event summarization
-- HerHelp app-generation support
-- Botmad workflow-improvement recommendations
-
-These categories help FUZE support multiple AI patterns within one platform architecture.
-
----
-
-## Canonical AI Task Lifecycle
-
-At minimum, the AI orchestration layer should support the following task lifecycle states:
-
-- `created`
-- `pending_context`
-- `pending_policy_check`
-- `queued`
+### Canonical Run Lifecycle
+A run SHOULD conceptually move through:
+- `pending`
+- `routing`
+- `awaiting_execution`
 - `running`
-- `streaming` where relevant
+- `awaiting_tool_result` where applicable
 - `completed`
 - `failed`
-- `canceled`
-- `timed_out`
+- `cancelled`
+- `restricted`
+- `timed_out` where applicable
 - `requires_review` where applicable
 
-### Lifecycle meanings
-
-#### Created
-The AI task request has been accepted into the platform.
-
-#### Pending Context
-The task is waiting for required contextual inputs.
-
-#### Pending Policy Check
-The task is awaiting commercial, permission, or execution-policy evaluation.
-
-#### Queued
-The task is ready for execution and waiting in the appropriate execution path.
-
-#### Running
-The task is actively executing.
-
-#### Streaming
-A task is returning incremental output to a caller where supported.
-
-#### Completed
-Execution finished with a usable result.
-
-#### Failed
-Execution ended unsuccessfully.
-
-#### Canceled
-The task was deliberately stopped before completion.
-
-#### Timed Out
-The task exceeded allowed execution time or orchestration constraints.
-
-#### Requires Review
-The task entered a special handling state because of risk, ambiguity, or platform-defined sensitivity.
-
-The lifecycle must be auditable and observable.
-
----
-
-## AI Execution Modes
-
-The orchestration layer must support multiple execution modes.
-
-### Synchronous Mode
-
-Used for:
-- user-facing low-latency responses
-- lightweight inference
-- immediate recommendation generation
-- bounded interactive assistance
-
-### Asynchronous Mode
-
-Used for:
-- heavy generation
-- long-running analysis
-- batch processing
-- workflow continuation
-- retries or delayed execution
-- expensive or non-urgent operations
-
-### Streaming Mode
-
-Used where:
-- partial AI output should be surfaced to the client as it arrives
-- interactive UX benefits from progressive output
-- execution remains within approved streaming policy
-
-### Hybrid Mode
-
-Used where:
-- a fast initial response is returned
-- deeper or heavier processing continues asynchronously afterward
-
-The execution mode should be chosen based on product need, cost profile, latency sensitivity, and policy constraints.
-
----
-
-## Context Model
-
-AI orchestration in FUZE must be context-aware. Context should never be treated as an unstructured pile of available data.
-
-The platform must distinguish among several context layers.
-
-### 1. Account Context
-Includes:
-- canonical account identity
-- account status
-- account-level permissions where relevant
-- personal preferences where approved
-- billing or commercial class where relevant
-
-### 2. Workspace Context
-Includes:
-- workspace identity
-- membership role
-- billing scope
-- workspace feature enablement
-- shared resources and permissions where relevant
-
-### 3. Product Context
-Includes:
-- product name or domain
-- product-specific task type
-- product objects or state references
-- product-specific rules for output handling
-
-### 4. Wallet-Aware Context
-Includes:
-- wallet-linked participation context
-- holder-aware context where relevant
-- eligibility-sensitive but policy-bounded signals
-
-### 5. Workflow Context
-Includes:
-- triggering event
-- prior workflow steps
-- state machine context
-- approval or review state where applicable
-
-### 6. Policy Context
-Includes:
-- plan or entitlement state
-- AI usage limits
-- class of permitted AI capability
-- sensitivity constraints
-- moderation or restricted-mode rules where relevant
-
-### Context Principle
-
-AI tasks should receive only the context required for the task, and context boundaries must respect ownership and permission rules. The AI layer must not become a hidden bypass for data access that would otherwise be denied.
-
----
-
-## Model Routing Principles
-
-The platform must support structured model routing rather than hard-coding one provider or one model for every task.
-
-### Routing may consider:
-
-- task category
-- latency needs
-- cost profile
-- model capability requirements
-- structured output requirement
-- safety or policy tier
-- product domain
-- fallback provider availability
-- account or workspace commercial tier where policy allows
-
-### Routing rules
-
-1. products request task intent, not raw provider selection
-2. model choice should be policy-governed
-3. routing decisions should be observable and attributable
-4. fallback behavior should be explicit
-5. provider-specific details should remain abstracted behind platform orchestration where possible
-
-This does not mean products can never influence routing. It means routing authority remains platform-owned even when product needs are part of the decision.
-
----
-
-## Prompt and Instruction Architecture
-
-FUZE must treat prompts and instructions as structured orchestration inputs, not ad hoc product strings with no platform discipline.
-
-### Prompt architecture should distinguish:
-
-- system-level platform policy instructions
-- product-domain instructions
-- task-specific instructions
-- formatting/output instructions
-- tool-use instructions where relevant
-- safety or moderation instructions where applicable
-
-### Prompt discipline principles
-
-- prompts should be versionable
-- prompts should be attributable to product and task class
-- prompt changes that materially affect behavior should be reviewable
-- products should not bypass shared orchestration discipline by embedding uncontrolled provider-specific behavior directly
-- instruction layering should preserve platform rules above product-specific behavior where relevant
-
-This matters because FUZE is expected to operate AI behavior as shared infrastructure, not as an uncontrolled prompt sprawl.
-
----
-
-## AI Output Handling
-
-AI outputs must be handled as bounded platform artifacts, not as automatically trusted truth.
-
-### Output handling rules
-
-- AI output should be associated with task metadata
-- products may transform or validate output according to domain rules
-- AI output should not automatically grant permissions, mutate sensitive state, or finalize governance-sensitive actions without explicit downstream logic
-- structured outputs should be schema-validated where appropriate
-- failures in output validation should be explicit and recoverable
-- user-visible AI output should remain attributable to product context and execution type
-
-### Output classes may include:
-
-- plain text
-- structured JSON
-- ranked suggestions
-- tagged classifications
-- generated drafts
-- summarized records
-- workflow actions requiring human confirmation
-
-The orchestration layer is responsible for producing bounded outputs, not for silently elevating them into authoritative final system truth.
-
----
-
-## Relationship to Product Domains
-
-The AI orchestration layer is shared infrastructure, but products still own product-specific intelligence behavior.
-
-### Platform owns:
-- execution routing
-- context policy
-- metering hooks
-- orchestration lifecycle
-- provider abstraction
-- execution observability
-- failure handling scaffolding
-
-### Products own:
-- domain purpose of the task
-- product-specific task definitions
-- product-specific interpretation of outputs
-- product-specific UI/UX around AI behavior
-- product-level downstream action logic
-
-### Product rule
-
-Products may not implement independent hidden AI stacks that bypass shared orchestration for core product intelligence if those stacks would weaken commercial, audit, or policy coherence.
-
-This is essential for keeping FUZE a real platform rather than a loose federation of AI products.
-
----
-
-## Relationship to Workflow and Automation
-
-The AI orchestration layer must integrate tightly with the workflow and automation layer.
-
-### AI may be triggered by:
-
-- user actions
-- scheduled tasks
-- queued workflows
-- event-driven product logic
-- support operations
-- reporting pipelines
-- reconciliation or classification flows
-
-### Workflow integration requirements
-
-- AI tasks must be triggerable from workflows
-- workflow state must be able to observe AI execution state
-- retries and error handling must be explicit
-- reservation or usage charging behavior must be compatible with async execution
-- human-review gates should be supportable where policy requires
-
-This matters because many FUZE products are expected to use AI as part of broader multi-step flows, not only as one-shot inference.
-
----
-
-## Relationship to Platform Credits and Billing
-
-The AI orchestration layer must remain commercially integrated with the FUZE platform economy.
-
-AI tasks may be:
-
-- included within a subscription
-- usage-metered
-- tied to premium access tiers
-- billed per action
-- bundled into workspace plans
-- governed by credits-backed quotas or overage logic
-
-### Billing integration principles
-
-- AI task execution should check entitlement and commercial policy before high-cost execution where required
-- usage records should be attributable to account or workspace scope
-- heavy async tasks may require reservation semantics before final settlement
-- failed tasks should follow policy-defined release or correction logic
-- products must not create hidden unmetered AI pathways that bypass the shared commercial system
-
-This is especially important because AI-native products can generate variable costs quickly if execution is not governed through the platform economy.
-
----
-
-## Usage Metering Hooks
-
-Every meaningful AI execution path must expose usage metering hooks.
-
-At minimum, the platform should be able to capture:
-
-- task type
-- product attribution
-- owner scope
+### Run Step Lifecycle
+A run step SHOULD conceptually move through:
+- `pending`
+- `ready`
+- `executing`
+- `completed`
+- `failed`
+- `cancelled`
+- `superseded`
+
+### Tool Invocation Lifecycle
+A tool invocation SHOULD conceptually move through:
+- `requested`
+- `authorized`
+- `executing`
+- `completed`
+- `failed`
+- `rejected`
+
+### Output Lifecycle
+Outputs SHOULD conceptually move through:
+- `partial`
+- `final`
+- `restricted`
+- `retracted_if_required`
+- `superseded`
+
+Lifecycle notes:
+- completion of a run does not imply business truth has been committed elsewhere
+- retries and cancellations MUST preserve lineage rather than overwrite history
+- restricted runs and outputs MUST remain explicit
+- async continuation MUST attach to canonical run identity
+
+## Invariants
+1. No production AI request with material product, workflow, cost, or trust effect may bypass orchestration.
+2. Every meaningful run MUST be attributable to actor, scope, product or service origin, execution policy, and runtime lineage.
+3. Orchestration MUST NOT directly commit business truth owned by another domain.
+4. Tool access MUST be explicit, request-scoped, and policy-governed.
+5. Context release MUST be bounded and permission-safe.
+6. Async AI work MUST remain attached to backend-tracked run lineage.
+7. Cancellation, retry, restriction, and remediation MUST preserve explicit history.
+8. Metering, billing, credits, and product business semantics MUST remain distinct from orchestration truth.
+9. Read models, dashboards, and UX projections MUST NOT silently become canonical run truth.
+10. Operator actions on runs MUST be reason-coded, policy-constrained, and auditable.
+
+## Functional Rules
+### Request Intake Rules
+- Orchestration MUST accept normalized requests only.
+- Requests MUST bind a clear scope, actor or service identity, origin surface or service, and requested capability class.
+- Requests without sufficient scope or policy context MUST fail closed, degrade, or enter review rather than widen authority.
+
+### Classification Rules
+Each request MUST be classifiable by at least:
+- request class
+- output class
+- risk class
 - execution mode
-- provider/model class
-- start and completion state
-- commercial classification
-- success/failure outcome
-- reservation or spend reference where applicable
+- product or platform capability family
+- policy bundle reference
 
-This does not require exposing raw provider billing internals in every user-facing view, but the platform must preserve enough structure to support:
+### Context Rules
+- Orchestration MUST use governed context bindings, not ad hoc uncontrolled prompt stuffing.
+- It SHOULD prefer stable summaries or bounded object references before broad raw object release.
+- Sensitive context MUST require explicit allowance.
+- Memory, if any, is assistive only and MUST NOT replace canonical backend state.
 
-- commercial charging
-- support investigation
-- reporting
-- optimization
-- anomaly detection
-- provider cost management
+### Model and Tool Rules
+- Products request task intent and allowed capability classes, not raw provider ownership.
+- Orchestration MUST rely on governed routing and policy decisions for model/provider choice.
+- Tool loops MUST be bounded by policy for step count, tool family, and failure handling.
+- Failure of a required tool MUST trigger explicit fallback, failure, or review behavior.
 
-AI orchestration without usage visibility is incompatible with FUZE’s platform model.
+### Output Rules
+- Outputs MUST be labeled by real output class.
+- Structured outputs MUST be schema-validated where relevant.
+- Action-adjacent outputs MUST be represented as proposals, not direct commits.
+- Outputs violating policy, validation, or audience safety MUST be blocked, degraded, or restricted.
 
----
+## Permission / Access Considerations
+- Run initiation MUST require valid authenticated session or trusted service identity, depending on route class.
+- Authorization MUST evaluate account identity, session validity, scope visibility, workspace role where applicable, product context, and route family.
+- Run output visibility MUST be constrained by the same or stricter scope rules than run initiation.
+- Sensitive admin routes require privileged role plus explicit reason codes.
+- Public or unauthenticated helper flows MUST remain bounded to public-safe scope and must never silently inherit authenticated capabilities.
 
-## Policy and Safety Controls
+## Entitlement Considerations
+- Execution initiation MUST evaluate entitlement and capability gating when AI features or execution classes are monetized, tiered, or restricted.
+- Workspace or account entitlement MAY affect allowed execution mode, model family, tool access, or volume.
+- Lack of entitlement MUST result in denial, downgrade, or alternate safe behavior; it MUST NOT be silently bypassed.
+- Entitlement state is owned by the entitlement domain, not by orchestration.
 
-The AI orchestration layer must support policy and safety controls without pretending that one generic moderation rule is sufficient for every product.
+## API / Contract Implications
+Downstream API specifications MUST preserve the following:
+- orchestration is exposed through explicit public, internal, admin, and event-driven surfaces
+- request creation, state reads, completion, cancellation, retry, restriction, and tool lineage are explicit operations
+- idempotency is REQUIRED for creation, cancellation, retry, remediation, and any mutation-like step reporting
+- run and step identifiers MUST remain stable and replay-safe
+- API consumers MUST NOT infer business truth finality from run completion alone
+- admin/control-plane routes MUST be separated from ordinary user routes
+- internal service routes MUST be authenticated with explicit least privilege
 
-### Policy controls may include:
+## Event / Async Implications
+- The orchestration domain MUST emit explicit lifecycle events for request, step, tool, completion, failure, cancellation, restriction, and remediation milestones where downstream consumers depend on them.
+- Async execution MUST attach to a canonical run and, where relevant, to workflow or job references.
+- Event consumers MUST treat orchestration events as orchestration-state events, not as business truth commits by default.
+- Streaming behavior, if supported, MUST still preserve canonical terminal state through backend-managed run completion.
 
-- plan-based execution limits
-- workspace or account usage caps
-- restricted task classes
-- prohibited output categories
-- model-availability gating
-- feature-tier restrictions
-- human-review requirements for selected flows
-- provider allowlist restrictions
-- rate and concurrency limits
+## Data Model / Storage Implications
+- Durable storage MUST preserve request, run, step, policy, context-binding, tool-use, output, and mutation-action lineage.
+- Storage MUST distinguish canonical durable entities from derived or cached views.
+- Sensitive payload storage SHOULD use references or bounded artifacts when full payload persistence would violate data-minimization rules.
+- Policy versions, route identifiers, trace identifiers, and idempotency keys MUST be stored where relevant.
+- Retention and deletion behavior MUST preserve audit, security, and compliance requirements while respecting the platform’s retention policies.
 
-### Safety principle
+## Read Model / Projection / Reporting Rules
+- User-facing run summaries, dashboards, and admin views MAY use derived read models for performance and UX.
+- Derived read models MUST clearly remain non-canonical projections of source orchestration state.
+- Reporting systems MAY summarize run counts, costs, failures, or output classes, but MUST NOT become the authority for run semantics.
+- Analytics or reporting layers MUST not invent completion, success, or effectiveness semantics inconsistent with canonical run state.
 
-The AI orchestration layer should not be the only place where safety exists, but it must provide a platform-level control point that helps products operate consistently and responsibly.
+## Security / Risk / Abuse Controls
+The orchestration domain MUST implement or enforce at least the following controls:
+- least-privilege context release
+- least-privilege tool exposure
+- secret non-disclosure and redaction discipline
+- route family separation for public, authenticated, internal, and admin execution
+- policy-based model and tool restrictions
+- rate, concurrency, and cost guardrails where relevant
+- safe handling for malformed provider responses
+- protection against prompt or tool escalation through surface-supplied hints
+- explicit bounded handling for high-risk request classes touching money, access, approvals, or high-trust messaging
 
-This matters especially in a multi-product platform where inconsistent AI behavior can quickly become a trust and operations problem.
+## Boundary Violation Detection / Non-Canonical Patterns
+The following patterns are non-canonical and forbidden unless a narrower approved exception explicitly permits them:
+- frontend or bot surfaces directly calling providers for production behavior outside orchestration
+- product domains embedding hidden privileged tool logic inside prompt code
+- dashboard or admin overlays inventing their own high-risk run semantics
+- AI outputs being written into business tables as authoritative truth without owning-domain validation
+- detached background AI tasks with no canonical run lineage
+- workflow or worker systems claiming orchestration ownership merely because they executed a task
+- metering or billing systems being used as the canonical source for run state
+- reporting or analytics outputs being treated as the source of truth for success/failure semantics
 
----
+## Audit / Traceability Requirements
+At minimum, the platform MUST be able to trace:
+- who or what initiated a run
+- in which scope and product/service context the run occurred
+- which execution policy and route family were applied
+- which context bindings and routing decisions were used
+- which tools were authorized and invoked
+- what terminal outcome occurred
+- whether the run was cancelled, retried, restricted, or remediated
+- which operator performed privileged intervention, with reason code
+- how the run linked to workflow, job, metering, or downstream validation systems where relevant
 
-## Reliability and Fallback Behavior
+High-sensitivity actions MUST generate durable audit records through the audit domain.
 
-FUZE must assume that AI execution is probabilistic, provider-dependent, and occasionally degraded. Reliability must therefore be designed into orchestration rather than assumed.
+## Failure Handling / Edge Cases
+### Missing or Ambiguous Identity
+Capability MUST narrow or execution MUST be denied. Silent privilege expansion is forbidden.
 
-### Required reliability behaviors may include:
+### Entitled Product, Non-Entitled AI Tier
+Execution MUST be denied, downgraded, or rerouted according to entitlement and commercial policy.
 
-- retry handling where safe
-- model/provider fallback where policy allows
-- explicit degraded-mode responses
-- timeout handling
-- partial-result handling where applicable
-- queue-based offloading for heavy tasks
-- user-visible or operator-visible failure states
-- compensation or release behavior for reserved-value flows where needed
+### Malformed Structured Output
+Output MUST fail validation explicitly and enter fallback, retry, restriction, or review flow.
 
-### Reliability principle
+### Tool Failure Mid-Run
+The run MUST either degrade safely, retry under policy, or terminate with explicit failure. Hidden partial success is forbidden.
 
-An AI task failure should not silently corrupt product state, commercial state, or workflow state. The system must make failure observable and recoverable.
+### Async Run During Permission Change
+Sensitive continuation SHOULD revalidate authorization and policy before executing high-impact actions or releasing sensitive outputs.
 
----
+### Context Drift During Long-Running Work
+Orchestration MUST follow a defined versioning rule for context bindings rather than implicitly substituting the newest state without lineage.
 
-## Observability Requirements
+### Duplicate Initiation or Retry
+Idempotency and lineage controls MUST prevent duplicate economic or operational side effects.
 
-The AI orchestration layer must support strong observability.
+### Restricted or Retraction Case
+Suppression, retraction, or restriction of outputs MUST preserve prior lineage and produce explicit control-plane trace.
 
-At minimum, the platform should be able to observe:
+## Operational Considerations
+- Orchestration services MUST expose health, latency, failure, backlog, and degraded-mode observability.
+- The platform SHOULD track provider degradation, tool failure rates, retry volumes, cancellation volumes, and policy-denied execution attempts.
+- Runtime alerts SHOULD distinguish provider issues, orchestration-policy issues, and downstream worker or queue issues.
+- Support and operations tooling MUST be able to inspect run lineage without mutating canonical state accidentally.
+- Kill-switch and feature-flag controls MUST be centrally enforceable through orchestration.
 
-- task creation rate
-- task completion/failure rate
-- routing decisions
-- latency by task type
-- async backlog where relevant
-- provider degradation
-- commercial impact by task class
-- retry volume
-- cancellation volume
-- usage spikes
-- policy-denied execution attempts
+## Migration / Compatibility / Supersession Considerations
+- Existing product-local AI paths MUST migrate toward shared orchestration semantics and explicit run lineage.
+- Migration plans MUST preserve backward compatibility for clients while removing non-canonical direct-provider dependencies.
+- Schema, API, and event changes MUST remain versioned and replay-safe.
+- Legacy AI helper behaviors that bypass policy, metering hooks, or durable lineage MUST be treated as technical debt and phased out.
+- This specification supersedes earlier ad hoc orchestration interpretations even where products historically relied on convenience shortcuts.
 
-Observability matters because AI is both a product capability and a platform cost center. FUZE must be able to operate it as infrastructure.
+## Implementation-Contract Guardrails
+Downstream implementations MUST preserve all of the following:
+- stable canonical request and run identifiers
+- explicit route family separation
+- idempotent mutation-like operations
+- explicit terminal states and reason-coded intervention paths
+- durable lineage for steps, tools, context, routing, and output publication
+- explicit separation between advisory output and committed business effects
+- explicit linkage to workflow, job, metering, and audit domains without collapsing ownership
+- degraded-mode and fallback behavior that fails closed on sensitive classes and fails soft only where policy allows
 
----
+Downstream implementations MUST NOT optimize away lineage, policy references, or validation gates for performance convenience.
 
-## Audit Requirements
+## Downstream Execution Staging
+A production-grade downstream rollout SHOULD stage as follows:
+1. establish canonical request/run lifecycle entities and APIs
+2. bind routing/context lineage and execution-policy references
+3. introduce governed tool-invocation lineage and bounded output classes
+4. connect async execution and workflow/job references
+5. connect metering, audit, monitoring, and control-plane intervention
+6. migrate product surfaces away from legacy direct-provider behavior
+7. harden degraded-mode, operator controls, and reporting/read-model discipline
 
-The orchestration layer must produce sufficient audit visibility for meaningful events.
+## Required Downstream Specs / Contract Layers
+This specification requires or expects compatible downstream material for:
+- orchestration API contracts
+- routing/context API contracts
+- AI usage metering API contracts
+- workflow and automation contracts
+- job queue / worker contracts
+- feature flag and rollout controls
+- tool registry and tool adapter contracts
+- prompt/output contract rules
+- safety and eval specifications
+- product integration specifications
 
-At minimum, audit records should exist for:
+## Canonical Examples / Anti-Examples
+### Canonical Example: Product Summary Request
+A product page requests a summary for an authorized user. The request passes through orchestration, binds approved context, selects a governed route, produces a bounded summary, and publishes it as assistive output. No business truth ownership changes.
 
-- AI task requested
-- high-impact policy denial
-- AI execution completed for auditable workflows where needed
-- support/admin-triggered AI task
-- manual retry or cancellation of sensitive AI jobs
-- workflow-coupled AI task affecting downstream critical state
-- commercial correction related to AI usage if applicable
+### Canonical Example: Workflow-Coupled Classification
+A workflow step triggers AI classification. Orchestration executes the run, returns a structured proposal, and the workflow or owning domain validates before committing any domain effect.
 
-Not every trivial inference needs the same audit depth, but the platform must remain capable of tracing meaningful execution paths.
+### Canonical Example: Heavy Async Artifact Job
+A long-running artifact generation request creates a canonical run and attaches to backend job lineage. Status is shown through derived views, but terminal truth remains in orchestration and related owning domains.
 
----
+### Anti-Example: Frontend Direct Model Call
+A frontend route directly chooses a provider and sends privileged product context. This bypasses orchestration and is forbidden.
 
-## Minimum Data Model Requirements
+### Anti-Example: AI Auto-Commit
+A model produces a structured action and the product writes it directly into durable business state. This is forbidden unless the owning domain performs explicit deterministic validation and commit.
 
-At minimum, the AI orchestration layer must support semantic representation of:
+### Anti-Example: Hidden Background Retry Loop
+A product silently retries AI calls in the background without canonical run lineage or operator visibility. This is forbidden.
 
-### AI Task
-- ai_task_id
-- task_type
-- product_reference
-- owner_scope_type
-- owner_scope_id
-- account_id where relevant
-- workspace_id where relevant
-- execution_mode
-- status
-- created_at
-- started_at / completed_at where relevant
-- policy class
-- commercial classification
+## Dependencies / Cross-Spec Links
+This specification depends materially on:
+- the refined registry and top-level system-boundary documents for governance and ownership posture
+- platform architecture for plane separation and runtime positioning
+- access-control and session foundations for actor and scope interpretation
+- entitlement for capability gating
+- routing/context for model selection and context-governance detail
+- metering for usage-accounting truth
+- workflow and queue specs for deferred execution posture
+- API, event, idempotency, migration, security, audit, and monitoring specs for implementation-contract requirements
 
-### Context Envelope
-- ai_task_id
-- context references
-- product context reference
-- workflow context reference where applicable
-- permission/policy references
-- structured context version or schema reference
+## Explicitly Deferred Items
+The following are intentionally deferred to adjacent or downstream specifications:
+- full model-ranking and provider-selection algorithms
+- exact prompt registries and prompt-text schemas
+- exact tool registry details and adapter schemas
+- exact evaluation methodology and quality gates
+- complete moderation/safety taxonomy by task class
+- exact frontend assistant UI or bot UX rules
+- exact retention intervals for all payload categories
 
-### Routing Record
-- ai_task_id
-- routing class
-- selected provider/model reference
-- fallback path reference where applicable
-- routing timestamp
+## Final Normative Summary
+FUZE AI orchestration is the platform-owned control plane for governed AI execution. It accepts normalized AI execution intent, binds authorized scope and policy, coordinates routing and tool use, manages synchronous and asynchronous run lifecycle, emits bounded outputs, and preserves explicit lineage. It is not a product-local helper, not a generic freeform agent sandbox, not metering truth, not workflow truth, and not business-truth ownership. Any production AI behavior that materially affects FUZE products, operations, or economics MUST pass through this orchestration model or be treated as non-canonical.
 
-### AI Output Record
-- ai_task_id
-- output type
-- output reference or payload pointer
-- validation state where applicable
-- created_at
-
-### Usage Record Linkage
-- ai_task_id
-- usage meter reference
-- credits or billing reference where applicable
-- commercial status
-
-These are minimum semantic requirements. Detailed schema is refined elsewhere.
-
----
-
-## Edge Cases and Failure Handling
-
-### User has entitlement to product but not to premium AI tier
-The AI task must be denied, downgraded, or rerouted according to commercial policy rather than executed silently.
-
-### AI provider returns malformed structured output
-The output must fail validation explicitly and enter retry, fallback, or error-handling flow rather than silently corrupt downstream state.
-
-### Heavy AI task reserved credits but fails before completion
-Reserved value must be released or settled according to policy-defined failure handling.
-
-### Product retries the same AI action after timeout
-Idempotency and business-action lineage must prevent duplicate economic effects where applicable.
-
-### Workspace permissions changed while async AI task is queued
-Execution may need revalidation at run time for sensitive or high-impact tasks.
-
-### Wallet-aware context changes after task creation
-The task should use the correct policy-defined context versioning rules rather than implicitly assuming the newest state for every in-flight task.
-
-### Reporting sees AI output before product validation completes
-The AI output is non-final until product-side validation and workflow rules are satisfied where applicable.
-
----
-
-## Open Items
-
-The following areas are intentionally refined in downstream specifications:
-
-- exact provider portfolio and fallback ordering
-- exact context-packing and truncation logic
-- exact prompt registry model
-- exact structured-output schema standards
-- exact AI moderation layers by product class
-- exact user-facing explanation patterns for degraded or denied AI tasks
-
-These do not weaken the canonical orchestration model established here.
-
----
-
-## Closing Summary
-
-The FUZE AI orchestration layer is the shared execution fabric that allows multiple products to use AI in a structured, commercially integrated, and policy-governed way. It receives task intent from products and workflows, assembles scoped context, routes execution across models and providers, meters usage, and returns bounded outputs without collapsing product ownership into provider behavior. This makes AI a reusable platform capability rather than a scattered set of product-local integrations. In a multi-product AI-powered ecosystem like FUZE, that shared orchestration layer is not optional. It is one of the platform’s core operating systems.
+## Quality Gate Checklist
+- [x] Canonical owner is explicit for orchestration truth families
+- [x] Mutation boundaries are explicit
+- [x] Adjacent domain boundaries are explicit
+- [x] Truth classes are explicit
+- [x] Conflict-resolution rules are explicit
+- [x] Default decision rules are explicit
+- [x] Non-canonical patterns are explicitly forbidden
+- [x] Operator override paths are bounded and audited
+- [x] Read-model and projection rules are explicit
+- [x] Failure and degraded-mode behavior is explicit
+- [x] Downstream implementation guardrails are explicit
+- [x] Dependencies and downstream impacts are explicit
+- [x] Non-goals and deferred items are explicit
+- [x] Document is strong enough to support downstream API, backend, workflow, queue, and runtime implementation without contradictory reinterpretation

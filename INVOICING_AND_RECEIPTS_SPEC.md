@@ -1,744 +1,833 @@
 # INVOICING_AND_RECEIPTS_SPEC
 
+## Title
+FUZE Invoicing and Receipts Specification
+
+## Document Metadata
+
+- Document Name: `INVOICING_AND_RECEIPTS_SPEC.md`
+- Document Type: Canonical refined system specification
+- Status: Active refined system spec
+- Version: 1.1.0
+- Effective Date: 2026-04-21
+- Last Updated: 2026-04-21
+- Reviewed On: 2026-04-21
+- Document Owner: FUZE Platform Invoicing and Billing Documents Architecture
+- Approval Authority: FUZE Platform Architecture and Governance Authority
+- Review Cadence: Quarterly or upon material change to billing truth, payment normalization, credits-ledger settlement posture, refund/correction policy, document delivery controls, tax or compliance posture, or audit/traceability requirements
+- Governing Layer: Platform core / shared commercial infrastructure / invoicing and receipts
+- Parent Registry: `REFINED_SYSTEM_SPEC_INDEX.md`
+- Primary Audience: Platform architecture, billing engineering, payments engineering, credits and ledger engineering, finance operations, support operations, security engineering, audit/compliance, product engineering, API design, data engineering, platform operations, implementation-contract authors
+- Primary Purpose: Define the canonical FUZE invoicing and receipts model as the platform-owned billing-document layer for approved commercial obligations and confirmed payment or settlement events, preserving strict separation from subscription truth, usage-billing truth, payment-rail truth, Platform Credits truth, credits-ledger truth, entitlement truth, token/payout/treasury truth, and product-local UI assumptions
+- Primary Upstream References:
+  - `REFINED_SYSTEM_SPEC_INDEX.md`
+  - `DOCS_SPEC_INDEX.md`
+  - `SYSTEM_SPEC_INDEX.md`
+  - `API_SPEC_INDEX.md`
+  - `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+  - `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+  - `PLATFORM_ARCHITECTURE_SPEC.md`
+  - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+  - `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+  - `IDENTITY_AND_ACCOUNT_SPEC.md`
+  - `WORKSPACE_AND_ORGANIZATION_SPEC.md`
+  - `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
+  - `SCOPED_AUTHORIZATION_MODEL_SPEC.md`
+  - `ACCESS_EVALUATION_AND_EFFECTIVE_PERMISSION_SPEC.md`
+  - `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md`
+  - `PLATFORM_CREDITS_SPEC.md`
+  - `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md`
+  - `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`
+  - `PAYMENT_RAILS_INTEGRATION_SPEC.md`
+  - `REFUND_REVERSAL_AND_ADJUSTMENT_SPEC.md`
+  - `PAYMENT_FRAUD_AND_ABUSE_PREVENTION_SPEC.md`
+  - `PRICING_AND_MONETIZATION_MODEL_SPEC.md`
+  - `SECURITY_AND_RISK_CONTROL_SPEC.md`
+- Primary Downstream Dependents:
+  - `INVOICING_RECEIPTS_API_SPEC.md`
+  - `REFUND_REVERSAL_AND_ADJUSTMENT_SPEC.md`
+  - `PAYMENT_FRAUD_AND_ABUSE_PREVENTION_SPEC.md`
+  - `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`
+  - `PAYMENT_RAILS_INTEGRATION_SPEC.md`
+  - accounting/export workflows
+  - reporting and reconciliation workflows
+  - support/control-plane document remediation workflows
+  - product billing-document visibility surfaces
+- Supersedes: Earlier or weaker FUZE invoicing or receipt writeups that did not clearly separate document truth from billing truth, payment truth, credits truth, or ledger truth
+- Superseded By: Not yet known
+- Related Decision Records: Not yet known
+- Canonical Status Note: This document is the canonical FUZE specification for invoice and receipt semantics. Downstream APIs, products, workers, dashboards, support tooling, payment integrations, billing adapters, credits consumers, and reporting systems MUST NOT reinterpret payment-provider UI state, raw billing events, raw ledger entries, or product-local document summaries as substitutes for canonical invoice or receipt truth.
+- Implementation Status: Normative architecture baseline; downstream API, service, runtime, event, audit, and control-plane contracts must conform
+- Approval Status: Drafted for refined-system inclusion; formal approval record not yet attached
+- Change Summary:
+  - strengthened separation between invoice truth, receipt truth, billing truth, payment normalization truth, and credits-ledger truth
+  - clarified document subject/scope attachment, issuance triggers, line-item lineage, receipt allocation semantics, and delivery/remediation posture
+  - hardened supersession-safe correction rules so document history is preserved rather than rewritten
+  - expanded implementation-contract guardrails for backend ownership, idempotent issuance, visibility controls, and derived-view safety
+
 ## Purpose
 
-This document defines the canonical invoicing and receipts architecture of the FUZE platform. Its purpose is to establish how commercial events are rendered into formal billing documents, how invoice and receipt records relate to subscriptions, usage billing, Platform Credits, payment rails, and billing scope, and how FUZE preserves traceable commercial documentation across a multi-product ecosystem.
+This specification defines the canonical invoicing and receipts model of the FUZE platform.
 
-This specification is important because FUZE is a platform company with shared billing and shared internal economics. A platform with subscriptions, usage charging, multiple payment rails, account and workspace billing scopes, and Platform Credits requires a disciplined documentation layer for what was charged, what was paid, what was credited, what was refunded, and which scope owned the commercial event.
+Its purpose is to make explicit:
 
-Invoices and receipts are therefore not decorative billing outputs. They are part of the platform’s commercial truth, support operations, support user trust, and support downstream audit, reporting, reconciliation, and finance workflows.
+- when invoices exist and what they mean
+- when receipts exist and what they confirm
+- how invoices and receipts relate to subscriptions, usage billing, credits purchases, renewals, seat changes, refunds, and approved commercial adjustments
+- how billing documents attach to account or workspace commercial scope
+- how document issuance, delivery, supersession, voiding, cancellation, and remediation must work
+- how APIs, events, audit lineage, and reporting/export flows must preserve billing-document truth
 
----
+FUZE supports monetary flows into the platform and product spending within it. Clear invoice and receipt rules are necessary for business customers, finance controls, tax/compliance readiness, internal legitimacy, and downstream reporting. The billing-document layer must therefore be durable, explicit, and distinct from the upstream or downstream commercial systems it references.
 
 ## Scope
 
-This specification covers:
+This specification governs:
 
-- the canonical role of invoices and receipts inside FUZE
-- the distinction between invoice, receipt, billing record, payment record, and credit-ledger record
-- invoice and receipt generation rules
-- account-scoped versus workspace-scoped billing documents
-- subscriptions, usage billing, add-ons, and credit-funding documentation
-- document lifecycle states
-- refunds, corrections, credit notes, and replacement-document behavior
-- interaction with payment rails, Platform Credits, subscriptions, and reporting
-- user-facing and internal-facing documentation requirements
-- audit, control, and retention implications
+- canonical invoice semantics
+- canonical receipt semantics
+- approved source references for invoice and receipt issuance
+- account-scoped and workspace-scoped billing-document ownership and visibility
+- line-item, allocation, and source-linkage semantics
+- issuance, delivery, supersession, voiding, cancellation, regeneration, and remediation rules
+- relationship among invoices, receipts, billing truth, payment normalization, credits purchases, credits-ledger settlement, and refunds/corrections
+- API, event, data-model, audit, security, and operational implications of billing-document truth
+- migration constraints preventing products or providers from becoming document-truth owners
 
-This specification does not define tax advice, legal jurisdiction-specific invoicing compliance, or complete accounting treatment for every geography. Those may be refined operationally later. This file also does not define the full payment verification or credits ledger internals, which are covered in:
+This specification does not define in full depth:
 
-- `PAYMENT_RAILS_INTEGRATION_SPEC.md`
-- `PLATFORM_CREDITS_SPEC.md`
-- `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`
-- `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md`
-- `REFUND_REVERSAL_AND_ADJUSTMENT_SPEC.md`
+- recurring subscription state machines
+- usage-rating logic
+- payment-provider verification protocols
+- credits-ledger append-oriented mutation logic
+- exact PDF rendering internals
+- exact tax-engine integration internals
+- exact external accounting-export formats
+- exact legal/compliance wording of all documents
 
----
+Those concerns belong to adjacent billing, payment, credits, refund, accounting-export, and API specifications and MUST remain compatible with this document.
+
+## Out of Scope
+
+This specification is explicitly out of scope for:
+
+- proving actor identity or session validity
+- determining final actor authorization for billing-document mutation
+- defining payment-processor state semantics
+- defining Platform Credits class semantics
+- defining final credits-ledger truth
+- defining full refund/reversal workflow semantics
+- defining payout statements, treasury reports, or token reports
+- defining unsupported peer-to-peer invoicing or generic contract-document management
 
 ## Design Goals
 
-The design goals of the invoicing and receipts system are:
-
-1. to provide one shared billing-document architecture across the FUZE ecosystem
-2. to make commercial events understandable across multiple products and billing models
-3. to preserve clean distinction between charge intent, payment verification, credits issuance, and final documentation
-4. to support both account-scoped and workspace-scoped billing contexts
-5. to make corrections, refunds, and replacement-document flows auditable and policy-driven
-6. to support transparency, reporting, support operations, and finance reconciliation
-7. to avoid product-local ad hoc receipt models that fragment the platform economy
-8. to keep user-facing documentation aligned with the platform’s structured commercial architecture
-
----
+1. Preserve invoices and receipts as distinct document classes with distinct business meaning.
+2. Ensure billing documents derive from approved upstream commercial truth rather than UI or provider assumptions.
+3. Support account-scoped and workspace-scoped billing documents with explicit scope clarity.
+4. Preserve durable lineage across issuance, delivery, supersession, voiding, and corrective remediation.
+5. Support multiple upstream commercial causes without document-semantics drift.
+6. Keep documents compatible with subscriptions, usage billing, credits purchases, seat changes, and payment confirmation flows.
+7. Support finance, support, reconciliation, audit, and compliance review without creating alternate truth owners.
+8. Keep product surfaces as consumers of document truth rather than owners.
+9. Support safe rendering, delivery, and access-link workflows without weakening canonical document records.
+10. Provide a durable implementation-contract foundation for APIs, storage, exports, and operations.
 
 ## Non-Goals
 
 This specification is not intended to:
 
-- make invoices the canonical source of payment truth
-- make receipts the canonical source of credits-ledger truth
-- require every product interaction to create a separate standalone invoice
-- define every jurisdiction-specific VAT, GST, or local tax rule
-- replace accounting ledgers with user-facing billing documents
-- let products create private commercial-document formats outside platform rules
-- make invoice display formatting more important than commercial traceability
+- make invoices and receipts generic transaction notes
+- treat receipts as substitutes for invoices where invoice semantics are required
+- treat payment-provider UI state as a receipt
+- treat ledger entries as invoices
+- treat invoices as proof of payment by themselves
+- let products define their own invoice or receipt semantics for shared platform commerce
+- allow destructive document rewrite that erases historical commercial truth
 
----
+## Core Principles
 
-## Canonical Documentation Principle
+### 1. Invoice / Receipt Distinction Principle
+Invoices and receipts are distinct document classes with separate business meaning. Invoices represent billing-document obligations or approved commercial billing records tied to FUZE platform semantics. Receipts represent confirmation of payment or value-settlement events according to allowed business rules. They are not interchangeable.
 
-The primary principle of FUZE invoicing and receipts is:
+### 2. Backend-Owned Document Truth Principle
+Backend owns canonical billing-document truth. Frontend and product surfaces consume billing-document records and delivery state; they do not invent or author them.
 
-> invoices and receipts are formal documentary views of normalized platform-commercial events, not substitutes for payment verification, subscription state, entitlement logic, or credits-ledger truth.
+### 3. Approved-Upstream-Sources Principle
+Invoices and receipts derive from approved commercial and billing events, not from frontend assumptions, provider-side UI state, or ad hoc operator notes.
 
-This means:
+### 4. Document-Is-Not-Billing Principle
+Billing truth determines commercial obligations, plan cycles, usage-rated outcomes, seat commercial state, and corrections. Billing documents are durable representations derived from approved billing truth, not replacements for it.
 
-- an invoice documents a chargeable commercial event or payable obligation
-- a receipt documents a completed payment or equivalent settled billing outcome
-- credits issuance may be related to invoices or receipts, but credits are still tracked in the credits system
-- payment records remain distinct from invoice records
-- reporting may derive from invoice and receipt records, but does not redefine them
+### 5. Document-Is-Not-Payment Principle
+Payment verification may justify receipt issuance and may contribute to invoice settlement state, but raw payment truth and provider UI state are not invoice or receipt truth.
 
-This separation is necessary for clarity and auditability.
+### 6. Document-Is-Not-Credits Principle
+Invoices and receipts must remain distinct from Platform Credits balances and credits-ledger state. A credits purchase or credits-backed subscription may be documented by invoices or receipts, but the documents do not become balance truth.
 
----
+### 7. Scope-Attached Document Principle
+Every invoice or receipt must attach to one explicit commercial scope, typically account or workspace. Wrong-scope document assignment is forbidden.
 
-## Core Concepts
+### 8. Supersession-Safe Correction Principle
+Voiding, supersession, cancellation, regeneration, and correction must preserve lineage instead of rewriting historical truth.
+
+### 9. Derived-View Subordination Principle
+Invoice summaries, receipt summaries, access links, and rendered-document delivery views are derived from canonical records and MUST remain subordinate to them.
+
+### 10. Auditability Principle
+Sensitive document issuance, correction, voiding, supersession, and remediation actions must be attributable and auditable because invoices and receipts are commercial and finance-sensitive artifacts.
+
+## Canonical Definitions
+
+### Billing Document
+The canonical supertype representing an invoice or receipt record and its routing metadata.
 
 ### Invoice
-A formal billing document representing a chargeable commercial obligation, whether for subscription, usage, add-on, seat expansion, credit funding, or other approved platform-commercial event.
+A canonical billing document that represents a commercial billing obligation, charge summary, or approved billable grouping according to FUZE domain policy. It is not itself payment proof.
 
 ### Receipt
-A formal document representing completed payment or settled commercial intake for a relevant invoice or platform purchase event.
-
-### Billing Record
-The platform-commercial record that tracks what happened commercially, such as a subscription charge, one-time purchase, usage charge, refund, cancellation, or correction.
-
-### Payment Record
-The normalized platform record of external payment state after rail-specific verification.
-
-### Credit Ledger Record
-The canonical internal economic record for Platform Credits issuance, spend, reversal, adjustment, expiry, or settlement behavior.
-
-### Credit Funding Document
-An invoice or receipt tied to the purchase or funding of Platform Credits.
-
-### Adjustment Document
-A documentary record for a correction, replacement, refund-related note, or compensating billing action where required by platform policy.
-
-### Billing Scope
-The owner of the commercial event, typically an account or a workspace.
-
----
-
-## Why FUZE Needs Shared Invoicing and Receipts
-
-FUZE needs a shared invoicing and receipts system because it is not a single-product application with one narrow payment model.
-
-The ecosystem supports:
-
-- multiple products
-- subscriptions
-- usage billing
-- account and workspace billing scopes
-- Platform Credits funding
-- add-ons and premium features
-- multiple external payment rails
-- refunds and corrections
-- future enterprise and partner-oriented commercial flows
-
-Without a shared documentation architecture, each product would be tempted to generate its own billing records and user-facing receipts independently. This would fragment support, reporting, finance workflows, and user understanding.
-
-A shared billing-document layer creates:
-
-- one consistent commercial language across products
-- one shared understanding of what was charged and what was paid
-- better reconciliation between subscriptions, payments, credits, and reporting
-- better support tooling
-- stronger platform-level auditability
-
-This is consistent with FUZE’s wider thesis that important shared systems should live at the platform layer rather than inside disconnected products.
-
----
-
-## Canonical Distinction Between Invoice and Receipt
-
-FUZE must preserve a clear distinction between an invoice and a receipt.
-
-### Invoice
-An invoice represents the commercial obligation, requested charge, or formal billing statement.
-
-Examples:
-- monthly workspace subscription invoice
-- seat expansion invoice
-- usage overage invoice
-- one-time credit-funding invoice
-- add-on feature invoice
-
-### Receipt
-A receipt represents the fact that payment or equivalent settlement has been completed for the relevant commercial event.
-
-Examples:
-- successful Stripe payment receipt
-- app-store confirmed purchase receipt as normalized by platform policy
-- stablecoin-funded platform purchase receipt after verification
-- successful purchase of credit package receipt
-
-### Key rule
-
-An invoice may exist before a receipt exists.  
-A receipt should not exist unless the platform recognizes that the associated payment or settlement event has been completed under policy.
-
-This distinction helps the rest of the platform reason correctly about:
-- obligations
-- payment completion
-- entitlement activation
-- credits issuance
-- refund logic
-- commercial history
-
----
-
-## Canonical Commercial Document Types
-
-FUZE should support, at minimum, the following document types.
-
-### 1. Subscription Invoice
-Documents recurring plan or recurring access charges.
-
-### 2. Usage Invoice
-Documents metered or overage-based billing.
-
-### 3. Seat / Expansion Invoice
-Documents seat increases, workspace upgrades, or plan expansions.
-
-### 4. Credit Funding Invoice
-Documents the purchase or funding of Platform Credits.
-
-### 5. One-Time Purchase Invoice
-Documents non-recurring purchases such as add-ons, premium modules, or bounded access packages.
-
-### 6. Payment Receipt
-Documents successful payment or settled purchase.
-
-### 7. Refund Receipt or Refund Record
-Documents completed refund outcomes where the platform represents them formally.
-
-### 8. Credit Note / Adjustment Note
-Documents a downward billing correction, credit correction, or compensating commercial adjustment where policy requires a formal document trail.
-
-The platform does not need to expose every document type identically in every UI, but the underlying semantic model must support them.
-
----
-
-## Billing Scope Model
-
-Invoices and receipts must be scope-aware.
-
-### 1. Account-Scoped Documents
-Commercial documents owned by an individual account.
-
-Examples:
-- personal subscription invoice
-- individual QTB receipt
-- personal credit package purchase receipt
-
-### 2. Workspace-Scoped Documents
-Commercial documents owned by a workspace or organization billing context.
-
-Examples:
-- workspace HerHelp plan invoice
-- team Botmad subscription invoice
-- workspace credits funding receipt
-- seat expansion invoice for a collaborative plan
-
-### Scope principles
-
-- every invoice and receipt must identify its billing scope clearly
-- account and workspace documents must remain distinguishable
-- support tools and reporting must preserve scope clarity
-- products must not issue workspace charges into personal document history by accident, or vice versa
-
-This distinction is necessary because FUZE supports both individual and multi-user commercial operation.
-
----
-
-## Relationship to Payment Rails
-
-The invoicing and receipts layer is downstream from payment normalization.
-
-### Architectural rule
-
-A payment event does not become a canonical receipt merely because a provider says payment occurred. The payment rail must first be verified and normalized into platform-commercial state.
-
-Once normalized, the invoicing and receipts system may generate or finalize the relevant document outcome.
-
-### Examples
-
-#### Stripe
-A subscription invoice may be created before payment completes. Once verified Stripe payment succeeds, a receipt may be issued or invoice state may transition to paid.
-
-#### Stablecoin
-A credit-funding invoice may be initiated. Once the stablecoin transfer is verified under policy, the receipt may be issued and credits funding completed.
-
-#### Apple / Google
-The store may be the raw payment source, but the platform still decides how that event is reflected as internal invoice/receipt and entitlement state.
-
-#### Telegram Stars
-Telegram-originated purchase state must be normalized before the relevant receipt or platform purchase record is finalized.
-
-This architecture keeps user-facing and finance-facing documents aligned with verified platform truth rather than with raw provider semantics.
-
----
-
-## Relationship to Platform Credits
-
-Invoices and receipts are especially important in a credits-based platform economy.
-
-### Credit-related documentation may include:
-
-- invoice for purchase of a credit package
-- receipt for successful credit funding
-- documentation of bonus-credit campaigns where exposed to the user
-- correction note for credits-related refund or reversal outcome
-- workspace-level receipt for credits funding used by multiple products
-
-### Important distinction
-
-An invoice or receipt may document a credits funding event, but it is not the ledger of the credits system itself.
-
-The credits domain remains canonical for:
-- issuance
-- spend
-- reversal
-- adjustment
-- expiry
-- scope-aware balance state
-
-The invoice/receipt layer documents the associated commercial event in a user-facing and finance-facing form.
-
-This separation is especially important in FUZE because the platform is designed to keep:
-- payment intake,
-- credits issuance,
-- product usage,
-- and profit participation
-
-as distinct but connected layers.
-
----
-
-## Relationship to Subscriptions and Usage Billing
-
-The invoicing and receipts layer is also downstream from the subscriptions and usage billing system.
-
-The billing system determines:
-- what should be charged
-- when it should be charged
-- which scope owns the charge
-- whether it is recurring, one-time, included, overage, or usage-driven
-- whether entitlement changes are tied to the charge
-
-The invoicing layer then renders that commercial outcome into formal documentation.
-
-### Examples
-
-- subscription renewal -> subscription invoice -> payment verified -> receipt -> entitlement remains active
-- usage overage event -> usage invoice -> credits or payment settlement -> receipt or paid-state update
-- plan upgrade -> expansion invoice -> payment success -> receipt -> new entitlement state
-
-Invoices and receipts therefore make the commercial state legible, but they do not independently define commercial policy.
-
----
-
-## Invoice Lifecycle
-
-The invoice system should support explicit lifecycle states.
-
-Recommended states include:
-
-- `draft`
-- `issued`
-- `pending_payment`
-- `paid`
-- `partially_paid` if relevant
-- `canceled`
-- `voided`
-- `replaced`
-- `adjusted`
-
-### State meanings
-
-#### Draft
-Prepared internally but not yet finalized for customer-facing or operational use.
-
-#### Issued
-Officially created as a payable or recognized billing statement.
-
-#### Pending Payment
-Payment is expected or in progress.
-
-#### Paid
-The invoice is satisfied by verified payment or equivalent settlement logic.
-
-#### Partially Paid
-Relevant only if the billing architecture supports partial settlement behavior.
-
-#### Canceled
-The charge intent is withdrawn before completion.
-
-#### Voided
-The invoice should no longer be treated as a valid commercial document in its original form.
-
-#### Replaced
-A newer invoice supersedes the prior one due to correction or restructuring.
-
-#### Adjusted
-The invoice has related correction records, credit notes, or modified interpretation paths.
-
-All transitions must be auditable.
-
----
-
-## Receipt Lifecycle
-
-Receipts should also support explicit lifecycle meaning, though usually simpler than invoices.
-
-Recommended states include:
-
-- `pending`
-- `issued`
-- `reversed`
-- `replaced`
-
-### State meanings
-
-#### Pending
-Optional state used when internal processing is not yet complete even though external payment may exist.
-
-#### Issued
-The platform recognizes completed payment or settled purchase and creates a formal receipt.
-
-#### Reversed
-The receipt remains part of history but the underlying payment was reversed or refunded in a way that materially changes commercial effect.
-
-#### Replaced
-A corrected receipt or settlement document supersedes the original.
-
-Receipts should remain traceable even when reversal or correction occurs.
-
----
-
-## Invoice Generation Rules
-
-Invoices should be generated only from approved commercial events.
-
-### Valid invoice triggers include:
-
-- new subscription activation
-- renewal event
-- seat increase
-- plan upgrade or downgrade transition where applicable
-- metered usage overage
-- one-time add-on purchase
-- credits funding purchase
-- enterprise billing event where supported
-- support-approved corrective rebill flow
-
-### Invoice generation requirements
-
-At minimum, an invoice should contain enough information to identify:
-
-- invoice identifier
-- billed scope
-- billed product or service context
-- line items or summarized charge reasons
-- currency or asset context
-- issue time
-- payment due or settlement expectation where relevant
-- related subscription or usage references where applicable
-- tax fields where required by operating policy
-- status
-
-Products must not invent separate invoice-generation logic that bypasses shared platform conventions.
-
----
-
-## Receipt Generation Rules
-
-Receipts should be issued only after the platform recognizes verified payment or settled billing completion.
-
-### Valid receipt triggers include:
-
-- verified Stripe payment
-- verified stablecoin settlement
-- verified app-store purchase normalization
-- verified Telegram Stars purchase normalization
-- verified credits funding purchase completion
-- support-approved manual settlement correction where policy allows
-
-### Receipt requirements
-
-At minimum, a receipt should contain enough information to identify:
-
-- receipt identifier
-- related invoice or commercial event reference
-- payment source rail
-- paid amount or settled amount
-- scope owner
-- settlement timestamp
-- status
-- refund/reversal linkage where applicable
-
-The receipt must communicate what actually completed, not merely what was requested.
-
----
-
-## Line Item Model
-
-FUZE invoices should support structured line items.
-
-### Line items may represent:
-
-- recurring plan fee
-- seat count or seat delta
-- usage overage
-- add-on purchase
-- one-time setup or activation fee if such a model is introduced
-- credits funding package
-- adjustment amount
-- discount or promotion effect where visible
-
-### Line item principles
-
-- line items must be attributable to a commercial reason
-- line items should remain interpretable in support and reporting contexts
-- product-specific items must still fit platform naming and reconciliation standards
-- discounting and promotional logic should be visible rather than silently changing totals without trace
-
-A line-item model makes the platform easier to support and more trustworthy for users.
-
----
-
-## Refunds, Credit Notes, and Replacement Documents
-
-The invoicing and receipts system must support correction behavior.
-
-### Refunds
-When value is returned through a valid refund flow, the platform may need to generate:
-- refund receipt
-- reversal record
-- adjusted invoice state
-- related credit note where policy requires
-
-### Credit Notes / Adjustment Notes
-Where the original invoice amount should be reduced, corrected, or compensated, the platform should support formal adjustment documents rather than silently mutating history.
-
-### Replacement Documents
-If an invoice or receipt was generated incorrectly, the system may support:
-- voiding the original
-- issuing a corrected replacement
-- preserving trace links between old and new documents
-
-### Principle
-
-Commercial history should be corrected through auditable document relationships, not by silent overwrite of the past.
-
-This matters for user trust, support quality, reporting integrity, and future finance operations.
-
----
-
-## User-Facing Document Access
-
-FUZE should support user-visible access to relevant billing documents.
-
-### Account-level visibility may include:
-
-- personal invoices
-- personal receipts
-- personal refund records
-- credits funding receipts
-- subscription renewal history
-
-### Workspace-level visibility may include:
-
-- workspace invoices
-- workspace receipts
-- seat-related billing documents
-- workspace credit funding records
-- shared commercial history where permitted by role
-
-### Visibility principles
-
-- document access must follow role and permission rules
-- billing owners and authorized operators may have broader visibility than ordinary members
-- document visibility should preserve privacy and scope boundaries
-- user-facing views are presentation layers, not the canonical source of billing truth
-
-This is important because multi-product and multi-workspace platforms require commercial visibility that is both useful and permission-aware.
-
----
-
-## Internal Operational Use
-
-Invoices and receipts are also important operational artifacts.
-
-Internal teams may use them for:
-
-- support investigation
-- billing dispute review
-- finance reconciliation
-- product-usage correlation
-- refund handling
-- credits funding traceability
-- workspace billing-owner review
-- abuse and fraud investigation
-
-### Internal-access rule
-
-Internal access to commercial documents must remain permission-bounded and auditable, especially when support, finance, or admin roles access user or workspace billing history.
-
----
-
-## Relationship to Reporting and Reconciliation
-
-Invoices and receipts feed reporting and reconciliation but do not replace them.
-
-### Reporting may derive from invoices and receipts to support:
-
-- MRR and subscription views
-- billing volume summaries
-- payment completion reporting
-- workspace billing health views
-- credits funding summaries
-- refund and dispute reporting
-- product revenue attribution summaries
-
-### Reconciliation may use invoices and receipts alongside:
-
-- payment records
-- credit ledger records
-- subscription state
-- usage records
-- refund events
-- chain commitment state where relevant
-
-Derived reporting must not mutate or redefine the underlying document history.
-
----
-
-## Control and Governance Implications
-
-Certain invoice and receipt actions are sensitive and must be controlled.
-
-### Sensitive actions include:
-
-- manual invoice void
-- manual receipt correction
-- backdated billing-document creation
-- replacement of issued documents
-- support or finance correction affecting user-visible billing history
-- bulk workspace billing adjustments
-- policy change affecting document semantics
-
-### Control principles
-
-- sensitive document actions must be permission-bounded
-- changes must be auditable
-- document history must preserve lineage between original and corrected states
-- products must not obtain unrestricted power to alter billing documents outside shared platform rules
-
-Billing documents are part of the trust surface of the platform and should be treated accordingly.
-
----
-
-## Audit Requirements
-
-The invoicing and receipts system must support strong auditability.
-
-At minimum, audit events should exist for:
-
-- invoice generated
-- invoice issued
-- invoice paid
-- invoice canceled or voided
-- receipt issued
-- refund or reversal documented
-- document replaced
-- billing scope reassigned where relevant
-- support/admin document correction
-- user-visible export or internal-access events where policy requires logging
-
-Because billing documents often become evidence in support, finance, or dispute workflows, audit discipline is mandatory.
-
----
-
-## Minimum Data Model Requirements
-
-At minimum, the invoicing and receipts system must support semantic representation of:
-
-### Invoice
-- invoice_id
-- scope_type
-- scope_id
-- product or billing context
-- status
-- currency or asset basis
-- subtotal / total
-- issue timestamp
-- due or settlement expectation where relevant
-- related subscription or billing references
+A canonical billing document that confirms an approved payment or value-settlement event lineage according to allowed business rules. It is not a substitute for an invoice where invoice semantics are required.
 
 ### Invoice Line Item
-- line_item_id
-- invoice_id
-- item type
-- description / charge reason
-- quantity where relevant
-- unit amount where relevant
-- total amount
-- product or meter reference where applicable
+Canonical line-level detail representing one billable component, charge category, or approved summarized billing element on an invoice.
+
+### Receipt Allocation
+Canonical linkage from a receipt to one or more source obligations or settlement-relevant source references, such as an invoice, billing cycle, credits top-up, or other approved commercial source.
+
+### Billing Document Source
+A normalized reference to an upstream commercial cause such as a subscription, billing cycle, usage batch, verified payment, credits purchase event, seat adjustment, or approved correction event.
+
+### Document Delivery Record
+A durable lineage record for rendering, generation, delivery attempt, access-link production, or delivery failure state associated with an invoice or receipt.
+
+### Document Mutation Action
+A durable action record for issuance, supersession, voiding, cancellation, regeneration, or remediation of a billing document.
+
+### Supersession
+The explicit replacement of one billing document by a later authoritative document while preserving the historical lineage of the prior one.
+
+## Truth Class Taxonomy
+
+Downstream implementations MUST preserve the following truth classes.
+
+### 1. Canonical Identity Truth
+The durable actor anchor represented by `account_id`.
+
+### 2. Runtime Session Truth
+Temporary authenticated runtime posture and privileged-session posture where relevant.
+
+### 3. Collaborative Scope Truth
+Canonical workspace, organization, and other approved subject-scope structures and lifecycle state.
+
+### 4. Structural Authorization Truth
+Role assignments, permission mappings, scoped grants, and scope applicability used to determine who may act.
+
+### 5. Effective-Permission Truth
+The final evaluated allow, deny, restricted, or review-required outcome for a concrete action.
+
+### 6. Billing Truth
+Recurring commitments, usage-rated charge state, included-usage posture, overage posture, seat commercial state, billing owner, and billing-scope responsibility owned by the subscriptions and usage billing domain.
+
+### 7. Payment-Rail Truth
+Verified payment input, normalized payment state, dispute posture, and reversal posture owned by the payment rails integration domain.
+
+### 8. Platform Credits Semantic Truth
+The canonical meaning of credits, class semantics, and ownership scope rules owned by the Platform Credits domain.
+
+### 9. Credit Ledger and Settlement Truth
+Authoritative credits mutation lineage, balance derivation, settlement posture, and reconciliation posture owned by the credit-ledger domain.
+
+### 10. Invoice / Receipt Truth
+Durable billing-document truth owned by this domain, including canonical invoice, receipt, source-reference, delivery, supersession, and remediation state.
+
+### 11. Policy / Restriction Truth
+Security, fraud, governance, compliance, review, and containment posture that may constrain billing-document issuance or visibility.
+
+### 12. Derived Read-Model Truth
+Invoice summaries, receipt summaries, download/access-link metadata, dashboards, exports, analytics, and support summaries derived from canonical records.
+
+## Architectural Position in the Spec Hierarchy
+
+This document sits below:
+
+- `REFINED_SYSTEM_SPEC_INDEX.md`
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `IDENTITY_AND_ACCOUNT_SPEC.md`
+- `WORKSPACE_AND_ORGANIZATION_SPEC.md`
+- `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
+- `SCOPED_AUTHORIZATION_MODEL_SPEC.md`
+- `ACCESS_EVALUATION_AND_EFFECTIVE_PERMISSION_SPEC.md`
+- `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md`
+- `PLATFORM_CREDITS_SPEC.md`
+- `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md`
+- `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`
+- `PAYMENT_RAILS_INTEGRATION_SPEC.md`
+- `SECURITY_AND_RISK_CONTROL_SPEC.md`
+
+and above:
+
+- `INVOICING_RECEIPTS_API_SPEC.md`
+- `REFUND_REVERSAL_AND_ADJUSTMENT_SPEC.md`
+- `PAYMENT_FRAUD_AND_ABUSE_PREVENTION_SPEC.md`
+- accounting/export workflows
+- reconciliation workflows
+- support/control-plane document remediation workflows
+- product document-visibility surfaces
+
+## System Boundaries
+
+This document governs only the following platform-owned boundaries:
+
+- canonical invoice and receipt semantics
+- canonical billing-document supertype and source linkage
+- invoice line-item and receipt-allocation semantics
+- account-scoped and workspace-scoped document ownership and visibility
+- document lifecycle state, delivery state, and mutation/remediation state
+- supersession-safe correction rules
+- API, event, audit, security, and operational expectations needed to preserve document truth
+
+It does not govern:
+
+- payment-provider verification in full depth
+- recurring billing and usage-rating logic
+- credits-ledger mutation mechanics
+- exact tax engine internals
+- exact PDF rendering implementation
+- external accounting-export schema in full detail
+- final refund policy logic
+
+## Adjacent Boundaries
+
+### Billing Domain
+Owns subscription and usage-billing truth. Invoices derive from approved billing obligations, billing cycles, usage batches, seat changes, add-ons, and billing corrections, but invoices do not replace billing truth.
+
+### Payment Rails Domain
+Owns normalized payment truth. Receipts derive from approved payment or value-settlement outcomes and may reflect payment allocations, but provider-side payment state is not itself receipt truth.
+
+### Platform Credits Domain
+Owns credits semantics. Credits top-ups, credits-backed purchases, or credits-backed subscription funding may appear as document sources, but invoices and receipts are not credits balances.
+
+### Credit Ledger and Settlement Domain
+Owns authoritative credits mutation and settlement lineage. Receipt issuance may reflect settlement lineage and invoice-state transitions may reflect settlement status, but document truth remains distinct from ledger truth.
+
+### Refund / Reversal / Adjustment Domain
+Owns exception-case corrections. Document voiding or supersession may be triggered by approved refund or reversal flows, but exception-case truth remains separate and must link into this domain rather than overwrite it.
+
+### Audit / Traceability Domain
+Owns durable traceability surfaces for sensitive document issuance, supersession, delivery remediation, and control-plane actions.
+
+### Product Domains
+May trigger approved billable events or reference documents for user display, but do not own invoice or receipt semantics.
+
+## Conflict Resolution Rules
+
+When invoicing or receipt layers disagree, FUZE MUST resolve conflicts in the following order unless a higher-order policy explicitly overrides it:
+
+1. canonical billing scope and billing owner truth
+2. canonical upstream billing or normalized payment truth, depending on document class
+3. canonical invoice or receipt record and its mutation lineage
+4. active review, fraud, compliance, or restriction posture
+5. delivery/render-ready state and access-link state
+6. derived summaries, dashboards, exports, product-local views, and provider UI
+
+Additional rules:
+
+- provider UI MUST NOT outrank canonical receipt state
+- product billing summaries MUST NOT outrank canonical invoice state
+- credits balances or ledger balances MUST NOT be used as substitutes for receipts or invoices
+- later corrective document actions MUST preserve lineage rather than erasing prior commercial truth
+- ambiguous scope or source linkage MUST resolve to hold, review, or explicit correction rather than guessed issuance
+
+## Default Decision Rules
+
+When ambiguity exists and no narrower policy-specific rule is available, the platform MUST apply the following defaults:
+
+- default to no invoice or receipt issuance without an approved source reference
+- default to explicit account or workspace scope assignment before issuance
+- default to no destructive rewrite; use supersession, voiding, or explicit remediation
+- default to backend canonical records over frontend or provider summaries
+- default to hold or review for broad-scope, tax-sensitive, or dispute-sensitive document correction
+- default to preserving original source references, mutation lineage, and reason codes
+- default to redacted derived visibility rather than absent internal truth when visibility is limited
+
+## Roles / Actors / Entities
+
+### Billing Scope Subject
+The account or workspace to which the billing document belongs.
+
+### Billing Owner
+The commercial controller responsible for the billing obligation or payment context associated with the document.
+
+### Invoice Issuer
+The approved backend-owned domain pathway that generates canonical invoice records from approved billing truth.
+
+### Receipt Issuer
+The approved backend-owned domain pathway that generates canonical receipt records from approved payment or settlement truth.
+
+### Document Consumer
+A product, API surface, worker, support tool, export workflow, or user-facing surface that reads billing-document truth.
+
+### Document Delivery Channel
+The rendering or delivery path used to expose invoices or receipts through secure display, download, email, or other approved channels.
+
+### Document Operator
+A privileged internal actor allowed to perform bounded document correction, voiding, supersession, regeneration, or delivery remediation under policy.
+
+## Ownership Model
+
+- the invoicing and receipts domain owns canonical invoice, receipt, line-item, source-reference, allocation, delivery, and mutation-lineage truth
+- the billing domain owns commercial obligations and usage-rated charge truth that may justify invoice issuance
+- the payment rails domain owns normalized payment truth that may justify receipt issuance
+- the credits and ledger domains own balances and settlement lineage, which may be referenced but not replaced by billing documents
+- products and frontend surfaces consume billing-document truth but do not own it
+- admin/control-plane may trigger bounded corrective workflows but do not become canonical document owners
+
+## Authority / Decision Model
+
+### Document Authority
+This domain decides what constitutes a canonical invoice or receipt, how documents are linked to approved upstream commercial causes, and how document lifecycle state is represented.
+
+### Upstream Source Authority
+Billing and payment domains decide whether the upstream commercial condition exists that justifies document issuance.
+
+### Delivery Authority
+This domain decides delivery/render-ready posture, secure access-link generation, and document-distribution lineage.
+
+### Correction Authority
+This domain decides document supersession, voiding, regeneration, and remediation posture subject to policy, while preserving linkage to upstream refund/reversal or billing-correction truth.
+
+### Product Authority
+Products may reference and present documents but do not decide document semantics, document states, or correction policy.
+
+## Canonical Document Classes
+
+### Invoice
+Invoices represent approved billing obligations or commercial billing records. They may summarize:
+- subscription cycles
+- usage-rated batches
+- credits purchases
+- seat changes
+- add-ons
+- approved grouped commercial events
+
+Invoices are authoritative billing documents, not generic transaction notes.
 
 ### Receipt
-- receipt_id
-- related invoice or billing event reference
-- payment rail reference
-- settled amount
-- status
-- issued timestamp
-- refund/reversal reference where applicable
+Receipts represent confirmation of approved payment or value-settlement events according to allowed business rules. They may allocate to:
+- one invoice
+- one billing cycle
+- one credits top-up
+- one or more approved commercial sources where policy allows
 
-### Adjustment / Correction Record
-- adjustment_id
-- related original document
-- adjustment type
-- reason
-- operator/system actor
-- timestamp
-- replacement linkage where applicable
+Receipts are confirmation documents, not replacements for invoices where invoicing semantics are required.
 
-These are minimum semantic requirements. More detailed schemas are refined downstream.
+### Distinction Rules
+- one invoice MAY exist before a receipt
+- one receipt MAY exist without an invoice only where policy explicitly allows that business model
+- one payment event MUST NOT be treated as its own invoice unless the invoicing domain explicitly models that case
+- one receipt MUST preserve allocation logic to its approved source(s)
 
----
+## Source Reference Model
 
-## Edge Cases and Failure Handling
+Canonical billing-document sources MAY include:
 
-### Payment verified but receipt generation delayed
-The platform must preserve recoverable state and avoid duplicate receipts. The verified payment remains part of commercial truth even if presentation/document issuance lags.
+- subscription reference
+- billing cycle reference
+- usage batch reference
+- credits purchase reference
+- verified payment reference
+- seat change reference
+- plan-change reference
+- approved adjustment or correction reference
 
-### Invoice generated with wrong scope
-The system must support correction through auditable replacement or void/reissue logic rather than silent mutation.
+### Source Rules
+- every invoice or receipt MUST have at least one approved source reference
+- source references MUST be durable and queryable
+- grouped invoices MUST preserve grouping logic rather than flattening source identity
+- corrective documents MUST preserve linkage to both original and superseding causes where relevant
 
-### Duplicate provider callback
-Invoice paid-state and receipt issuance must be idempotency-aware to prevent duplicate commercial documents.
+## Lifecycle / Workflow Model
 
-### Usage charge corrected after invoice issued
-The platform must support adjustment notes, replacement invoices, or equivalent correction pathways under policy.
+### Invoice Lifecycle
+Supported semantic states SHOULD include:
+- `draft_if_supported`
+- `issued`
+- `voided`
+- `superseded`
+- `cancelled_if_supported`
 
-### Workspace billing owner changes after invoices already exist
-Historical documents must preserve historical scope and ownership context rather than being rewritten to match new state.
+### Receipt Lifecycle
+Supported semantic states SHOULD include:
+- `issued`
+- `voided_if_supported`
+- `superseded_if_supported`
 
-### Refund occurs after credits partially consumed
-The receipt/document layer must reflect the commercial correction outcome, while the credits and billing systems apply policy-aware reversal logic.
+### Delivery Lifecycle
+Supported semantic states SHOULD include:
+- `pending_render`
+- `rendered`
+- `delivered`
+- `delivery_failed`
+- `expired`
 
-### Product-local display differs from canonical invoice record
-The product display is non-canonical. The shared invoicing system remains authoritative for document truth.
+### Mutation Action Lifecycle
+Supported semantic states SHOULD include:
+- `requested`
+- `validated`
+- `executed`
+- `failed`
+- `closed`
 
----
+### Lifecycle Rules
+- issued documents are durable business records
+- supersession or voiding MUST preserve lineage
+- receipts are issued only from approved payment or settlement outcomes
+- invoice issuance derives from approved billing-document creation rules, not ad hoc UI triggers
+- delivery status remains distinct from document issuance status
 
-## Open Items
+## Invariants
 
-The following areas are intentionally refined in downstream or operational specifications:
+1. Invoices and receipts are distinct document classes.
+2. Backend owns canonical billing-document truth.
+3. Documents derive from approved upstream commercial state, not frontend assumptions.
+4. Every document attaches to an explicit billing scope.
+5. Receipts do not replace invoices where invoice semantics are required.
+6. Document truth remains distinct from credits balances, token balances, payouts, and treasury resources.
+7. Supersession and correction preserve lineage rather than rewriting history.
+8. Delivery state remains distinct from issuance state.
+9. Product summaries and access links remain derived and subordinate.
+10. Sensitive document mutation remains attributable and auditable.
 
-- exact jurisdiction-specific tax handling
-- exact PDF / export rendering rules
-- exact receipt formatting by rail type
-- exact enterprise billing document conventions
-- exact localized language and currency presentation behavior
-- exact retention duration and archival policy by region
+## Functional Rules
+
+### Issuance Rule
+Invoices and receipts MUST be issued only from approved upstream commercial events under backend-owned rules.
+
+### Distinct Failure Rule
+Missing invoice source, missing receipt source, invalid scope, delivery failure, payment dispute, correction review, and missing permission are different failure classes and MUST remain distinguishable internally.
+
+### Scope-Correctness Rule
+The platform MUST NOT silently attach a document to the wrong account or workspace scope. Wrong-scope document generation fails closed or enters explicit correction flow.
+
+### Delivery Rule
+Rendering and delivery MAY fail or be delayed without changing canonical document truth. Delivery remediation must remain explicit and auditable.
+
+### No Product-Local Document Truth Rule
+Products MUST NOT create unofficial invoice or receipt systems for shared platform commerce, nor display provider-side or billing-summary artifacts as canonical invoices or receipts.
+
+### Supersession Rule
+Corrective document actions MUST create explicit supersession, voiding, cancellation, or regeneration lineage rather than destructive overwrite.
+
+## Permission / Access Considerations
+
+Billing-document truth does not grant mutation authority by itself.
+
+Required constraints:
+- actors may view only account or workspace documents for scopes they are authorized to access
+- workspace document visibility and document mutation authority are separate concerns
+- privileged correction, voiding, supersession, and remediation require bounded admin/control-plane pathways
+- document access-link generation remains subject to scope visibility and policy
+- UI visibility of a billing document does not imply mutation authority
+
+## API / Contract Implications
+
+The billing-document layer MUST expose stable platform-consumable contracts for:
+
+- listing visible invoices and receipts by allowed scope
+- reading canonical invoice and receipt details
+- issuing invoices and receipts through internal backend-owned pathways
+- linking documents to approved source references
+- reading delivery/render-ready status
+- generating bounded access/display metadata
+- executing admin/control-plane correction-safe document actions
+
+### Contract Rules
+- public and first-party surfaces read document truth but do not create it directly
+- internal issuance APIs require approved upstream references and idempotent issuance behavior
+- admin routes require reason-coded privileged action
+- APIs MUST distinguish invoice and receipt lifecycle state, delivery state, and mutation-action state
+- document APIs MUST preserve machine-readable linkage to source references, supersession lineage, and audit lineage
+
+## Event / Async Implications
+
+The invoicing and receipts domain SHOULD support event families such as:
+
+- `invoice.issued`
+- `invoice.voided`
+- `invoice.superseded`
+- `receipt.issued`
+- `receipt.voided`
+- `receipt.superseded`
+- `document.rendered`
+- `document.delivered`
+- `document.delivery_failed`
+- `document.remediation.executed`
+
+Event rules:
+- events MUST be emitted after canonical commit
+- events MUST preserve document identity, scope, source references, lifecycle state, and correlation references
+- consumers MUST treat events as synchronization signals rather than document-truth substitutes
+- retries MUST preserve idempotent issuance and mutation behavior
+- downstream exports, notifications, support views, and reconciliation consumers MUST remain linked to canonical document records
+
+## Data Model / Storage Implications
+
+At minimum, the invoicing and receipts domain SHOULD support semantic representation of:
+
+### billing_documents
+- canonical supertype or routing record for invoices and receipts
+
+### invoices
+- canonical invoice records
+
+### invoice_line_items
+- canonical line-level charge detail
+
+### receipts
+- canonical receipt records
+
+### receipt_allocations
+- allocations linking receipts to invoices, billing cycles, credits purchases, or other approved source references
+
+### billing_document_sources
+- normalized references to subscriptions, cycles, usage batches, verified payments, credits purchase events, or other approved commercial causes
+
+### document_delivery_records
+- rendering and delivery lineage for invoice or receipt documents
+
+### document_mutation_actions
+- issuance, supersession, cancellation, regeneration, and remediation actions
+
+### billing_document_audit_events
+- durable audit linkage for sensitive document actions
+
+### Derived Views
+- invoice summary views
+- receipt summary views
+- document access-link/download views
+
+## Read Model / Projection / Reporting Rules
+
+- invoice summaries, receipt summaries, and access-link/download views MAY support UX and low-risk reads, but MUST remain explicitly derived
+- sensitive document actions MUST re-check canonical backend state rather than relying on stale dashboard or frontend summaries
+- reports and exports MAY aggregate document state, but MUST remain traceable to canonical invoice and receipt records
+- provider UI, email content, or downloaded cached files MUST NOT outrank canonical backend document state
+- projection lag MUST NOT silently create or erase billing-document truth
+
+## Security / Risk / Abuse Controls
+
+The billing-document layer is a sensitive commercial and finance-facing control surface and MUST enforce:
+
+- backend-owned issuance and mutation logic
+- strict scope-aware visibility checks
+- privileged correction/remediation controls with reason-coded audit trails
+- fraud/risk/review posture integration where disputed or reversed commercial events affect document state
+- protected access-link generation and delivery remediation
+- resistance to provider-side, product-side, or support-side document spoofing
+- protection against silent destructive rewrite of historical commercial documents
+
+## Boundary Violation Detection / Non-Canonical Patterns
+
+The following patterns are non-canonical and forbidden:
+
+- frontend or product generation of canonical invoices or receipts outside backend-owned domain rules
+- using payment-provider UI as a receipt substitute
+- using billing summary rows or ledger entries as invoice substitutes
+- treating receipts as interchangeable with invoices where invoice semantics are required
+- silent document rewrite that erases correction history
+- wrong-scope document issuance due to heuristic guessing
+- exposing delivery state as if it were the same thing as issuance truth
+
+Implementations SHOULD detect and surface these conditions through diagnostics, audit, and operational alerts.
+
+## Audit / Traceability Requirements
+
+At minimum, FUZE MUST be able to report on:
+
+- document issuance
+- document scope
+- line items and source references
+- payment or settlement allocation references for receipts
+- delivery/render status
+- supersession, voiding, cancellation, and regeneration lineage
+- billing owner context where relevant
+- operator-driven document remediation
+- whether a visible view is canonical or derived
+
+Sensitive document actions SHOULD generate immutable audit linkage sufficient for finance, support, dispute, and compliance review.
+
+## Failure Handling / Edge Cases
+
+### Billing Event Exists but Invoice Generation Fails
+The platform MUST preserve a recoverable pending or remediation state rather than silently losing the document obligation.
+
+### Payment Verified but Receipt Issuance Lags
+Receipt issuance MAY be delayed, but the normalized payment truth and eventual receipt lineage must remain recoverable and auditable.
+
+### Scope Misassignment Discovered Later
+The platform MUST use explicit corrective supersession or regeneration flow rather than destructive rewrite.
+
+### Delivery Fails After Issuance
+Canonical document truth remains `issued`; delivery state becomes `delivery_failed` and remediation must remain explicit.
+
+### Receipt Needs Allocation Across More Than One Source
+This is permitted only through explicit receipt-allocation semantics. Hidden grouping is forbidden.
+
+### Provider Revocation or Refund Arrives After Receipt Issuance
+The platform MUST route the effect through normalized reversal/correction logic and preserve original receipt lineage plus later corrective state.
+
+### Product Wants “Quick Transaction Note” Instead of Canonical Document
+Allowed only if clearly non-canonical and not presented as invoice or receipt truth for shared platform commerce.
+
+## Operational Considerations
+
+Operational systems SHOULD support:
+
+- deterministic invoice and receipt issuance pipelines
+- rendering and delivery health monitoring
+- explicit document source-link validation
+- reconciliation between billing/payment events and document issuance
+- support and finance control-plane tools for bounded remediation
+- wrong-scope detection
+- duplicate issuance detection
+- runbooks for missing document, late receipt, delivery failure, source mismatch, and supersession flows
+
+Because billing documents are shared commercial artifacts, operational defects can affect multiple products and downstream finance/reporting surfaces. Operational posture MUST therefore be platform-grade rather than product-local.
+
+## Migration / Compatibility / Supersession Considerations
+
+Migrations into this canonical model MUST enforce the following:
+
+- product-local invoice or receipt systems with shared platform meaning must be retired or explicitly marked non-canonical
+- provider-facing or UI-only document artifacts must not be represented as canonical billing documents unless normalized into this domain
+- old summary-only document flows must be upgraded so lineage, scope, and source references are explicit
+- backward-compatibility adapters MAY preserve older document numbers, URLs, or layout conventions, but canonical document semantics, lifecycle state, and correction lineage MUST remain explicit internally
+- historical assumptions that “paid” equals “receipt exists” or “bill exists” are superseded within this scope
+
+## Implementation-Contract Guardrails
+
+Downstream implementations MUST preserve all of the following:
+
+1. invoices and receipts remain distinct document classes with different semantics
+2. backend remains the canonical owner of billing-document truth
+3. every document attaches to an explicit canonical scope
+4. invoices, receipts, billing truth, payment truth, credits truth, and ledger truth remain distinct
+5. product surfaces consume canonical document truth rather than inventing substitutes
+6. provider UI and derived summaries MUST NOT outrank canonical backend records
+7. delivery state remains distinct from issuance state
+8. supersession, voiding, regeneration, and remediation remain explicit and lineage-preserving
+9. degraded runtime conditions MUST NOT silently widen visibility or silently hide document ambiguity for sensitive commercial actions
+10. idempotency and replay safety MUST be preserved for issuance, regeneration, delivery remediation, and corrective workflows
+11. reason capture, source references, scope references, and audit lineage MUST remain explicit for high-impact document changes
+12. downstream teams MUST NOT optimize away source linkage, allocation logic, scope references, lifecycle states, or supersession lineage where those elements protect auditability, supportability, compliance posture, or migration safety
+
+## Downstream Execution Staging
+
+This specification implies the following preferred downstream implementation order:
+
+1. stabilize invoice and receipt class semantics
+2. stabilize scope attachment and source-reference rules
+3. stabilize lifecycle, delivery, and mutation-action states
+4. integrate billing and payment upstream issuance triggers through explicit contracts
+5. integrate audit, reporting, support/control-plane, and corrective workflows
+6. integrate derived views, access-link generation, rendering, and delivery surfaces
+
+## Required Downstream Specs / Contract Layers
+
+This specification directly requires compatible downstream refinement and implementation-contract work in:
+
+- `INVOICING_RECEIPTS_API_SPEC.md`
+- `REFUND_REVERSAL_AND_ADJUSTMENT_SPEC.md`
+- `PAYMENT_FRAUD_AND_ABUSE_PREVENTION_SPEC.md`
+- accounting/export workflows
+- reporting and reconciliation workflows
+- support/control-plane document remediation workflows
+- product billing-document visibility surfaces
+
+## Canonical Examples / Anti-Examples
+
+### Canonical Example 1 — Invoice for Workspace Renewal
+A workspace renewal creates a billing obligation. The invoicing domain issues a workspace-scoped invoice linked to the subscription cycle and billing owner. Later payment may create a separate receipt.
+
+### Canonical Example 2 — Receipt for Credits Purchase
+A verified payment for a credits package is normalized through the payment domain. The invoicing domain issues a receipt linked to the verified payment and credits purchase source references. The receipt is not the credits balance.
+
+### Canonical Example 3 — Superseded Invoice
+A billing correction requires replacing an incorrect invoice. The original invoice remains preserved and a superseding invoice explicitly links back to it.
+
+### Canonical Example 4 — Delivery Failure After Issuance
+An invoice is correctly issued but PDF/email delivery fails. Delivery remediation occurs without changing the canonical invoice issuance truth.
+
+### Anti-Example 1 — Provider UI as Receipt
+A payment-provider dashboard showing `paid` is treated as the user’s canonical receipt. This is forbidden.
+
+### Anti-Example 2 — Receipt as Invoice Substitute
+A receipt is used in a context where the platform requires invoice semantics, with no invoice record. This is forbidden unless policy explicitly says invoices are not required for that business model.
+
+### Anti-Example 3 — Product-Local Invoice
+A product generates its own invoice PDF and treats it as canonical shared platform billing truth. This is forbidden.
+
+### Anti-Example 4 — Silent Rewrite
+Support edits an issued invoice in place so prior line items and history disappear. This is forbidden.
+
+## Dependencies / Cross-Spec Links
+
+This specification depends on:
+
+- `REFINED_SYSTEM_SPEC_INDEX.md`
+- `DOCS_SPEC_INDEX.md`
+- `SYSTEM_SPEC_INDEX.md`
+- `API_SPEC_INDEX.md`
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `IDENTITY_AND_ACCOUNT_SPEC.md`
+- `WORKSPACE_AND_ORGANIZATION_SPEC.md`
+- `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
+- `SCOPED_AUTHORIZATION_MODEL_SPEC.md`
+- `ACCESS_EVALUATION_AND_EFFECTIVE_PERMISSION_SPEC.md`
+- `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md`
+- `PLATFORM_CREDITS_SPEC.md`
+- `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md`
+- `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`
+- `PAYMENT_RAILS_INTEGRATION_SPEC.md`
+- `REFUND_REVERSAL_AND_ADJUSTMENT_SPEC.md`
+- `PAYMENT_FRAUD_AND_ABUSE_PREVENTION_SPEC.md`
+- `PRICING_AND_MONETIZATION_MODEL_SPEC.md`
+- `SECURITY_AND_RISK_CONTROL_SPEC.md`
+
+This specification directly governs or materially informs:
+
+- `INVOICING_RECEIPTS_API_SPEC.md`
+- `REFUND_REVERSAL_AND_ADJUSTMENT_SPEC.md`
+- `PAYMENT_FRAUD_AND_ABUSE_PREVENTION_SPEC.md`
+- accounting/export workflows
+- reporting and reconciliation workflows
+- support/control-plane document remediation workflows
+- product billing-document visibility surfaces
+
+## Explicitly Deferred Items
+
+The following are intentionally deferred to adjacent or downstream specifications:
+
+- exact PDF rendering internals
+- exact tax-engine internals
+- exact accounting-export schema and formats
+- exact email/render delivery channel implementation details
+- exact receipt numbering and jurisdiction-specific formatting rules
+- exact external compliance wording and disclosure templates
+- exact document storage/indexing implementation details
 
 These do not weaken the canonical invoicing and receipts model established here.
 
----
+## Final Normative Summary
 
-## Closing Summary
+The FUZE invoicing and receipts domain is the platform-owned billing-document layer for approved commercial operations. It defines invoices and receipts as distinct, durable document classes derived from approved upstream billing and payment truth. It preserves explicit scope attachment, source linkage, allocation logic, delivery lineage, and supersession-safe correction behavior. It is not a billing engine, not a payment processor, not a credits balance system, and not a frontend rendering convenience layer.
 
-The FUZE invoicing and receipts system is the shared documentary layer of the platform’s commercial architecture. It turns normalized subscriptions, usage charges, credits funding events, add-ons, and refunds into formal billing records that are understandable, auditable, and scope-aware. Invoices represent payable or chargeable commercial events. Receipts represent completed settlement outcomes. Both are distinct from payment verification, credits ledgers, and accounting truth, but they connect to all of those layers. This structure allows FUZE to maintain a coherent commercial documentation model across a growing multi-product ecosystem without fragmenting into product-specific billing records or ambiguous payment history.
+This document is the canonical FUZE rule set for invoicing and receipt semantics.
