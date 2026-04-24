@@ -1,638 +1,821 @@
-# GOVERNANCE_MODEL_SPEC
+# FUZE Governance Model Specification
+
+## Document Metadata
+
+- **Document Name:** `GOVERNANCE_MODEL_SPEC.md`
+- **Document Type:** Canonical refined system specification
+- **Status:** Active refined system spec
+- **Version:** 2.0.0
+- **Effective Date:** 2026-04-23
+- **Last Updated:** 2026-04-23
+- **Reviewed On:** 2026-04-23
+- **Document Owner:** FUZE Governance Model Domain (canonical owner for governance-policy semantics, governance-scope classification, approval-path posture, governance-action lineage, exceptional-governance semantics, and bounded future participation evolution); named individual owner is not explicitly specified in the retrieved governing materials
+- **Approval Authority:** Not explicitly specified in the retrieved governing materials; constitutional approval authority remains governed by `REFINED_SYSTEM_SPEC_INDEX.md` and the active FUZE approval workflow
+- **Review Cadence:** SHOULD be reviewed quarterly and whenever treasury/control posture, Foundation stewardship posture, vault-action posture, multisig/timelock posture, public-trust posture, on-chain/off-chain control boundaries, or future DAO-lite participation policy materially changes
+- **Governing Layer:** Platform governance / policy and control architecture / cross-cutting governance model
+- **Parent Registry:** `REFINED_SYSTEM_SPEC_INDEX.md`
+- **Primary Audience:** Platform architecture, backend engineering, contracts engineering, treasury and finance stakeholders, governance/control-plane authors, security engineering, audit/compliance, public-trust/reporting authors, product leadership, implementation-contract authors
+- **Primary Purpose:** Define the canonical FUZE governance model as the cross-cutting policy and decision layer that governs how sensitive economic, structural, operational, and public-trust actions are classified, reviewed, approved, constrained, executed, reported, corrected, and evolved without collapsing governance truth into treasury truth, Foundation stewardship truth, vault execution truth, contract execution truth, runtime truth, transparency-report truth, or symbolic token-voting narrative
+- **Primary Upstream References:**
+  - `REFINED_SYSTEM_SPEC_INDEX.md`
+  - `DOCS_SPEC_INDEX.md`
+  - `SYSTEM_SPEC_INDEX.md`
+  - `API_SPEC_INDEX.md`
+  - `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+  - `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+  - `PLATFORM_ARCHITECTURE_SPEC.md`
+  - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+  - `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+  - `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
+  - `API_ARCHITECTURE_SPEC.md`
+  - `PUBLIC_API_SPEC.md`
+  - `INTERNAL_SERVICE_API_SPEC.md`
+  - `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+  - `IDEMPOTENCY_AND_VERSIONING_SPEC.md`
+  - `MIGRATION_AND_BACKWARD_COMPATIBILITY_SPEC.md`
+  - `AUDIT_LOG_AND_ACTIVITY_SPEC.md`
+  - `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md`
+  - `SECURITY_AND_RISK_CONTROL_SPEC.md`
+  - `MONITORING_ALERTING_AND_INCIDENT_RESPONSE_SPEC.md`
+  - `DEPLOYMENT_AND_RUNTIME_OPERATIONS_SPEC.md`
+  - `BUSINESS_CONTINUITY_AND_RECOVERY_SPEC.md`
+  - `TRANSPARENCY_MODEL_SPEC.md`
+  - `TRANSPARENCY_REPORTING_SPEC.md`
+  - `PUBLIC_CONTRACT_AND_WALLET_REGISTRY_SPEC.md`
+  - `FOUNDATION_GOVERNANCE_SPEC.md`
+  - `TREASURY_CONTROL_POLICY_SPEC.md`
+  - `VAULT_ACTION_POLICY_SPEC.md`
+  - `MULTISIG_AND_TIMELOCK_SPEC.md`
+  - `PROFIT_PARTICIPATION_SYSTEM_SPEC.md`
+  - `SNAPSHOT_AND_ELIGIBILITY_PIPELINE_SPEC.md`
+  - `PAYOUT_LEDGER_SPEC.md`
+  - `CHAIN_ARCHITECTURE_SPEC.md`
+  - `FUZE_WHITEPAPER_v.2026.3.0.1.pdf`
+- **Primary Downstream Dependents:**
+  - `GOVERNANCE_MODEL_API_SPEC.md`
+  - `FOUNDATION_GOVERNANCE_SPEC.md`
+  - `TREASURY_CONTROL_POLICY_SPEC.md`
+  - `VAULT_ACTION_POLICY_SPEC.md`
+  - `MULTISIG_AND_TIMELOCK_SPEC.md`
+  - `PUBLIC_API_SPEC.md`
+  - `INTERNAL_SERVICE_API_SPEC.md`
+  - `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+  - governance/control-plane tooling
+  - public-safe governance reporting surfaces
+  - discrepancy and correction runbooks
+  - future DAO-lite participation contracts if formally activated
+- **Supersedes:** Earlier or weaker interpretations that treat governance as symbolic token theater, as a synonym for treasury execution, as unbounded operator discretion, or as narrative future decentralization without explicit scope, policy discipline, multisig/timelock enforcement, approval-path separation, lineage, and public-trust-safe visibility
+- **Superseded By:** None currently defined
+- **Related Decision Records:** Not explicitly specified in the retrieved governing materials
+- **Canonical Status Note:** This document is the canonical governing FUZE specification for governance-model semantics. Downstream APIs, treasury/control policies, vault controls, Foundation governance, contract-control pathways, reporting surfaces, admin/control-plane tools, and future DAO-lite participation layers MUST preserve the ownership, truth-separation, scope, approval, execution, correction, and visibility rules defined here.
+- **Implementation Status:** Normative source; downstream governance services, control-plane workflows, reporting linkages, and chain-adjacent execution controls MUST align
+- **Approval Status:** Draft refined canonical specification pending explicit approval workflow
+- **Change Summary:** Refined governance into a production-grade canonical specification; normalized governance philosophy, scope taxonomy, approval and execution separation, multisig and timelock posture, policy-defined action categories, exceptional-governance discipline, DAO-lite future-direction boundaries, public-safe visibility posture, correction/supersession lineage, and implementation-contract guardrails
+
+## Title
+
+FUZE Governance Model Specification
 
 ## Purpose
 
-This document defines the canonical governance model of the FUZE ecosystem. Its purpose is to establish how FUZE governs high-impact platform actions, how authority is structured across contracts, reserves, policies, and operating systems, how governance remains compatible with a platform-company execution model, and how the ecosystem can evolve toward broader participation without weakening control quality or architectural clarity.
+This specification defines the canonical FUZE governance model.
 
-This specification is foundational because FUZE includes multiple trust-sensitive layers at once: a token participation system, Platform Credits, treasury and reserve architecture, stablecoin profit participation, smart-contract-controlled vaults, and a growing family of AI-powered products. In an ecosystem with this level of structural complexity, governance cannot be treated as a symbolic add-on. It must be part of the architecture itself.
+Its purpose is to make explicit:
 
----
+- what the governance model governs and what it does not govern
+- how FUZE classifies and governs sensitive economic, structural, operational, and trust-relevant actions
+- how governance relates to treasury, Foundation stewardship, payout systems, registry publication, transparency, runtime control, and on-chain execution without replacing those domains
+- how proposals, review, approval, execution linkage, public-safe visibility, correction, and supersession must work
+- how current governance controls operate today and how bounded DAO-lite participation may evolve later without weakening current controls
+- what downstream APIs, policies, reports, admin surfaces, and chain-adjacent execution layers MUST preserve
+
+This specification is intentionally governing rather than descriptive. It does not merely describe a philosophy of governance. It defines FUZE governance as an enforceable operating system for bounded authority.
 
 ## Scope
 
-This specification covers:
+This specification governs:
 
-- the canonical governance philosophy of FUZE
-- how governance is structured across platform, treasury, reserve, and payout-sensitive domains
-- the distinction between governance authority and routine product administration
-- multisig and timelock expectations for material actions
-- policy-defined action categories and governance boundaries
-- the relationship between governance, transparency, treasury control, and contract architecture
-- the role of governance in managing reserves, payout cycles, credits-policy changes, and contract controls
-- the future direction toward DAO-lite participation
-- governance risks, safeguards, and failure-handling principles
+- the shared FUZE governance model across platform, treasury, contract-control, reserve, Foundation, payout, and public-trust-adjacent domains
+- governance-policy semantics and governance-scope classification
+- governance-action lifecycle semantics
+- proposal, review, approval, execution-linkage, and reporting-linkage posture
+- multisig and timelock governance expectations at the model level
+- policy-defined action-category posture
+- public-safe governance visibility and governance-report linkage expectations
+- exceptional-governance handling and post-incident review posture
+- future DAO-lite participation boundaries and activation constraints
+- implementation-contract guardrails for governance APIs, events, admin controls, reporting, and chain-adjacent execution references
 
-This specification does not define every signer set, every timelock parameter, every vault-specific action matrix, or every future token-participation mechanism. Those are refined in:
+## Out of Scope
 
-- `TREASURY_CONTROL_POLICY_SPEC.md`
-- `VAULT_ACTION_POLICY_SPEC.md`
-- `FOUNDATION_GOVERNANCE_SPEC.md`
-- `MULTISIG_AND_TIMELOCK_SPEC.md`
-- `DAO_LITE_GOVERNANCE_FUTURE_SPEC.md`
-- `PROFIT_PARTICIPATION_SYSTEM_SPEC.md`
-- `TRANSPARENCY_REPORTING_SPEC.md`
-- `SMART_CONTRACT_ARCHITECTURE_SPEC.md`
+This specification does not define:
 
----
+- final treasury policy tables for every reserve or wallet
+- Foundation stewardship rules in full depth
+- vault-by-vault operational action catalogs in full depth
+- signer roster management, key custody, or quorum internals
+- low-level smart-contract ABI behavior
+- exact public transparency-report composition
+- exact voting mechanics for any future DAO-lite rollout
+- exact org-chart accountability or committee membership
+
+Those concerns belong in adjacent specifications and downstream implementation contracts and MUST NOT be silently redefined here.
 
 ## Design Goals
 
-The design goals of the FUZE governance model are:
+The design goals of the governance model are to:
 
-1. to make governance a real structural layer rather than a rhetorical claim
-2. to ensure that high-impact actions are policy-bounded and role-specific
-3. to prevent sensitive economic and contract actions from depending on informal operator discretion
-4. to preserve clear separation between platform administration, treasury authority, and stewardship authority
-5. to support transparency and auditability around governance-sensitive actions
-6. to create a governance model that is credible for investors, partners, holders, and future ecosystem participants
-7. to preserve operational practicality without sacrificing control quality
-8. to create a path toward broader participation that does not weaken present-day execution discipline
-
----
+1. make governance a real architecture layer rather than a narrative promise
+2. preserve one bounded cross-cutting governance model across treasury, Foundation, reserve, payout, contract-control, and public-trust-sensitive surfaces
+3. ensure governance remains distinct from direct execution and distinct from symbolic token participation
+4. reduce concentration risk and undefined discretionary authority
+5. make sensitive actions category-aware, explainable, and auditable
+6. support visible control discipline through multisig, timelock, and policy-defined actions
+7. preserve role clarity among token participation, Platform Credits, treasury reserves, Foundation stewardship, and profit participation
+8. support public trust through bounded public-safe governance visibility without leaking unsafe internal control details
+9. preserve correction and supersession lineage for governance decisions and public interpretation
+10. allow future participation expansion only where structurally appropriate and operationally safe
 
 ## Non-Goals
 
 This specification is not intended to:
 
-- treat token ownership alone as sufficient governance architecture
-- collapse all governance into fully open token voting from the beginning
-- make every product or operational decision a governance event
-- blur product administration with treasury or reserve authority
-- replace policy discipline with generalized founder discretion
-- imply that governance quality comes from complexity alone
-- make DAO language a substitute for explicit current control structure
+- equate governance quality with full token voting
+- let governance become a synonym for treasury movement, contract execution, or admin convenience
+- allow all sensitive actions to be authorized through one generic operational role
+- expose all governance internals publicly
+- replace treasury policy, Foundation policy, vault policy, or contract-level enforcement
+- create a hidden pathway for high-impact actions outside defined policy and approval classes
+- let future DAO-lite direction weaken current governance discipline
+- silently rewrite prior governance meaning or approval history
 
----
+If there is tension between convenience and bounded governance discipline, bounded governance discipline wins.
 
-## Canonical Governance Principle
+## Core Principles
 
-The primary principle of FUZE governance is:
+### 1. Governance-Quality Principle
+Governance quality in FUZE comes from architecture, policy discipline, and clearly bounded authority, not from vague claims of decentralization.
 
-> governance in FUZE must be explicit, bounded, role-specific, and auditable, so that control over sensitive platform, treasury, reserve, and payout functions is structurally understandable rather than dependent on informal discretion.
+### 2. Governance-Is-Cross-Cutting Principle
+Governance is a cross-cutting policy and decision layer, not a narrow treasury subroutine and not a product-local control path.
 
-This means:
+### 3. Governance-Is-Not-Execution Principle
+Governance approval authorizes a path; it does not itself become the owner of resulting execution or business state.
 
-- governance should define what authority exists and what it is allowed to do
-- different categories of power should remain separated
-- multisig and timelock should support governance, not replace it
-- governance-sensitive actions should be tied to policy and reporting
-- future expansion of participation should build on strong architecture rather than replace it
+### 4. Multisig-and-Timelock Principle
+Multisig reduces concentration risk and timelock adds procedural restraint and observability for high-impact changes.
 
-This principle is central to FUZE’s identity as a transparency-first platform ecosystem.
+### 5. Policy-Defined-Action Principle
+Sensitive authority MUST be tied to explicit categories of permitted behavior rather than broad undefined discretion.
 
----
+### 6. Role-Separation Principle
+Governance must preserve the distinct roles of token participation, Platform Credits, treasury reserves, Foundation stewardship, and stablecoin profit participation.
 
-## Why Governance Matters in FUZE
+### 7. Public-Trust Discipline Principle
+Governance must be visible enough to be evaluated, but not so loosely exposed that public trust is confused with unsafe disclosure.
 
-Governance matters in FUZE because the platform combines several systems that can affect stakeholder trust materially:
+### 8. Future-Participation-Bounds Principle
+DAO-lite or broader ecosystem participation MAY emerge, but only selectively, maturity-dependently, and without destabilizing execution discipline.
 
-- the FUZE token as the ecosystem participation asset
-- Platform Credits as the internal consumption layer
-- treasury and reserve categories with distinct meanings
-- stablecoin profit participation for eligible holders
-- contract-separated allocations and role-specific vaults
-- product ecosystems that may grow in scope and value over time
-- transparency claims that must be backed by real control discipline
+### 9. Historical-Intelligibility Principle
+Corrections, supersessions, exceptional treatments, and changed governance interpretations MUST remain historically intelligible.
 
-In a system like this, weak governance creates several forms of risk quickly:
+### 10. Derived-Surface-Subordination Principle
+Public summaries, APIs, dashboards, and governance-reporting surfaces are derived views subordinate to canonical governance truth.
 
-- reserve category drift
-- payout ambiguity
-- concentration of sensitive authority
-- weak separation between treasury, Foundation, and operations
-- inconsistent interpretation of policy
-- difficulty explaining the system publicly
+## Canonical Definitions
 
-FUZE addresses these risks by treating governance as one of the core platform layers. This means governance is not a future phase that begins only when token voting exists. Governance already exists whenever the ecosystem must answer questions such as:
+### Governance Model
+The cross-cutting FUZE domain that defines how sensitive actions are categorized, proposed, reviewed, approved, constrained, executed by reference, and publicly interpreted.
 
-- who can fund a payout cycle
-- who can change a vault-control path
-- who can approve reserve deployment
-- who can rotate signers
-- who can change credits policy or payout logic
-- who can act in an emergency
-- who can define or revise policy that shapes economic meaning
+### Governance Scope
+The explicit governance area to which a governance action belongs, such as treasury, Foundation, payout, contract-role, reserve-category, policy, reporting, or another approved scope.
 
-A serious ecosystem must answer these questions explicitly. That is why governance matters in FUZE from the beginning.
+### Governance Action
+A canonical governance-domain record representing a proposed, reviewed, approved, rejected, paused, superseded, or exceptionally handled governance-sensitive action.
 
----
+### Governance Policy Version
+The canonical policy record describing active governance rules and their version lineage.
 
-## Governance as Architecture, Not Slogan
+### Governance Proposal
+A candidate governance action that has not yet completed required approval posture.
 
-FUZE treats governance as architecture rather than slogan.
+### Governance Review Path
+The structured record of required review and approval steps for a governance action.
 
-This is a critical distinction. Many ecosystems claim to be governed, but in practice governance is either vague, overly concentrated, or symbolically decentralized without meaningful structural discipline. FUZE is designed to avoid this pattern.
+### Governance Control Reference
+A structured reference to the bounded control mechanism associated with a governance action, such as multisig, timelock, emergency pathway, or other approved control reference.
 
-To treat governance as architecture means the platform must define:
+### Governance Execution Reference
+A bounded reference to the downstream execution artifact or execution pathway linked to an approved governance action.
 
-- governance domains
-- control roles
-- action categories
-- approval paths
-- timelock expectations
-- exceptional-action pathways
-- reporting obligations
-- and future participation boundaries
+### Exceptional Governance
+A narrowly bounded governance pathway used when ordinary timelines or pathways are insufficient because safety, containment, or urgent trust-preserving action is required.
 
-This architecture-first approach is important because FUZE does not rely on one simplistic governance idea. It must govern:
+### DAO-lite
+A future governance direction in which broader ecosystem participation may inform or shape selected bounded governance categories without turning FUZE into a fully token-administered system.
 
-- token-side reserve structures
-- Foundation stewardship logic
-- treasury deployment logic
-- payout-cycle-sensitive actions
-- contract control changes
-- credits and billing-policy changes where sensitive
-- emergency and recovery pathways
-- future community participation without loss of control quality
+## Truth Class Taxonomy
 
-This means governance cannot be reduced to “the token will decide everything later.” That would be structurally weak and operationally unrealistic. FUZE instead begins from explicit governance architecture and may later widen participation in a controlled and bounded way.
+The governance model operates with the following truth classes, which MUST remain distinct:
 
-That is why governance in FUZE should be understood as a system of defined power, not as a symbolic label.
+1. **Governance-model truth** — governance policy versions, governance-scope classifications, governance action records, proposal and review-path records, control references, and correction/supersession semantics
+2. **Source-domain truth** — treasury truth, Foundation truth, payout truth, registry truth, chain-native truth, policy truth, and other stronger or narrower domain truths
+3. **Approval truth** — the canonical record that a governance action did or did not receive the required governance authorization
+4. **Execution truth** — downstream runtime, contract, or operational execution state linked to a governance action
+5. **Reporting / public-visibility truth** — public-safe governance summaries, transparency references, and reporting linkages
+6. **Audit truth** — immutable audit and activity records for governance-sensitive mutations
+7. **Runtime / execution-plane truth** — retries, async jobs, export jobs, discrepancy cases, and operational remediation state
+8. **Presentation truth** — labels, summaries, status wording, and explanatory framing
+9. **Future-participation truth** — bounded records related to any formally activated DAO-lite or wider participation layer
+10. **Public interpretation truth** — the currently effective public-facing meaning of a governance action or governance policy after correction and supersession rules are applied
 
----
+These truth classes MUST NOT be collapsed into one undifferentiated governance dashboard or policy page.
 
-## Governance Domains
+## Architectural Position in the Spec Hierarchy
 
-The FUZE governance model should recognize distinct governance domains.
+This document sits below:
 
-This is necessary because not all governance-sensitive actions belong to the same category of authority.
-
-At minimum, FUZE should recognize the following governance domains:
-
-### 1. Platform Governance Domain
-Covers platform-wide structural systems such as:
-- credits-policy changes
-- shared infrastructure control changes
-- chain-role-sensitive architecture decisions
-- platform-level administrative boundaries
-- selected transparency and reporting rules
-
-### 2. Treasury Governance Domain
-Covers treasury-controlled capital and reserve deployment under category-aware policy.
-
-### 3. Foundation Governance Domain
-Covers the Foundation’s stewardship structure, principal-protection logic, and Foundation-specific policy actions.
-
-### 4. Vault and Reserve Governance Domain
-Covers vault-specific actions, destination restrictions, vesting-sensitive logic, and category-preservation decisions.
-
-### 5. Profit Participation Governance Domain
-Covers payout-cycle-sensitive actions such as:
-- cycle funding approval
-- claim-window-related controls where applicable
-- entitlement or eligibility publication references
-- emergency containment around payout execution
-
-### 6. Contract Control Governance Domain
-Covers signer sets, contract ownership pathways, timelock configuration, emergency pause authorities, and governance-critical control-role changes.
-
-### Governance-domain principle
-
-These domains may overlap in implementation, but they should remain conceptually distinct. Governance becomes stronger when the ecosystem can explain not only that a decision was approved, but what category of authority approved it and why that authority was appropriate.
-
----
-
-## Governance Philosophy
-
-The governance philosophy of FUZE is based on bounded authority, role separation, and procedural legibility.
-
-### 1. Bounded Authority
-No sensitive governance actor should be assumed to have universal authority over the ecosystem simply because they are trusted participants. Authority should be linked to role and domain.
-
-### 2. Role Separation
-Proposal, approval, execution, reporting, and audit interpretation should not collapse entirely into one informal group when sensitivity is high.
-
-### 3. Policy Before Preference
-Sensitive actions should be judged against explicit policy, not only against operator intention or urgency.
-
-### 4. Legibility Over Theater
-Governance should be understandable. Apparent decentralization without real clarity is weaker than explicit, bounded, and explainable control.
-
-### 5. Maturity Over Premature Openness
-Broader participation should expand as the ecosystem matures, not in ways that reduce present-day execution safety.
-
-This philosophy matters because FUZE is trying to build a long-lived platform ecosystem, not only a token community. Governance should therefore be designed to support credible long-term operation, not short-term optics.
-
----
-
-## Governance Layers in Practice
-
-The FUZE governance model operates through layered mechanisms rather than through one single control idea.
-
-### Policy Layer
-Defines what categories of action are permitted, restricted, or disallowed.
-
-### Approval Layer
-Determines which actions require what level of governance authorization.
-
-### Contract Control Layer
-Uses multisig, timelock, and role-restricted control paths to enforce sensitive actions.
-
-### Reporting Layer
-Makes governance-sensitive actions more understandable through auditability and transparency publication.
-
-### Recovery Layer
-Defines how emergency or exceptional actions may be used without dissolving the governance model.
-
-This layered approach is important because governance in FUZE is not only about saying yes or no to actions. It is also about preserving role meaning, reducing ambiguity, and maintaining external trust in how the system works.
-
----
-
-## Governance-Sensitive Action Categories
-
-FUZE governance should explicitly recognize governance-sensitive action categories.
-
-At minimum, these include:
-
-### Category 1: Contract Control Actions
-Examples:
-- signer rotation
-- timelock modification
-- contract ownership changes
-- emergency authority adjustments
-- control-role reassignment
-
-### Category 2: Treasury and Vault Actions
-Examples:
-- reserve deployment approval
-- category-specific funding authorization
-- destination-sensitive movement approval
-- Foundation-sensitive actions
-- liquidity operations approval
-
-### Category 3: Payout Actions
-Examples:
-- payout-cycle funding approval
-- entitlement publication reference approval where applicable
-- cycle open/close-sensitive controls
-- emergency payout containment actions
-
-### Category 4: Policy Actions
-Examples:
-- revision of reserve action policy
-- credits-policy category changes
-- payout-treatment changes
-- exclusion-policy changes affecting holder economics
-- reporting-policy changes for sensitive domains
-
-### Category 5: Structural Architecture Actions
-Examples:
-- chain-role-sensitive architecture revision
-- contract-model changes
-- reserve-class introduction or retirement
-- governance-path redesign
-
-### Category 6: Emergency Actions
-Examples:
-- protective pause
-- emergency containment
-- destination blocking
-- urgent contract control intervention
-- incident-driven restriction pending full review
-
-These categories help make governance easier to interpret. A governance model is stronger when it identifies what kind of action is occurring rather than treating every decision as equally generic.
-
----
-
-## Governance Sensitivity Tiers
-
-FUZE governance should also use sensitivity tiers.
-
-### Low Sensitivity
-Actions with limited structural risk, such as bounded reporting updates or low-impact administrative coordination.
-
-### Moderate Sensitivity
-Actions that affect control posture or policy reference but do not directly deploy capital or alter high-trust assumptions materially.
-
-### High Sensitivity
-Actions that affect reserve deployment, payout funding, major policy interpretation, or significant contract control.
-
-### Critical Sensitivity
-Actions that may materially alter:
-- Foundation stewardship assumptions
-- reserve meaning
-- payout fairness perception
-- contract trust assumptions
-- or emergency safety posture
-
-### Sensitivity principle
-
-Sensitivity must be determined by both:
-- the action itself,
-- and the domain in which it occurs.
-
-A small action in one domain may still be critical if it affects trust-sensitive structure, while a larger operational action elsewhere may be routine under policy. This nuance is essential to credible governance.
-
----
-
-## Multisig Control
-
-Multisig control is a core enforcement mechanism of the FUZE governance model.
-
-Sensitive contract and treasury actions should not depend on unilateral execution. Multisig structures reduce concentration risk, create stronger shared accountability, and make high-impact control behavior more structurally credible.
-
-### Multisig should generally apply to:
-- treasury-sensitive actions
-- vault-sensitive actions
-- Foundation-sensitive controls
-- payout-cycle-sensitive funding actions
-- contract ownership and role changes
-- emergency controls where applicable
-
-### Multisig principle
-
-Multisig is not the full governance model by itself. It is one of the mechanisms that enforces governance decisions through shared authorization. The governance quality still depends on:
-- who the signers are,
-- what they are allowed to approve,
-- what policy guides the action,
-- and how the resulting action is reported.
-
-Even so, multisig is one of the foundational safeguards that make FUZE governance more credible than informal operator control.
-
----
-
-## Timelock Requirements
-
-Timelock protection should apply to important actions where delayed execution improves trust, observability, or recovery opportunity.
-
-### Timelock is especially relevant for:
-- major contract-control changes
-- policy-significant reserve actions
-- structural governance changes
-- high-impact vault actions
-- payout-related or holder-sensitive architecture changes
-- other actions where instant execution would increase trust risk
-
-### Timelock principle
-
-Timelock is not required because “decentralization” demands it in abstract terms. It is required where delay helps:
-- prevent impulsive control behavior
-- create time for review
-- improve external observability
-- and reduce trust damage from sudden sensitive change
-
-FUZE should therefore apply timelock proportionately and intentionally rather than uniformly.
-
----
-
-## Policy-Defined Governance Actions
-
-A central feature of FUZE governance is that meaningful action should be policy-defined.
-
-This means governance should not rely only on the existence of control power. It should rely on defined categories of permitted and restricted behavior.
-
-Examples of policy-defined governance areas include:
-
-- allowed and disallowed reserve uses
-- Foundation principal-treatment rules
-- payout eligibility treatment categories
-- credits issuance and adjustment rules
-- vault destination classes
-- exceptional-action pathways
-- reporting requirements for sensitive actions
-
-### Policy principle
-
-Governance is much stronger when actors can point to policy before acting and when outside observers can later understand how the action fit the architecture. Policy does not eliminate discretion entirely, but it narrows and explains it.
-
-This is one of the strongest safeguards against governance drift in FUZE.
-
----
-
-## Governance Boundaries
-
-The FUZE governance model should preserve explicit governance boundaries.
-
-### Boundary 1: Governance is not routine product admin
-Most day-to-day product changes should not require treasury-style governance. Governance should focus on actions that materially affect structure, economics, control, or trust assumptions.
-
-### Boundary 2: Product urgency does not override reserve meaning
-A product need may be real, but it should not automatically justify using reserve categories outside their intended role.
-
-### Boundary 3: Token ownership does not equal unrestricted governance
-The existence of a participation token does not by itself define a full governance architecture.
-
-### Boundary 4: Foundation governance is not ordinary treasury governance
-The Foundation must remain a distinct stewardship domain.
-
-### Boundary 5: Emergency controls are not ordinary governance shortcuts
-Emergency powers should be narrow, temporary, and reviewable.
-
-These boundaries matter because governance becomes less trustworthy when its scope is vague.
-
----
-
-## Relationship to Treasury and Reserve Governance
-
-Treasury and reserve governance is one of the most important applied domains of the FUZE governance model.
-
-Governance must ensure that:
-- reserve categories preserve their intended meaning
-- treasury capital is not treated as omnibus discretionary power
-- Foundation capital remains more strongly constrained
-- liquidity operations remain tightly bounded
-- stability/transparency categories remain trust-consistent
-- vesting structures are not treated as flexible reserve pools
-
-### Governance implication
-
-The governance model must support category-sensitive action approval, not just generic wallet control. This is why governance and reserve architecture are deeply connected in FUZE.
-
----
-
-## Relationship to Profit Participation Governance
-
-Profit participation is a high-trust governance domain.
-
-Governance must ensure that:
-- payout cycles are funded only after policy-defined profit finalization
-- eligibility treatment remains explicit
-- cycle-sensitive actions are properly authorized
-- payout execution remains structurally separate from internal credits logic
-- reporting and payout-ledger integrity remain strong
-
-### Governance principle
-
-Profit participation should not appear discretionary, symbolic, or casually reactive. The governance model must reinforce its status as a structured economic process.
-
----
-
-## Relationship to Transparency
-
-Transparency is one of the main reasons FUZE governance must be explicit.
-
-A transparency-first platform cannot rely on hidden or weakly defined governance. To make transparency credible, the platform should be able to show:
-
-- who can control sensitive systems
-- what those roles can do
-- what policy boundaries exist
-- how major actions are approved
-- how contract and reserve roles are separated
-- how governance-sensitive actions become visible in reporting
-
-### Transparency-governance principle
-
-Transparent architecture without transparent governance remains incomplete. Governance must therefore be one of the main public-legibility layers of the ecosystem.
-
----
-
-## Governance and Future DAO-Lite Direction
-
-FUZE governance is designed to support a future DAO-lite direction, but from a strong current control foundation.
-
-### Present model
-The current governance model should prioritize:
-- multisig
-- timelock
-- policy-defined authority
-- role separation
-- category-aware reserve governance
-- payout and contract discipline
-
-### Future DAO-lite direction
-Over time, FUZE may introduce selected token-linked participation in areas such as:
-- ecosystem signaling
-- bounded strategic input
-- limited governance participation for suitable domains
-- selected community-legitimization functions
-
-### Important principle
-
-Future DAO-lite participation should extend a strong governance architecture, not replace it prematurely. FUZE should not confuse broader participation with the abandonment of control quality.
-
-This is one of the reasons the platform begins with disciplined governance architecture rather than starting with raw token voting.
-
----
-
-## Emergency Governance and Incident Response
-
-FUZE governance must include emergency pathways, but those pathways should remain narrow and reviewable.
-
-### Emergency actions may include:
-- pause of contract-sensitive pathways
-- signer compromise response
-- destination blocking
-- payout-cycle containment before claim opening
-- protective restriction on vault actions
-- urgent governance role rotation in response to credible risk
-
-### Emergency governance principles
-
-- emergency authority should protect structure, not bypass it casually
-- emergency actions should be temporary where possible
-- follow-up review should be mandatory
-- reporting should preserve trust without exposing avoidable security risk
-- emergency use should not become normalized governance
-
-Emergency governance is necessary, but its design must preserve the integrity of the broader model.
-
----
-
-## Risks in the Governance Model
-
-The governance model must recognize and guard against several risks.
-
-### 1. Concentration Risk
-Too much practical authority sits with too few actors.
-
-### 2. Ambiguity Risk
-The ecosystem cannot clearly explain what authorities exist and what they may do.
-
-### 3. Category Drift Risk
-Reserve and vault meanings weaken because governance uses “reasonable exceptions” too often.
-
-### 4. Symbolic Governance Risk
-The ecosystem claims governance maturity without having explicit present-day control structure.
-
-### 5. Emergency Shortcut Risk
-Protective pathways become informal substitutes for normal governance.
-
-### 6. Participation Prematurity Risk
-Broader governance participation is introduced before the architecture is strong enough to support it safely.
-
-These risks explain why FUZE governance must remain explicit and architecture-driven.
-
----
-
-## Safeguards and Control Measures
-
-The FUZE governance model addresses governance risk through layered safeguards.
-
-These include:
-
-- distinct governance domains
-- policy-defined action categories
-- sensitivity-tiered approval expectations
-- multisig control for sensitive actions
-- timelock for important structural changes
-- separation of proposal, approval, and execution where appropriate
-- Foundation-specific governance boundaries
-- payout-cycle-sensitive governance treatment
-- transparency and reporting requirements
-- narrow emergency pathways with mandatory review
-
-The purpose of these safeguards is not to make governance theatrical. It is to make governance explainable, bounded, and durable.
-
----
-
-## Minimum Architectural Entities
-
-At minimum, the FUZE governance model should recognize the following conceptual entities:
-
-### Governance Domain Entities
-- governance_domain_id
-- domain_name
-- domain_scope
-- policy_reference
-
-### Action Entities
-- governance_action_id
-- action_category
-- sensitivity_tier
-- action_status
-- proposed_at
-- approved_at
-- executed_at
-
-### Role Entities
-- proposer_role
-- approver_role
-- executor_role
-- reviewer_role where applicable
-- emergency_role where applicable
-
-### Control Entities
-- multisig_reference
-- timelock_reference
-- contract_control_reference
-- pause_control_reference where applicable
-
-### Audit and Reporting Entities
-- policy_version_reference
-- audit_lineage_reference
-- transparency_report_reference
-- payout_cycle_reference where applicable
-- exception_or_incident_reference where applicable
-
-These are minimum conceptual entities. Detailed schema and enforcement integration are refined downstream.
-
----
-
-## Open Items
-
-The following areas are intentionally refined in downstream specifications:
-
-- exact signer and quorum structures by governance domain
-- exact timelock application matrix by action class
-- exact DAO-lite participation boundaries
-- exact governance reporting depth for sensitive actions
-- exact emergency-action rollback and review procedures
-- exact community signaling mechanisms if introduced later
-
-These do not weaken the canonical governance model established here.
-
----
-
-## Closing Summary
-
-The FUZE governance model is a role-specific, policy-defined, multisig-compatible, and timelock-aware control architecture designed to govern a multi-product, transparency-first platform ecosystem with token participation, Platform Credits, reserve contracts, and stablecoin profit participation. It treats governance as architecture rather than slogan, separates governance domains, preserves category-specific reserve meaning, and creates a future path toward DAO-lite participation without weakening present-day execution discipline. By making authority explicit and bounded, FUZE strengthens one of the most important trust layers in the entire ecosystem.
+- `REFINED_SYSTEM_SPEC_INDEX.md`
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
+- `API_ARCHITECTURE_SPEC.md`
+- `PUBLIC_API_SPEC.md`
+- `INTERNAL_SERVICE_API_SPEC.md`
+- `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+- `IDEMPOTENCY_AND_VERSIONING_SPEC.md`
+- `MIGRATION_AND_BACKWARD_COMPATIBILITY_SPEC.md`
+- `AUDIT_LOG_AND_ACTIVITY_SPEC.md`
+- `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md`
+- `SECURITY_AND_RISK_CONTROL_SPEC.md`
+
+and above or alongside:
+
+- `GOVERNANCE_MODEL_API_SPEC.md`
+- `FOUNDATION_GOVERNANCE_SPEC.md`
+- `TREASURY_CONTROL_POLICY_SPEC.md`
+- `VAULT_ACTION_POLICY_SPEC.md`
+- `MULTISIG_AND_TIMELOCK_SPEC.md`
+- governance/control-plane tooling
+- public-safe governance reporting surfaces
+- future DAO-lite specifications if formally activated
+
+This document governs governance semantics. It does not redefine narrower source-domain truth.
+
+## System Boundaries
+
+This document governs only the following platform-owned boundaries:
+
+- governance-policy and governance-scope semantics
+- governance action lifecycle semantics
+- proposal, review, approval, exceptional treatment, and supersession posture
+- governance-specific control-reference and execution-reference semantics
+- governance public-safe visibility and reporting linkage posture
+- governance correction, discrepancy, and historical-intelligibility posture
+- governance implementation-contract guardrails
+
+It does not govern:
+
+- final treasury movement semantics
+- Foundation principal-lock or allowed-use rules in full depth
+- vault execution semantics in full depth
+- low-level signer/key custody mechanics
+- exact contract execution logic
+- public transparency report composition in full depth
+- broad product/runtime operational authority outside governance-sensitive action classes
+- generic public participation mechanics beyond explicitly activated governance pathways
+
+## Adjacent Boundaries
+
+### Treasury Control Policy
+Treasury policy owns treasury-specific allowed actions, reserve meaning, and treasury restrictions. Governance determines how those actions are approved and bounded but does not replace treasury truth.
+
+### Foundation Governance
+Foundation governance owns the stricter stewardship posture for the Foundation as a long-term institutional structure. The governance model provides higher-order governance semantics and approval discipline but does not replace Foundation-specific rules.
+
+### Vault Action Policy
+Vault-action policy owns category-specific vault behavior and allowed action classes. Governance determines how those action classes are evaluated and approved.
+
+### Multisig and Timelock
+Multisig and timelock layers own their narrower enforcement and control-path semantics. Governance model semantics determine why and when those layers apply.
+
+### Transparency and Reporting
+Transparency model and transparency reporting own public-trust interpretation and recurring public reporting. Governance may link to those artifacts or provide public-safe summaries, but does not absorb them.
+
+### Public Registry
+The public registry owns public designation truth for official contracts and wallets. Governance may govern approval pathways related to registry changes but does not own registry publication truth.
+
+### On-Chain / Off-Chain Responsibility
+The on-chain/off-chain boundary governs what is committed on-chain versus decided or reported off-chain. Governance approval remains off-chain governance truth even when linked to on-chain execution.
+
+## Conflict Resolution Rules
+
+When materials, systems, or interpretations conflict, FUZE MUST resolve them in the following order:
+
+1. the active refined registry and higher constitutional materials win over narrower documents
+2. `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`, `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`, `PLATFORM_ARCHITECTURE_SPEC.md`, and `DOMAIN_OWNERSHIP_MATRIX_SPEC.md` win on top-level ownership and boundary posture
+3. `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md` wins on chain-native versus off-chain decision/reporting separation
+4. narrower source-domain specifications win on the meaning of their canonical truths
+5. `FOUNDATION_GOVERNANCE_SPEC.md`, `TREASURY_CONTROL_POLICY_SPEC.md`, `VAULT_ACTION_POLICY_SPEC.md`, and `MULTISIG_AND_TIMELOCK_SPEC.md` win within their specific policy or enforcement scope
+6. this document wins on governance-model semantics, governance-scope classification, proposal/review/approval posture, exceptional-governance handling, public-safe governance visibility, and governance correction/supersession semantics
+7. public dashboards, summaries, exports, and API views never win over stronger canonical governance truth
+8. when ambiguity remains, FUZE MUST choose the more conservative trust-preserving interpretation and escalate the ambiguity into downstream refinement or recorded decision work
+
+## Default Decision Rules
+
+When no narrower approved exception exists, FUZE MUST default to the following:
+
+1. governance is explicit and bounded, never implied by operator convenience
+2. ambiguous action classes default to narrower or higher-sensitivity governance treatment
+3. ambiguous governance scope defaults to review-required rather than silent reuse of a nearby scope
+4. approval is always distinct from downstream execution
+5. public visibility defaults to public-safe summary or non-public treatment rather than full internal exposure
+6. exceptional-governance treatment defaults to narrower duration and mandatory post-review rather than standing broad discretion
+7. DAO-lite or broader participation defaults to inactive until explicitly approved and activated
+8. historical governance meaning defaults to preserved correction/supersession lineage rather than silent overwrite
+9. if governance scope, policy version, or approval path cannot be identified, the action is incomplete and MUST NOT proceed
+10. role-sensitive reserves and vaults retain their meaning unless an explicit governance process, visibility posture, and legitimacy basis permit change
+
+## Roles / Actors / Entities
+
+### Human Actors
+- governance reviewers
+- privileged operators
+- treasury and finance stakeholders
+- Foundation stewards where applicable
+- security and incident operators
+- public-trust/reporting authors
+- token holders or broader ecosystem participants only where future DAO-lite participation is explicitly activated
+
+### System Actors
+- governance model service
+- admin/control-plane services
+- treasury policy services
+- vault-action services
+- multisig/timelock control services
+- contract execution services
+- reporting and transparency services
+- audit and monitoring systems
+- discrepancy and correction tooling
+
+### Canonical Entities
+- governance policy versions
+- governance scope profiles
+- governance action records
+- governance proposals
+- governance review paths
+- governance control references
+- governance execution references
+- governance reporting references
+- governance exception records
+- governance discrepancy cases
+- governance mutation actions
+
+## Ownership Model
+
+The Governance Model domain is the canonical owner of:
+
+- governance-policy semantics
+- governance-scope classification semantics
+- governance action lifecycle semantics
+- governance proposal/review/approval posture
+- governance control-reference and execution-reference semantics
+- governance correction, discrepancy, and supersession semantics
+- governance-owned public-safe read and reporting-linkage source truth
+
+It is not the canonical owner of:
+
+- treasury movement truth
+- Foundation stewardship truth
+- vault action truth
+- chain-native execution truth
+- final public transparency-report truth
+- signer/key custody internals
+- generic product/runtime control semantics outside governance-sensitive action classes
+
+## Authority / Decision Model
+
+Authority MUST be separated as follows:
+
+- source domains determine the meaning and validity of their own truths
+- the governance model domain determines how governance-sensitive actions are classified, reviewed, approved, constrained, and historically recorded
+- multisig and timelock control paths enforce bounded execution discipline where applicable
+- treasury, Foundation, vault, payout, or registry domains execute or own the resulting domain meaning within their own scope
+- reporting and transparency domains determine how governance meaning is surfaced publicly under public-safe rules
+- future DAO-lite participation MAY provide bounded signaling or participation input only if explicitly activated through governance policy
+
+No dashboard, token narrative, static page, or product-local flow may mint canonical governance truth outside these boundaries.
+
+## State Model
+
+### Governance Policy Version Lifecycle
+- `draft`
+- `active`
+- `deprecated`
+- `superseded`
+- `archived`
+
+### Governance Action Lifecycle
+- `draft`
+- `proposed`
+- `under_review`
+- `approved`
+- `rejected`
+- `ready_for_execution`
+- `executed_reference_linked`
+- `reported_if_applicable`
+- `paused`
+- `superseded`
+- `closed`
+
+### Review-Path Lifecycle
+- `proposal_recorded`
+- `review_pending`
+- `approved`
+- `rejected`
+- `execution_linked`
+- `closed`
+
+### Exceptional-Governance Lifecycle
+- `declared`
+- `containment_active`
+- `post_review_pending`
+- `closed`
+- `superseded`
+
+### Discrepancy Lifecycle
+- `opened`
+- `under_review`
+- `resolved`
+- `failed`
+- `closed`
+
+Implementations MAY vary in naming, but these semantic distinctions MUST remain expressible.
+
+## Lifecycle / Workflow Model
+
+1. a governance-sensitive change is identified and classified by governance scope, action class, and sensitivity tier
+2. a governance proposal is recorded with policy version context and source-domain references
+3. required review path and control references are attached
+4. the action is approved, rejected, paused, escalated, or exceptionally handled under bounded policy
+5. if approved, a governance execution reference is linked to the downstream execution pathway
+6. public-safe governance reporting or transparency linkage occurs where policy requires
+7. corrections, supersessions, or discrepancy cases are handled with preserved lineage
+8. any exceptional-governance action enters mandatory post-review and closure discipline
+
+## Invariants
+
+1. governance remains a distinct cross-cutting policy and decision layer
+2. governance approval does not equal execution completion
+3. governance scopes remain explicit
+4. multisig and timelock are enforcement mechanisms, not substitutes for policy
+5. policy-defined action categories remain explicit
+6. role-sensitive reserves, vaults, and economic categories retain their meaning absent explicit legitimate change
+7. public-safe governance visibility does not authorize unsafe disclosure
+8. exceptional governance remains narrow, reason-bearing, and reviewable
+9. DAO-lite future direction remains bounded and inactive until explicitly activated
+10. corrections and supersessions preserve historical intelligibility
+
+## Functional Rules
+
+### Governance Philosophy Rule
+FUZE governance MUST be architecture-based, policy-bound, and role-aware rather than rhetoric-based or narrative-based.
+
+### Scope Classification Rule
+Every material governance action MUST resolve to an explicit governance scope and action class before approval can proceed.
+
+### Proposal-Approval-Execution Separation Rule
+Proposal, approval, and execution MUST remain structurally distinct lifecycle concepts.
+
+### Policy-Defined Action Rule
+Sensitive actions MUST be tied to explicit permitted categories and explicit out-of-scope conditions.
+
+### Multisig Rule
+High-impact administrative and contract-level authority SHOULD route through multisig structures rather than unilateral actor control.
+
+### Timelock Rule
+Especially sensitive actions SHOULD include timelock protection where required to improve observability, restraint, and trust.
+
+### Public-Safe Visibility Rule
+Governance systems MUST support bounded public-safe visibility for trust-relevant governance meaning where policy requires, but MUST NOT expose unsafe control detail.
+
+### Exceptional-Governance Rule
+Emergency or exceptional governance pathways MUST remain explicit, narrow, time-bounded where possible, and subject to post-review.
+
+### DAO-lite Rule
+Future broader governance participation MAY include signaling, strategic preference indication, or selected bounded categories, but MUST NOT overwrite current governance discipline or transfer all operational control into direct token voting.
+
+### Boundary-Preservation Rule
+Governance MUST preserve distinct roles among token participation, Platform Credits, treasury reserves, Foundation stewardship, and stablecoin profit participation.
+
+## Permission / Access Considerations
+
+Governance mutation authority is privileged and bounded.
+
+Required constraints:
+
+- privileged governance actions require explicit operator identity, least-privilege access, and reason-coded execution
+- creation, review, approval, pause, escalation, exceptional handling, supersession, and discrepancy resolution MUST remain access-controlled
+- public-safe governance views are distinct from internal governance records
+- source-domain operators do not automatically gain governance-model mutation authority outside their bounded roles
+- access failures on governance-sensitive mutation paths MUST fail closed
+
+## Entitlement Considerations
+
+Entitlement is not a primary governance owner, but it MAY shape future user-facing participation surfaces.
+
+Rules:
+
+- entitlement MUST NOT redefine governance truth
+- token status or product entitlement MUST NOT be treated as automatic governance authority
+- any future participation-linked features MUST remain bounded by explicit governance policy and activation
+- community-facing governance visibility does not imply community mutation authority
+
+## API / Contract Implications
+
+The governance layer MUST expose stable contracts for:
+
+- internal creation and read of governance policy versions and governance actions
+- governance-scope and action-class interpretation
+- proposal, review-path, control-reference, and execution-reference recording
+- privileged approve, reject, pause, escalate, exceptional-handle, supersede, and discrepancy-resolution actions
+- public-safe governance summaries where approved
+- reporting and transparency linkages
+
+### Contract Rules
+
+- public-read governance APIs MUST remain bounded and public-safe
+- internal APIs MUST preserve source legitimacy, idempotency, and lineage
+- privileged control APIs MUST require reason-coded action for trust-sensitive transitions
+- APIs MUST distinguish governance truth from downstream execution truth and from public reporting truth
+- future DAO-lite interfaces MUST remain disabled or clearly bounded unless formally activated
+
+## Event / Async Implications
+
+The governance model SHOULD support event families such as:
+
+- `governance.policy_activated`
+- `governance.action_proposed`
+- `governance.action_approved`
+- `governance.action_rejected`
+- `governance.action_paused`
+- `governance.action_superseded`
+- `governance.execution_reference_linked`
+- `governance.exception_declared`
+- `governance.discrepancy_opened`
+- `governance.discrepancy_resolved`
+
+Event rules:
+
+- events MUST be emitted after canonical commit
+- events MUST preserve scope, action class, policy version, review-path lineage, and execution-reference lineage
+- downstream consumers MUST treat governance events as synchronization signals rather than replacements for canonical governance records
+- replay, retries, and corrections MUST preserve idempotency and supersession safety
+
+## Data Model / Storage Implications
+
+At minimum, the governance model SHOULD support semantic representation of:
+
+- `governance_policy_versions`
+- `governance_action_records`
+- `governance_scope_profiles`
+- `governance_action_classifications`
+- `governance_proposals`
+- `governance_review_paths`
+- `governance_control_references`
+- `governance_execution_references`
+- `governance_reporting_references`
+- `governance_exception_records`
+- `governance_discrepancy_cases`
+- `governance_mutation_actions`
+
+Derived stores MAY include public governance summaries, internal status views, and discrepancy dashboards, provided they remain subordinate to canonical governance truth.
+
+## Read Model / Projection / Reporting Rules
+
+- public-safe governance policy summaries and governance-action summaries are derived views
+- internal status dashboards are derived views
+- public summaries MUST NOT overtake canonical governance records
+- governance reporting and transparency linkages remain references, not ownership transfers
+- public or internal views MAY lag operationally, but they MUST remain reconcilable to canonical governance records and stronger source domains
+
+## Security / Risk / Abuse Controls
+
+The governance model is a trust-sensitive control surface and MUST enforce:
+
+- strict separation between governance truth and downstream execution truth
+- protection against unauthorized approval, silent history rewrite, misclassification, or unsafe public exposure
+- bounded service-to-service mutation pathways
+- privileged reason-coded governance actions
+- safe handling of exceptional governance, restriction, and correction events
+- discrepancy detection when governance meaning and downstream reporting or execution references drift
+- protection against governance-sensitive actions hiding inside ordinary runtime or product-local pathways
+
+## Boundary Violation Detection / Non-Canonical Patterns
+
+The following patterns are non-canonical and forbidden:
+
+- treating governance as a synonym for treasury movement or contract execution
+- using token voting rhetoric as a substitute for governance architecture before formal activation
+- letting a multisig alone stand in for policy-defined action categories
+- approving high-impact changes through ordinary operational shortcuts
+- allowing role-sensitive reserves or vaults to lose their meaning through administrative convenience
+- silently repurposing governance meaning without correction or supersession lineage
+- exposing unsafe internal control detail under the banner of public governance visibility
+- letting dashboards, exports, or static pages become write owners of governance truth
+
+## Audit / Traceability Requirements
+
+FUZE MUST be able to report on:
+
+- who or what created, reviewed, approved, rejected, paused, escalated, exceptionally handled, superseded, or corrected a governance action
+- what governance scope, action class, sensitivity tier, and policy version applied
+- what review path and control references applied
+- what downstream execution reference, if any, was linked
+- what public-safe reporting or transparency linkage exists
+- what discrepancy or correction lineage exists
+- which policy or ruleset version governed the decision
+
+Governance actions are part of FUZE’s trust architecture and must remain reconstructable.
+
+## Failure Handling / Edge Cases
+
+### Proposal Exists but Approval Path Is Incomplete
+The action remains incomplete and MUST NOT proceed to execution.
+
+### Approval Exists but Execution Fails
+Governance approval remains true, but execution truth remains separate and failure-bearing.
+
+### Public Governance Summary Lags Behind Internal Action
+The public summary is a derived view and must reconcile rather than redefine internal governance truth.
+
+### Emergency Action Is Taken
+Exceptional-governance handling MUST preserve explicit declaration, bounded treatment, and post-review requirements.
+
+### DAO-lite Participation Is Discussed But Not Activated
+No symbolic participation surface may imply canonical governance authority before formal activation.
+
+### Governance Scope Is Misclassified
+A discrepancy case MUST be opened and resolved with preserved lineage rather than silent relabeling.
+
+## Operational Considerations
+
+Operational systems SHOULD support:
+
+- deterministic governance-action recording and lifecycle handling
+- scope-classification validation
+- review-path completeness checks
+- discrepancy detection between governance truth and downstream execution/reporting references
+- bounded emergency handling with post-review
+- health monitoring for public-safe governance views and internal control surfaces
+- runbooks for misclassification, incomplete review paths, supersession propagation failure, public-summary lag, and exceptional-governance review closure
+
+## Migration / Compatibility / Supersession Considerations
+
+Migrations into this canonical model MUST enforce the following:
+
+- legacy approvals or ad hoc admin sign-offs that act as hidden governance truth must be retired or normalized
+- historical governance labels MAY be preserved as lineage, but MUST NOT silently override canonical current interpretation
+- compatibility layers MAY preserve older route shapes or admin screens temporarily, but canonical governance semantics MUST remain explicit
+- any future DAO-lite layer MUST integrate as an explicit bounded extension rather than as a replacement for current governance architecture
+- downstream consumers MUST migrate to canonical governance truth rather than local shadow approval stores
+
+## Implementation-Contract Guardrails
+
+Downstream implementations MUST preserve all of the following:
+
+1. governance remains distinct from source-domain truth and from downstream execution truth
+2. governance scope, action class, and policy version remain explicit
+3. proposal, approval, and execution remain distinct lifecycle concepts
+4. policy-defined action categories remain explicit
+5. public-safe governance visibility remains bounded and distinct from internal governance detail
+6. exceptional governance remains narrow and reviewable
+7. historical governance meaning and correction/supersession lineage remain preserved
+8. public summaries, APIs, and dashboards remain derived from canonical governance truth
+9. idempotency, replay safety, and correction lineage remain explicit for trust-sensitive mutations
+10. downstream teams MUST NOT create local governance truth that conflicts with the governance model domain
+
+## Downstream Execution Staging
+
+This specification implies the following preferred downstream implementation order:
+
+1. stabilize governance-scope taxonomy and action-class semantics
+2. stabilize canonical governance policy, action, proposal, and review-path semantics
+3. stabilize control-reference, execution-reference, and reporting-reference behavior
+4. integrate treasury, Foundation, vault, and multisig/timelock control linkage rules
+5. integrate public-safe governance summaries and reporting linkages
+6. integrate exceptional-governance, discrepancy, correction, and future participation tooling
+
+## Required Downstream Specs / Contract Layers
+
+This specification directly requires compatible downstream refinement and implementation-contract work in:
+
+- `GOVERNANCE_MODEL_API_SPEC.md`
+- `FOUNDATION_GOVERNANCE_SPEC.md`
+- `TREASURY_CONTROL_POLICY_SPEC.md`
+- `VAULT_ACTION_POLICY_SPEC.md`
+- `MULTISIG_AND_TIMELOCK_SPEC.md`
+- governance discrepancy/remediation runbooks
+- public-safe governance reporting contracts
+- future DAO-lite extension contracts if formally activated
+
+## Canonical Examples / Anti-Examples
+
+### Canonical Example 1 — Treasury Policy Change
+A treasury-sensitive action is proposed, classified, reviewed under the correct governance scope, approved through the required path, linked to execution, and later referenced in public-safe reporting.
+
+### Canonical Example 2 — Foundation Stewardship Discipline
+A Foundation-related action is governed more narrowly than an ordinary operating reserve action because the Foundation has a long-term stewardship role.
+
+### Canonical Example 3 — Timelocked High-Impact Change
+A structural contract-role change requires multisig approval and timelock delay before execution linkage can complete.
+
+### Canonical Example 4 — DAO-lite Signaling Without Full Control Transfer
+A future bounded participation mechanism records ecosystem signaling for selected categories without turning all operational governance into direct token voting.
+
+### Anti-Example 1 — Multisig Without Policy
+A multisig can move anything at any time because governance categories were never defined. This is forbidden.
+
+### Anti-Example 2 — Dashboard as Governance Truth
+An admin panel summary becomes the de facto owner of governance meaning. This is forbidden.
+
+### Anti-Example 3 — Treasury and Foundation Blur
+The Foundation is treated like an ordinary treasury reserve through convenience actions. This is forbidden.
+
+### Anti-Example 4 — Silent Historical Rewrite
+A misclassified governance action is relabeled in place with no discrepancy or correction lineage. This is forbidden.
+
+## Dependencies / Cross-Spec Links
+
+This specification depends on:
+
+- `REFINED_SYSTEM_SPEC_INDEX.md`
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
+- `API_ARCHITECTURE_SPEC.md`
+- `PUBLIC_API_SPEC.md`
+- `INTERNAL_SERVICE_API_SPEC.md`
+- `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+- `IDEMPOTENCY_AND_VERSIONING_SPEC.md`
+- `MIGRATION_AND_BACKWARD_COMPATIBILITY_SPEC.md`
+- `AUDIT_LOG_AND_ACTIVITY_SPEC.md`
+- `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md`
+- `SECURITY_AND_RISK_CONTROL_SPEC.md`
+- `MONITORING_ALERTING_AND_INCIDENT_RESPONSE_SPEC.md`
+- `DEPLOYMENT_AND_RUNTIME_OPERATIONS_SPEC.md`
+- `BUSINESS_CONTINUITY_AND_RECOVERY_SPEC.md`
+- `TRANSPARENCY_MODEL_SPEC.md`
+- `TRANSPARENCY_REPORTING_SPEC.md`
+- `PUBLIC_CONTRACT_AND_WALLET_REGISTRY_SPEC.md`
+- `FOUNDATION_GOVERNANCE_SPEC.md`
+- `TREASURY_CONTROL_POLICY_SPEC.md`
+- `VAULT_ACTION_POLICY_SPEC.md`
+- `MULTISIG_AND_TIMELOCK_SPEC.md`
+- `PROFIT_PARTICIPATION_SYSTEM_SPEC.md`
+- `SNAPSHOT_AND_ELIGIBILITY_PIPELINE_SPEC.md`
+- `PAYOUT_LEDGER_SPEC.md`
+- `CHAIN_ARCHITECTURE_SPEC.md`
+- `FUZE_WHITEPAPER_v.2026.3.0.1.pdf`
+
+## Explicitly Deferred Items
+
+The following are intentionally deferred to adjacent or downstream specifications:
+
+- exact signer rosters and quorum formulas
+- exact DAO-lite participation mechanics and activation thresholds
+- exact public disclosure thresholds for each governance event class
+- exact route-by-route API shapes
+- exact report composition rules
+- exact committee composition or org-chart accountability
+- exact contract ABI implementation details
+
+## Final Normative Summary
+
+The FUZE governance model is the cross-cutting policy and decision architecture that makes sensitive actions bounded, category-aware, reviewable, and publicly credible. It is built around structured control rather than symbolic decentralization. Governance quality comes from architecture, policy discipline, multisig/timelock enforcement, policy-defined actions, role separation, and explicit boundaries. It is distinct from treasury execution, Foundation stewardship, vault execution, payout execution, runtime convenience, and narrative future participation. It supports future DAO-lite expansion only where bounded participation strengthens legitimacy without weakening operational integrity.
+
+This document is the canonical FUZE rule set for governance-model semantics.
+
+## Quality Gate Checklist
+
+- Canonical owner is explicit for governance-model truth, approval truth, and correction/supersession semantics.
+- Mutation boundaries are explicit for internal services, control-plane tools, and derived public surfaces.
+- Adjacent boundaries are explicit for treasury, Foundation, vault, multisig/timelock, transparency, registry, payout, and on-chain/off-chain domains.
+- Truth classes are explicit and separated.
+- Conflict-resolution rules are explicit.
+- Default decision rules are explicit for scope ambiguity, sensitivity ambiguity, exceptional handling, and future participation.
+- Non-canonical patterns are called out clearly.
+- Operator/admin override paths are bounded, reason-coded, and auditable.
+- Read-model, reporting, and public-summary rules are explicit.
+- Failure and degraded-mode behaviors are explicit.
+- Downstream implementation guardrails are explicit.
+- Dependencies and downstream impacts are explicit.
+- Non-goals and deferred items are explicit.
+- The document is strong enough to support downstream API, backend, control-plane, reporting, and chain-adjacent implementation without contradictory semantic invention.

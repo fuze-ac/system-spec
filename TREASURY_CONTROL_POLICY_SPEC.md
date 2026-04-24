@@ -1,53 +1,88 @@
-# TREASURY_CONTROL_POLICY_SPEC
+# FUZE Treasury Control Policy Specification
+
+## Document Metadata
+
+- **Document Name:** `TREASURY_CONTROL_POLICY_SPEC.md`
+- **Document Type:** Canonical refined system specification
+- **Status:** Active refined system spec
+- **Version:** 2.0.0
+- **Effective Date:** 2026-04-23
+- **Last Updated:** 2026-04-23
+- **Reviewed On:** 2026-04-23
+- **Document Owner:** FUZE Treasury Control Policy Domain (canonical owner for treasury-control semantics, reserve-category-aware control posture, treasury-sensitive action meaning, approval-path discipline, destination and use restriction interpretation, and treasury-specific correction/supersession lineage); named individual owner is not explicitly specified in the retrieved governing materials
+- **Approval Authority:** Not explicitly specified in the retrieved governing materials; constitutional approval authority remains governed by `REFINED_SYSTEM_SPEC_INDEX.md` and the active FUZE approval workflow
+- **Review Cadence:** SHOULD be reviewed quarterly and whenever treasury architecture, Foundation boundaries, vault-action posture, multisig/timelock posture, payout funding posture, transparency posture, or public-trust-sensitive reserve treatment materially changes
+- **Governing Layer:** Platform governance / treasury-governed capital control architecture / category-aware treasury policy layer
+- **Parent Registry:** `REFINED_SYSTEM_SPEC_INDEX.md`
+- **Primary Audience:** Platform architecture, backend engineering, contracts engineering, treasury and finance stakeholders, governance/control-plane authors, security engineering, audit/compliance, public-trust/reporting authors, implementation-contract authors
+- **Primary Purpose:** Define the canonical FUZE treasury control policy as the category-aware policy-and-control layer for treasury-governed capital, including reserve-sensitive action classification, approval-path posture, destination and use restriction interpretation, payout-funding treatment, exceptional treasury handling, and public-trust-safe reporting linkage, without collapsing treasury-control truth into Foundation stewardship truth, vault-action truth, multisig/timelock enforcement truth, profit-participation truth, contract execution truth, or generic operator discretion
+- **Primary Upstream References:** `REFINED_SYSTEM_SPEC_INDEX.md`, `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`, `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`, `PLATFORM_ARCHITECTURE_SPEC.md`, `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`, `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`, `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`, `GOVERNANCE_MODEL_SPEC.md`, `FOUNDATION_GOVERNANCE_SPEC.md`, `VAULT_ACTION_POLICY_SPEC.md`, `MULTISIG_AND_TIMELOCK_SPEC.md`, `PROFIT_PARTICIPATION_SYSTEM_SPEC.md`, `SNAPSHOT_AND_ELIGIBILITY_PIPELINE_SPEC.md`, `TRANSPARENCY_MODEL_SPEC.md`, `TRANSPARENCY_REPORTING_SPEC.md`, `PUBLIC_CONTRACT_AND_WALLET_REGISTRY_SPEC.md`, `CHAIN_ARCHITECTURE_SPEC.md`, `FUZE_WHITEPAPER_v.2026.3.0.1.pdf`
+- **Primary Downstream Dependents:** `TREASURY_CONTROL_POLICY_API_SPEC.md`, `VAULT_ACTION_POLICY_SPEC.md`, `FOUNDATION_GOVERNANCE_SPEC.md`, `MULTISIG_AND_TIMELOCK_SPEC.md`, `PROFIT_PARTICIPATION_SYSTEM_SPEC.md`, `SNAPSHOT_AND_ELIGIBILITY_PIPELINE_SPEC.md`, `TRANSPARENCY_REPORTING_SPEC.md`, public-safe treasury reporting surfaces, treasury-specific admin/control-plane tooling, discrepancy and correction runbooks
+- **Supersedes:** Earlier or weaker interpretations that treat treasury-controlled capital as one flexible pool, treat separated reserve categories as practically interchangeable, collapse Foundation stewardship into treasury convenience, or allow material treasury-sensitive actions to proceed without category-aware policy, bounded authority, destination/use restriction clarity, reporting lineage, and meaningful proposal/approval/execution separation
+- **Superseded By:** None currently defined
+- **Related Decision Records:** Not explicitly specified in the retrieved governing materials
+- **Canonical Status Note:** This document is the canonical governing FUZE specification for treasury-control policy semantics. Downstream APIs, vault policies, Foundation linkage rules, multisig/timelock enforcement layers, profit-participation funding workflows, reporting surfaces, and treasury-sensitive admin/control-plane tools MUST preserve the ownership, truth-separation, reserve-category meaning, action classification, approval, restriction, correction, and visibility rules defined here.
+- **Implementation Status:** Normative source; downstream treasury-control services, vault and execution controls, reporting linkages, and chain-adjacent execution references MUST align
+- **Approval Status:** Draft refined canonical specification pending explicit approval workflow
+- **Change Summary:** Refined treasury control into a production-grade canonical specification; normalized treasury control as a distinct governance domain, clarified reserve-category-aware action semantics, formalized action classes and sensitivity tiers, strengthened proposal/approval/execution separation, tightened destination and use restrictions, made payout-funding treatment explicit, reinforced Foundation separation, and defined correction/supersession lineage and public-safe reporting guardrails
+
+## Title
+
+FUZE Treasury Control Policy Specification
 
 ## Purpose
 
-This document defines the canonical treasury control policy of the FUZE ecosystem. Its purpose is to establish how treasury-controlled capital may be governed, authorized, restricted, executed, reviewed, and reported so that treasury behavior remains policy-driven, role-bounded, and structurally consistent with the transparency-first architecture of FUZE.
+This specification defines the canonical FUZE treasury control policy.
 
-This specification is foundational because treasury architecture alone is not sufficient to create trust. Even when reserve categories are separated into distinct vaults and contracts, the ecosystem still needs a clear control policy that defines what treasury authority means in practice. Without such a policy, category separation can be weakened by overly broad operational discretion, vague approval pathways, or inconsistent interpretation of what treasury-controlled capital is allowed to do. The treasury control policy is therefore the rule layer that gives operational meaning to the reserve architecture.
+Its purpose is to make explicit:
 
----
+- what treasury control governs and what it does not govern
+- how treasury-controlled capital is classified, bounded, authorized, restricted, executed by reference, reviewed, and reported
+- how reserve-category meaning is preserved across Treasury Reserve, Foundation, incentives, partnerships, liquidity, transparency/stability, and treasury-adjacent vesting structures
+- how treasury control relates to governance, Foundation stewardship, vault-action policy, multisig/timelock enforcement, payout funding, transparency, and public trust without replacing those domains
+- how action classes, sensitivity tiers, destination restrictions, exceptional handling, and correction/supersession must work
+- what downstream APIs, policies, reports, admin surfaces, and chain-adjacent execution layers MUST preserve
+
+This specification is intentionally governing rather than descriptive. It defines treasury control as the operational governance layer between reserve architecture and real treasury behavior.
 
 ## Scope
 
-This specification covers:
+This specification governs:
 
 - the canonical control philosophy for treasury-governed capital in FUZE
 - how treasury authority is bounded across reserve categories
 - the distinction between treasury control and ordinary platform administration
-- the action classes that treasury governance must recognize
-- approval, authorization, and execution principles for treasury-sensitive actions
+- treasury-sensitive action classes and sensitivity tiers
+- approval, authorization, and execution-linkage principles for treasury-sensitive actions
+- destination and use restriction posture
 - the relationship between treasury control, multisig, timelock, policy, and reporting
-- the boundaries between treasury reserve, Foundation, incentives, liquidity, partnerships, and related categories
-- correction, emergency, and exceptional-action principles
+- the boundaries between Treasury Reserve, Foundation, incentives, partnerships, liquidity, transparency/stability, and treasury-adjacent vesting categories
+- correction, emergency, and exceptional treasury treatment
 - transparency, audit, and reconciliation expectations for treasury-controlled actions
+- implementation-contract guardrails for treasury APIs, events, admin controls, reporting, and chain-adjacent execution references
 
-This specification does not define the full smart contract implementation of each vault, every allowed-use matrix by reserve category, or the full operational details of profit-participation funding. Those are refined in:
+It does not govern:
 
-- `TREASURY_AND_RESERVE_ARCHITECTURE_SPEC.md`
-- `FOUNDATION_GOVERNANCE_SPEC.md`
-- `VAULT_ACTION_POLICY_SPEC.md`
-- `MULTISIG_AND_TIMELOCK_SPEC.md`
-- `PROFIT_PARTICIPATION_SYSTEM_SPEC.md`
-- `TRANSPARENCY_REPORTING_SPEC.md`
-- `MONITORING_ALERTING_AND_INCIDENT_RESPONSE_SPEC.md`
-
----
+- full smart-contract implementation of each vault
+- exact allowed-use matrix by reserve category in contract detail
+- full Foundation-governance rules in depth
+- full multisig signer or timelock configuration internals
+- exact payout-cycle execution mechanics
+- exact transparency-report composition
+- low-level contract ABI implementation details
 
 ## Design Goals
 
-The design goals of the FUZE treasury control policy are:
+The design goals of the FUZE treasury control policy are to:
 
-1. to prevent treasury-controlled capital from being treated as broad discretionary operator capital
-2. to preserve the distinct economic meaning of each treasury-related reserve category
-3. to define clear action classes for treasury-sensitive decisions
-4. to require explicit authorization pathways for material treasury actions
-5. to make treasury behavior auditable, reportable, and structurally explainable
-6. to support strong separation between governance authority, execution authority, and reporting authority
-7. to create safer handling for exceptional or emergency treasury cases
-8. to improve long-term public trust by making treasury control visible and bounded
-
----
+1. prevent treasury-controlled capital from being treated as broad discretionary operator capital
+2. preserve the distinct economic meaning of each treasury-related reserve category
+3. define clear action classes and sensitivity posture for treasury-sensitive decisions
+4. require explicit authorization pathways for material treasury actions
+5. make treasury behavior auditable, reportable, and structurally explainable
+6. support strong separation between governance authority, execution authority, and reporting authority
+7. create safer handling for exceptional or emergency treasury cases
+8. improve long-term public trust by making treasury control visible and bounded
 
 ## Non-Goals
 
@@ -61,541 +96,573 @@ This specification is not intended to:
 - replace contract-level security controls with pure procedural trust
 - make reporting optional for material treasury-sensitive actions
 
----
+## Core Principles
 
-## Canonical Treasury Control Principle
+### 1. Canonical Treasury Control Principle
+Treasury-controlled capital may be activated only through explicit category-aware policy, bounded authority, and auditable governance pathways that preserve the intended economic meaning of the capital being controlled.
 
-The primary principle of FUZE treasury control is:
+### 2. Treasury Control as Distinct Governance Domain Principle
+Treasury-sensitive actions MUST be governed through a distinct control discipline closer to governance architecture than to routine product operations.
 
-> treasury-controlled capital may be activated only through explicit category-aware policy, bounded authority, and auditable governance pathways that preserve the intended economic meaning of the capital being controlled.
+### 3. Category-Aware Control Principle
+“Treasury” is not one undifferentiated pool of power. The same broad control philosophy may apply across the architecture, but the permitted action space MUST differ by category.
 
-This means:
+### 4. Proposal-Approval-Execution Separation Principle
+Proposal, approval, and execution MUST remain meaningfully separated for material treasury-sensitive actions whenever feasible.
 
-- treasury authority is not a blanket right to move ecosystem capital
-- each reserve category should remain subject to role-appropriate action rules
-- approval, execution, and review should be distinct where possible
-- treasury-sensitive actions should be explainable before and after execution
-- policy should constrain discretion rather than merely describe it
+### 5. Destination-and-Use Discipline Principle
+A treasury action is not justified only because its immediate use appears reasonable. It must also preserve the structural clarity of where the value is going and why that destination fits the reserve category.
 
-This principle is central to FUZE’s transparency-first design. The ecosystem should not rely on assumptions such as “the treasury team will use good judgment.” It should rely on explicit, reviewable control structure.
+### 6. Foundation-Boundary Preservation Principle
+Treasury control MUST reinforce, not weaken, Foundation governance boundaries.
 
----
+### 7. Payout-Funding Distinction Principle
+Funding a payout cycle is treasury-sensitive, but it is not equivalent to routine treasury deployment. It is a formal ecosystem event with tighter transparency, holder-facing, and reporting consequences.
 
-## Why Treasury Control Needs Its Own Policy Layer
+### 8. Timelock-and-Multisig Support Principle
+Timelock and multisig are enforcement and control instruments that help implement treasury policy. They do not replace treasury policy meaning.
 
-FUZE uses a structured reserve architecture with separate vaults for Treasury, Foundation, team vesting, advisor vesting, holder incentives, partnerships, liquidity operations, and transparency/stability functions. That architecture is necessary, but it is not sufficient by itself.
+### 9. Exceptional-Treasury Narrowness Principle
+Emergency pathways are necessary, but they must remain narrower than ordinary deployment authority, explicitly documented, and followed by structured review.
 
-A separated reserve system still requires a policy answer to important questions such as:
-
-- what actions are permitted for each category
-- which actions require stronger review
-- which actions are disallowed regardless of convenience
-- who can propose, approve, execute, or pause a treasury-sensitive action
-- what reporting must follow execution
-- how exceptional actions are handled without undermining trust
-
-Without a treasury control policy, contract separation can still degrade into ambiguous operator behavior. Funds may remain technically separate but practically governed through unclear decision logic. Over time, this weakens the public meaning of the reserve architecture.
-
-The treasury control policy solves this by making control explicit. It acts as the operational governance layer between reserve architecture and real treasury behavior.
-
-This is especially important in FUZE because the ecosystem includes:
-
-- token-side reserve categories with different purposes
-- a Foundation with stronger stewardship logic
-- liquidity operations with higher trust sensitivity
-- a transparency/stability category whose meaning depends on restraint
-- stablecoin profit participation that must not be confused with reserve discretion
-- a multi-product platform whose operational needs could otherwise pressure treasury boundaries
-
-The treasury control policy exists so that growth, urgency, and operational convenience do not silently rewrite economic meaning.
-
----
-
-## Treasury Control as a Distinct Governance Domain
-
-Treasury control should be treated as a distinct governance domain inside FUZE.
-
-This means treasury-sensitive actions must not be governed through the same informal pathways used for routine product operations, content changes, or day-to-day platform administration. Treasury control affects long-term trust, reserve interpretation, and holder confidence. It therefore requires its own discipline.
-
-### Why distinct treatment is necessary
-
-Treasury actions may affect:
-
-- reserve credibility
-- market interpretation
-- future funding flexibility
-- relationship between stewardship and operating capital
-- public confidence in governance quality
-- consistency between platform narrative and platform behavior
-
-For these reasons, treasury control should sit closer to governance architecture than to routine product operations.
-
-### Treasury-governance principle
-
-Treasury governance should therefore be:
-- category-aware,
-- policy-driven,
-- multisig-compatible,
-- timelock-sensitive where appropriate,
-- and auditable enough to support meaningful external interpretation.
-
-This does not mean every treasury action must be slow or ceremonial. It means treasury action must always be structurally accountable.
-
----
-
-## Treasury-Controlled Capital Categories
-
-The treasury control policy applies across treasury-governed or treasury-adjacent reserve categories, but not every category is controlled in exactly the same way.
-
-At minimum, policy must distinguish among:
-
-- Treasury Reserve Vault
-- Foundation Vault
-- Holder Incentives Vault
-- Ecosystem Partnership Vault
-- Liquidity Operations Vault
-- Transparency / Stability Vault
-
-It must also recognize that some categories are structurally adjacent but not ordinary treasury deployment pools, including:
-
-- Team Vesting Vault
-- Advisor Vesting Vault
-
-### Category-aware control principle
-
-The same control philosophy should apply across the architecture, but the permitted action space should differ by category.
-
-For example:
-- Treasury Reserve may support strategic platform deployment under policy.
-- Foundation should remain more principal-preserving and more constrained.
-- Liquidity Operations may allow a narrower but more operationally sensitive set of actions.
-- Transparency / Stability should remain tightly bounded to trust-oriented functions.
-- Team and Advisor Vesting should not be treated as general treasury capital at all.
-
-A strong treasury control policy therefore begins by recognizing that “treasury” is not one undifferentiated pool of power.
-
----
-
-## Treasury Action Classes
-
-The treasury control policy should define explicit treasury action classes.
-
-At minimum, FUZE should recognize the following action classes.
-
-### 1. Observation and Reporting Actions
-Actions that do not move capital but are required for visibility and governance compatibility.
-
-Examples:
-- reserve-state publication
-- balance attestations
-- registry updates that do not change asset position
-- scheduled treasury reporting actions
-
-### 2. Administrative Configuration Actions
-Actions that change control configuration but do not directly deploy capital.
-
-Examples:
-- signer rotation
-- timelock configuration changes
-- registry updates
-- contract control-role updates
-- policy-reference updates where contract-linked
-
-### 3. Internal Coordination Actions
-Actions that prepare or coordinate treasury state without constituting outward deployment.
-
-Examples:
-- category-internal reconciliation
-- contract-to-contract synchronization where policy permits
-- setup steps for an already-approved treasury event
-- bounded migration actions
-
-### 4. Category Deployment Actions
-Actions that use reserve capital according to the allowed role of a category.
-
-Examples:
-- approved treasury deployment
-- incentives program funding
-- partnership allocation release
-- transparency/stability bounded action
-- policy-approved liquidity operation
-
-### 5. Payout-Related Funding Actions
-Actions that relate treasury/accounting finalization to profit-participation cycle funding.
-
-Examples:
-- funding a stablecoin payout cycle after formal approval
-- publishing payout-cycle references linked to treasury authorization
-
-### 6. Exceptional or Emergency Actions
-Actions taken under exceptional circumstances to protect assets, halt harm, or recover from serious issues.
-
-Examples:
-- emergency pause
-- emergency destination block
-- urgent freeze or containment action
-- exceptional governance-constrained intervention pending review
-
-These action classes matter because a treasury control system is much stronger when it distinguishes everyday visibility actions from configuration changes, capital deployment, and emergency action.
-
----
-
-## Action Sensitivity Tiers
-
-In addition to action classes, treasury control should use sensitivity tiers.
-
-At minimum, actions should be understood in terms such as:
-
-### Low Sensitivity
-Reporting or low-risk configuration activity with no immediate outward capital deployment.
-
-### Moderate Sensitivity
-Administrative or coordination actions that affect treasury control posture but do not directly deploy material capital.
-
-### High Sensitivity
-Material capital deployment, payout-cycle funding, category reallocation, or governance-significant control changes.
-
-### Critical Sensitivity
-Exceptional actions, emergency actions, Foundation-principal-sensitive actions, or any action capable of materially altering long-term reserve meaning or trust assumptions.
-
-### Sensitivity principle
-
-The more sensitive the action, the stronger the requirements for:
-- approval structure,
-- role separation,
-- timelock,
-- reporting,
-- and audit traceability.
-
-This allows treasury policy to be practical without being loose.
-
----
-
-## Proposal, Approval, and Execution Separation
-
-FUZE treasury control should preserve meaningful separation among proposal, approval, and execution functions whenever feasible.
-
-### Proposal role
-The proposal role identifies and frames a treasury-sensitive action.
-
-### Approval role
-The approval role authorizes whether the action may occur according to policy, sensitivity, and reserve-category meaning.
-
-### Execution role
-The execution role performs the authorized action through the appropriate contract control pathway.
-
-### Why separation matters
-
-Without separation, the same small group could:
-- decide that an action is appropriate,
-- approve it,
-- execute it,
-- and explain it afterward.
-
-This concentrates too much interpretive and operational power in one path.
-
-### Separation principle
-
-Not every low-sensitivity action requires maximum separation, but material treasury actions should avoid full concentration of proposal, approval, and execution in one informal channel. This strengthens governance credibility and reduces misuse risk.
-
----
-
-## Treasury Approval Principles
-
-Every treasury-sensitive action should be evaluated against approval principles that go beyond technical feasibility.
-
-At minimum, approval should ask:
-
-1. **Is the action consistent with the role of this reserve category?**
-2. **Is the action allowed under current policy?**
-3. **Is the destination or use consistent with bounded control rules?**
-4. **Does the action preserve category meaning rather than erode it?**
-5. **Is the action proportionate to the stated objective?**
-6. **Does the action require stronger governance pathing because of sensitivity?**
-7. **Will the action remain explainable in future transparency reporting?**
-
-### Approval principle
-
-The correct treasury question is not merely “can we do this?” It is “should this reserve category do this under the architecture we have publicly defined?”
-
-This distinction is essential to trust.
-
----
-
-## Category-Specific Treasury Control Philosophy
-
-### Treasury Reserve Vault
-The Treasury Reserve should support strategic platform flexibility, but only through policy-defined action categories. It should not become a justification for unbounded discretionary deployment.
-
-### Foundation Vault
-Foundation control should be more conservative than ordinary treasury control. Principal-sensitive actions should be exceptional, and stewardship meaning must remain stronger than operational convenience.
-
-### Holder Incentives Vault
-Actions should remain tied to holder-facing or participation-facing programs. It should not become an alternative treasury budget.
-
-### Ecosystem Partnership Vault
-Actions should remain relationship- and expansion-oriented, not substitutes for internal platform operating capital.
-
-### Liquidity Operations Vault
-This category should have narrower action pathways, stronger destination discipline, and stronger reporting expectations because of its higher trust sensitivity.
-
-### Transparency / Stability Vault
-This category should remain one of the most tightly bounded. It should not be treated as discretionary backup capital. Its actions should preserve the trust-oriented meaning of the reserve.
-
-### Team and Advisor Vesting
-These are not ordinary treasury deployment categories. Treasury control policy should recognize them primarily through vesting-governance and beneficiary-protection logic rather than through deployment logic.
-
-This category-specific interpretation is one of the most important parts of the treasury control policy. It preserves reserve meaning over time.
-
----
-
-## Relationship to Foundation Governance
-
-Treasury control policy must explicitly recognize that the Foundation is not just another treasury bucket.
-
-### Key principle
-
-Foundation governance should remain distinct even where treasury control infrastructure overlaps technically.
-
-This means:
-- Foundation principal is not ordinary deployable treasury capital
-- Foundation-sensitive actions should require stronger restraint
-- Foundation policy should not be silently overridden through ordinary treasury procedure
-- Foundation participation in wider ecosystem mechanisms must remain explicit
-
-### Why this matters
-
-If treasury control policy ignores this distinction, the Foundation may lose much of its structural trust value. The treasury control policy should therefore reinforce, not weaken, Foundation governance boundaries.
-
----
-
-## Relationship to Profit Participation Funding
-
-Treasury control policy must also define how treasury-sensitive funding interacts with profit participation.
-
-### Key principle
-
-Profit-participation funding should occur only after:
-- accounting and treasury finalize the policy-defined distributable amount,
-- eligibility preparation is ready,
-- and the cycle is properly authorized.
-
-### Treasury-control implication
-
-Funding a payout cycle is a treasury-sensitive action, but it is not equivalent to routine treasury deployment. It has:
-- stronger transparency consequences,
-- stronger holder-facing implications,
-- and tighter linkage to reporting and payout-ledger structures.
-
-### Important boundary
-
-Treasury control policy should preserve the distinction between:
-- visible reserve balances,
-- internal product economics,
-- and funded stablecoin payout cycles.
-
-A payout cycle is not simply a treasury spend. It is a formal ecosystem event requiring tighter policy coupling.
-
----
-
-## Destination and Use Restrictions
-
-Treasury control policy should include destination and use restrictions.
-
-At a minimum, the policy model should support the principle that treasury-controlled capital may move only toward destinations and purposes consistent with the reserve category and approval path.
-
-### Restriction examples by principle
-
-- vesting capital should not route to discretionary operating destinations
-- stability-oriented capital should not route to generic product spending
-- incentives capital should not route to undefined treasury substitution
-- liquidity operations should not route through opaque generic wallets where avoidable
-- Foundation-controlled value should not drift into ordinary operating pathways without exceptional governance treatment
-
-### Destination principle
-
-A treasury action should not be approved only because the immediate use seems reasonable. It must also preserve the structural clarity of where the value is going and why that destination fits the reserve category.
-
-This is essential because treasury misuse often appears first as destination ambiguity, not explicit theft.
-
----
-
-## Timelock and Multisig Expectations
-
-Treasury control policy should assume compatibility with multisig and timelock architecture for material actions.
-
-### Multisig expectations
-Sensitive actions should require shared authorization rather than unilateral execution.
-
-### Timelock expectations
-Where actions materially affect reserve structure, capital deployment, or governance-sensitive configuration, timelock should provide:
-- delay,
-- observability,
-- and reduced impulsive execution risk.
-
-### Principle
-
-Timelock and multisig are not the treasury policy themselves. They are enforcement and control instruments that help implement treasury policy. Treasury control policy defines what kinds of actions deserve those protections and under what circumstances.
-
----
-
-## Emergency and Exceptional Treasury Actions
-
-The treasury control policy must define how exceptional or emergency cases are treated.
-
-### Emergency examples may include:
-- suspected compromise of treasury-control pathway
-- discovered misrouting risk
-- contract vulnerability exposure
-- incorrect destination configuration
-- urgent containment need around liquidity-sensitive behavior
-- payout-cycle funding issue discovered before claim opening
-
-### Emergency principles
-
-- emergency action should prioritize containment over convenience
-- emergency action should be narrower than ordinary deployment authority
-- emergency action should not become a standing shortcut around normal governance
-- post-incident review and reporting should be required
-- any exceptional use of protected categories should be especially scrutinized
-
-### Exceptional-action principle
-
-Emergency pathways are necessary, but they are strongest when they are limited, documented, and followed by structured review. A transparency-first ecosystem should not rely on emergency ambiguity.
-
----
-
-## Treasury Reporting Requirements
-
-Treasury control policy should require reporting discipline for material treasury actions.
-
-At minimum, reporting expectations should support:
-
-- category-aware explanation of the action
-- date and governance-path visibility
-- action-class and sensitivity visibility
-- destination or outcome classification
-- linkage to policy basis
-- relationship to reserve category meaning
-- reconciliation to public reserve and contract visibility where applicable
-
-### Reporting principle
-
+### 10. Reporting-Is-Part-of-Control Principle
 A treasury action that cannot be explained clearly after execution was probably not governed clearly enough before execution.
 
-This principle reinforces that treasury transparency is not a public-relations layer. It is part of the control system.
+## Canonical Definitions
 
----
+### Treasury-Controlled Capital
+Capital governed under FUZE treasury-control policy, including treasury-governed and treasury-adjacent reserve categories with category-specific constraints.
 
-## Audit and Review Requirements
+### Reserve Category
+The canonical category used to interpret the purpose, allowable action space, reporting posture, and trust meaning of a treasury-controlled capital pool.
 
-Treasury control policy should support meaningful auditability.
+### Treasury-Sensitive Action
+A control-relevant action affecting treasury-controlled capital, treasury configuration, treasury-linked payout funding, or reserve-category interpretation.
 
-At minimum, treasury-sensitive actions should preserve enough structure to answer:
+### Action Class
+A governed category of treasury-sensitive action, such as observation/reporting, administrative configuration, internal coordination, category deployment, payout-related funding, or exceptional/emergency action.
 
-- what category was affected
-- what action class applied
-- who proposed the action
-- who approved the action
-- what control path executed it
-- what policy basis justified it
-- what reporting references describe it
-- whether the action matched allowed category behavior
+### Sensitivity Tier
+The risk and trust significance level attached to a treasury-sensitive action, used to determine required review quality, separation, timelock/multisig expectations, and reporting discipline.
 
-### Review principle
+### Destination Category
+The canonical classification of where treasury-controlled capital is intended to move or what it will affect.
 
-The purpose of auditability is not only after-the-fact blame. It is long-term institutional clarity. The ecosystem should be able to look back at treasury actions and still understand their role-specific logic.
+### Treasury Policy Version
+The canonical policy record describing active treasury-control rules and their version lineage.
 
----
+### Treasury Control Reference
+A structured reference to the bounded control mechanism associated with a treasury-sensitive action, such as multisig, timelock, emergency authority, or exceptional path.
 
-## Relationship to Transparency Model
+### Treasury Execution Reference
+A bounded reference to the downstream execution artifact or pathway linked to an approved treasury action.
 
-Treasury control policy is one of the most important operational expressions of FUZE’s transparency model.
+### Treasury Reporting Reference
+A structured reference to the reporting, registry, or payout artifact linked to a treasury-sensitive action.
 
-The transparency model claims that:
-- reserve categories are visible,
-- roles are separated,
-- governance is structured,
-- and value movement is more intelligible than in opaque ecosystems.
+## Truth Class Taxonomy
 
-Treasury control policy is where those claims either become real or fail.
+The treasury-control domain operates with the following truth classes, which MUST remain distinct:
 
-### Transparency-control principle
+1. **Treasury-control truth** — treasury policy versions, treasury-sensitive action records, reserve-category interpretations, action classes, sensitivity tiers, destination/use restrictions, and correction/supersession semantics
+2. **General governance truth** — higher-order governance-model semantics, approval-path posture, and cross-domain governance architecture
+3. **Foundation-governance truth** — Foundation-specific stewardship, principal-treatment, and stronger constraints
+4. **Vault-action truth** — what each vault category may meaningfully do
+5. **Execution truth** — downstream contract or operational execution state linked to a treasury action
+6. **Profit-participation truth** — payout and eligibility-system meaning, including treasury funding only where explicitly referenced
+7. **Reporting / public-visibility truth** — public-safe treasury summaries, transparency references, registry references, and payout linkages
+8. **Audit truth** — immutable audit and activity records for treasury-sensitive mutations
+9. **Runtime / execution-plane truth** — retries, async jobs, export jobs, discrepancy cases, and operational remediation state
+10. **Presentation truth** — labels, summaries, status wording, and explanatory framing
 
-If treasury control remains vague, the transparency model weakens even if the contract layout looks good. If treasury control is explicit, category-aware, and reported clearly, the transparency model becomes stronger.
+These truth classes MUST NOT be collapsed into one undifferentiated treasury dashboard or reserve page.
 
-This is why treasury control policy is not a narrow finance document. It is part of the public trust architecture of FUZE.
+## Architectural Position in the Spec Hierarchy
 
----
+This document sits below:
 
-## Risks Addressed by Treasury Control Policy
+- `REFINED_SYSTEM_SPEC_INDEX.md`
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
+- `GOVERNANCE_MODEL_SPEC.md`
 
-The treasury control policy is designed to reduce several major risks.
+and above or alongside:
 
-### 1. Omnibus Treasury Behavior Risk
-The risk that separated reserves are still treated in practice as one flexible pool.
+- `TREASURY_CONTROL_POLICY_API_SPEC.md`
+- `FOUNDATION_GOVERNANCE_SPEC.md`
+- `VAULT_ACTION_POLICY_SPEC.md`
+- `MULTISIG_AND_TIMELOCK_SPEC.md`
+- `PROFIT_PARTICIPATION_SYSTEM_SPEC.md`
+- `TRANSPARENCY_REPORTING_SPEC.md`
+- public-safe treasury reporting surfaces
+- treasury-specific admin/control-plane tooling
 
-### 2. Category Drift Risk
-The risk that reserve categories gradually lose their intended meaning through repeated “reasonable exceptions.”
+This document governs treasury-control semantics. It does not redefine narrower source-domain truth.
 
-### 3. Governance Concentration Risk
-The risk that too few actors can frame, approve, and execute treasury-sensitive actions without meaningful separation.
+## System Boundaries
 
-### 4. Reporting Weakness Risk
-The risk that treasury actions cannot later be explained in structurally clear terms.
+This document governs only the following platform-owned boundaries:
 
-### 5. Foundation Boundary Failure Risk
-The risk that Foundation-controlled value becomes treasury-like in practice.
+- treasury-control philosophy and reserve-category-aware control meaning
+- treasury-sensitive action classes and sensitivity-tier semantics
+- proposal, approval, execution-linkage, and reporting-linkage posture for treasury-sensitive actions
+- destination and use restriction interpretation
+- treasury-specific exceptional treatment and discrepancy posture
+- treasury correction, supersession, and historical-intelligibility posture
+- public-safe treasury reporting linkage and implementation-contract guardrails
 
-### 6. Profit Participation Confusion Risk
-The risk that payout-cycle funding, reserves, and product economics become blurred together.
+It does not govern:
 
-These risks explain why treasury control needs formal policy rather than good intentions alone.
+- Foundation-specific principal-lock rules in full depth
+- vault-specific allow/deny matrices in full depth
+- multisig signer and timelock parameter details
+- exact contract-execution logic
+- raw accounting-book truth
+- full payout execution semantics
+- public transparency-report composition in full depth
 
----
+## Adjacent Boundaries
 
-## Minimum Architectural Entities
+### Governance Model
+The governance model owns higher-order governance semantics, scope classification, approval-path posture, and future participation boundaries. Treasury control is a narrower governance domain for treasury-governed capital.
 
-At minimum, the treasury control policy should recognize the following conceptual entities:
+### Foundation Governance
+Foundation governance owns the stricter stewardship posture for Foundation-controlled value. Treasury control must reinforce, not weaken, those boundaries.
 
-### Treasury Action Entities
-- treasury_action_id
-- reserve_category
-- action_class
-- sensitivity_tier
-- policy_version
-- proposed_at
-- approved_at
-- executed_at
-- action_status
+### Vault Action Policy
+Vault-action policy governs what each vault may meaningfully do. Treasury control governs how treasury-sensitive actions are controlled.
 
-### Governance Entities
-- proposer_role
-- approver_role
-- executor_role
-- multisig reference
-- timelock reference where applicable
-- emergency authority reference where applicable
+### Multisig and Timelock
+Multisig and timelock own their narrower enforcement and queued-action/control-path semantics. Treasury control determines what kinds of actions deserve those protections and under what circumstances.
 
-### Policy Entities
-- allowed-use reference
-- restricted-use reference
-- destination-category reference
-- exceptional-action reference where applicable
+### Profit Participation and Eligibility
+Profit-participation and eligibility domains own payout-cycle and claim-related truth. Treasury control governs how payout-cycle funding is treated as a treasury-sensitive action and how it links to reporting and payout-ledger structures.
 
-### Audit and Reporting Entities
-- audit_lineage_reference
-- transparency_report_reference
-- public_registry_reference where applicable
-- payout_linkage_reference where applicable
+### Transparency and Reporting
+Transparency and reporting domains own public-trust interpretation and recurring public reporting. Treasury control owns the structural meaning that must be explainable and reportable.
 
-These are minimum conceptual entities. Detailed schema and contract integration are refined downstream.
+### Public Registry
+The public registry owns public designation truth for official contracts and wallets. Treasury control may link to registry artifacts where treasury-sensitive actions require trust-safe reference.
 
----
+## Conflict Resolution Rules
 
-## Open Items
+When materials, systems, or interpretations conflict, FUZE MUST resolve them in the following order:
 
-The following areas are intentionally refined in downstream specifications:
+1. the active refined registry and higher constitutional materials win over narrower documents
+2. top-level boundary, ownership, and architecture specs win on top-level ownership and boundary posture
+3. `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md` wins on chain-native versus off-chain policy/reporting separation
+4. narrower source-domain specifications win on the meaning of their canonical truths
+5. `GOVERNANCE_MODEL_SPEC.md` wins on higher-order governance semantics, scope classification, approval-path posture, and DAO-lite future-direction boundaries
+6. `FOUNDATION_GOVERNANCE_SPEC.md`, `VAULT_ACTION_POLICY_SPEC.md`, and `MULTISIG_AND_TIMELOCK_SPEC.md` win within their narrower policy or enforcement scope
+7. this document wins on treasury-control semantics, reserve-category-aware action meaning, destination/use restrictions, payout-funding treatment, treasury-specific exceptional handling, and treasury correction/supersession semantics
+8. public dashboards, reserve pages, summaries, exports, and API views never win over canonical treasury-control truth
+9. when ambiguity remains, FUZE MUST choose the more conservative trust-preserving interpretation and escalate the ambiguity into downstream refinement or recorded decision work
+
+## Default Decision Rules
+
+When no narrower approved exception exists, FUZE MUST default to the following:
+
+1. treasury authority is not a blanket right to move ecosystem capital
+2. reserve categories retain their role-specific meaning by default
+3. ambiguous action classes default to narrower or higher-sensitivity treatment
+4. ambiguous destination or use rationale defaults to review-required or disallowed treatment rather than silent interpretation
+5. payout-cycle funding defaults to treasury-sensitive formal-event treatment rather than routine treasury deployment treatment
+6. Foundation-sensitive flows default to stronger restraint than ordinary treasury behavior
+7. public visibility defaults to public-safe structural explanation rather than full internal exposure
+8. exceptional treasury treatment defaults to narrower duration and mandatory post-review rather than standing shortcut authority
+9. if reserve category, action class, sensitivity tier, policy version, or approval path cannot be identified, the action is incomplete and MUST NOT proceed
+10. treasury control MUST resist pressure to use separated reserves as one flexible pool
+
+## Roles / Actors / Entities
+
+### Human Actors
+- treasury and finance stakeholders
+- governance reviewers
+- privileged operators
+- Foundation stewards where applicable
+- security and incident operators
+- public-trust/reporting authors
+
+### System Actors
+- treasury-control service
+- governance model service
+- vault-action services
+- Foundation governance service
+- multisig/timelock control services
+- contract execution services
+- profit-participation and payout-linkage services
+- reporting and transparency services
+- audit and monitoring systems
+- discrepancy and correction tooling
+
+### Canonical Entities
+- treasury policy versions
+- treasury action records
+- treasury action categories
+- treasury action destinations
+- treasury action approval paths
+- treasury action control references
+- treasury action execution references
+- treasury action reporting references
+- treasury exception records
+- treasury discrepancy cases
+- treasury mutation actions
+
+## Ownership Model
+
+The Treasury Control Policy domain is the canonical owner of:
+
+- treasury-control philosophy and reserve-category-aware control semantics
+- treasury-sensitive action lifecycle semantics
+- action class and sensitivity-tier meaning
+- destination and use restriction interpretation
+- treasury-specific proposal/approval/execution-linkage posture
+- treasury correction, discrepancy, and supersession semantics
+- treasury-owned public-safe read and reporting-linkage source truth
+
+It is not the canonical owner of:
+
+- Foundation stewardship truth
+- vault-specific allowed-action truth
+- multisig or timelock implementation internals
+- payout-cycle execution truth
+- raw contract execution truth
+- final transparency-report truth
+- raw accounting exports
+
+## Authority / Decision Model
+
+Authority MUST be separated as follows:
+
+- the governance model domain determines higher-order governance semantics
+- the treasury-control domain determines how treasury-sensitive actions are classified, reviewed, approved, constrained, and historically recorded
+- vault, Foundation, payout, and execution domains own the resulting narrower action or execution truth in their own scope
+- multisig and timelock layers enforce bounded execution discipline where applicable
+- reporting and transparency domains determine how treasury meaning is surfaced publicly under public-safe rules
+
+No dashboard, static page, spreadsheet, or product-local flow may mint canonical treasury-control truth outside these boundaries.
+
+## State Model
+
+### Treasury Policy Version Lifecycle
+- `draft`
+- `active`
+- `deprecated`
+- `superseded`
+- `archived`
+
+### Treasury Action Lifecycle
+- `draft`
+- `proposed`
+- `under_review`
+- `approved`
+- `rejected`
+- `ready_for_execution`
+- `executed_reference_linked`
+- `reported`
+- `paused`
+- `superseded`
+- `closed`
+
+### Approval-Path Lifecycle
+- `proposal_recorded`
+- `approval_pending`
+- `approved`
+- `rejected`
+- `execution_linked`
+- `closed`
+
+### Exceptional-Action Lifecycle
+- `declared`
+- `containment_active`
+- `post_review_pending`
+- `closed`
+- `superseded`
+
+### Discrepancy Lifecycle
+- `opened`
+- `under_review`
+- `resolved`
+- `failed`
+- `closed`
+
+## Lifecycle / Workflow Model
+
+1. a treasury-sensitive change is identified and classified by reserve category, action class, sensitivity tier, destination class, and policy version
+2. a treasury proposal is recorded with source-domain references
+3. required approval path and control references are attached
+4. the action is approved, rejected, paused, escalated, or exceptionally handled under bounded policy
+5. if approved, a treasury execution reference is linked to the downstream execution pathway
+6. public-safe reporting, registry, or payout linkage occurs where policy requires
+7. corrections, supersessions, or discrepancy cases are handled with preserved lineage
+8. any exceptional treasury action enters mandatory post-review and closure discipline
+
+## Invariants
+
+1. treasury control remains a distinct governance domain
+2. separated reserve categories remain semantically meaningful
+3. treasury-sensitive actions remain explicitly classified
+4. approval remains distinct from execution completion
+5. destination and use restrictions remain explicit
+6. Foundation-sensitive flows remain more conservative than ordinary treasury behavior
+7. payout-cycle funding remains distinct from routine treasury deployment
+8. public-safe treasury visibility does not authorize unsafe disclosure
+9. exceptional treasury handling remains narrow, reason-bearing, and reviewable
+10. corrections and supersessions preserve historical intelligibility
+
+## Functional Rules
+
+### Treasury Policy Layer Rule
+Treasury architecture alone is not sufficient to create trust. Treasury control policy is the rule layer that gives operational meaning to the reserve architecture.
+
+### Distinct Treasury Governance Rule
+Treasury-sensitive actions MUST NOT be governed through the same informal pathways used for routine product operations, content changes, or day-to-day platform administration.
+
+### Category-Specific Philosophy Rule
+At minimum, Treasury Reserve, Foundation, Holder Incentives, Ecosystem Partnership, Liquidity Operations, Transparency/Stability, Team Vesting, and Advisor Vesting MUST remain structurally distinguishable and must not all share the same permitted action space.
+
+### Action-Class Rule
+Treasury control MUST distinguish at least observation/reporting, administrative configuration, internal coordination, category deployment, payout-related funding, and exceptional/emergency actions.
+
+### Sensitivity-Tier Rule
+Treasury control MUST distinguish at least low, moderate, high, and critical sensitivity tiers, with stronger requirements for approval structure, role separation, timelock, reporting, and audit traceability as sensitivity increases.
+
+### Approval Rule
+The correct treasury question is not merely “can we do this?” It is “should this reserve category do this under the architecture FUZE has publicly defined?”
+
+### Destination Principle
+A treasury action must preserve the structural clarity of where the value is going and why that destination fits the reserve category.
+
+### Foundation Boundary Rule
+Foundation policy should not be silently overridden through ordinary treasury procedure.
+
+### Profit Participation Funding Rule
+Profit-participation funding should occur only after accounting and treasury finalize the policy-defined distributable amount, eligibility preparation is ready, and the cycle is properly authorized.
+
+### Exceptional Treasury Rule
+Emergency pathways MUST prioritize containment over convenience, remain narrower than ordinary deployment authority, and require post-incident review and reporting.
+
+## Permission / Access Considerations
+
+Treasury mutation authority is privileged and bounded.
+
+Required constraints:
+
+- privileged treasury actions require explicit operator identity, least-privilege access, and reason-coded execution
+- creation, review, approval, pause, escalation, exceptional treatment, supersession, and discrepancy resolution MUST remain access-controlled
+- public-safe treasury views are distinct from internal treasury records
+- vault or product operators do not automatically gain treasury-control mutation authority outside bounded roles
+- access failures on treasury-sensitive mutation paths MUST fail closed
+
+## Entitlement Considerations
+
+Entitlement is not a primary treasury-control owner.
+
+Rules:
+
+- entitlement MUST NOT redefine treasury truth
+- token status or product entitlement MUST NOT be treated as automatic treasury authority
+- community-facing treasury visibility does not imply mutation authority
+- any future participation-linked features touching treasury meaning MUST remain bounded by explicit governance policy and activation
+
+## API / Contract Implications
+
+The treasury-control layer MUST expose stable contracts for:
+
+- internal creation and read of treasury policy versions and treasury-sensitive actions
+- reserve-category, action-class, sensitivity-tier, destination, and use restriction interpretation
+- proposal, approval-path, control-reference, execution-reference, and reporting-reference recording
+- privileged approve, reject, pause, escalate, exceptional-handle, supersede, and discrepancy-resolution actions
+- public-safe treasury policy summaries and treasury-action summaries where approved
+
+## Event / Async Implications
+
+The treasury-control domain SHOULD support event families such as:
+
+- `treasury_control.action_created`
+- `treasury_control.destination_validated`
+- `treasury_control.approval_path_recorded`
+- `treasury_control.control_linked`
+- `treasury_control.reporting_linked`
+- `treasury_control.execution_linked`
+- `treasury_control.action_approved`
+- `treasury_control.action_rejected`
+- `treasury_control.action_paused`
+- `treasury_control.action_escalated`
+- `treasury_control.exception_declared`
+- `treasury_control.action_superseded`
+- `treasury_control.discrepancy_resolved`
+
+## Data Model / Storage Implications
+
+At minimum, the treasury-control domain SHOULD support semantic representation of:
+
+- `treasury_policy_versions`
+- `treasury_action_records`
+- `treasury_action_categories`
+- `treasury_action_destinations`
+- `treasury_action_approval_paths`
+- `treasury_action_control_references`
+- `treasury_action_reporting_references`
+- `treasury_action_execution_references`
+- `treasury_exception_records`
+- `treasury_discrepancy_cases`
+- `treasury_mutation_actions`
+
+Derived stores MAY include public treasury policy views, public-safe treasury action views, internal status views, and discrepancy dashboards, provided they remain subordinate to canonical treasury truth.
+
+## Read Model / Projection / Reporting Rules
+
+- public-safe treasury policy summaries and treasury-action summaries are derived views
+- internal status dashboards are derived views
+- public summaries MUST NOT overtake canonical treasury records
+- reporting, registry, and payout linkages remain references, not ownership transfers
+- public or internal views MAY lag operationally, but they MUST remain reconcilable to canonical treasury records and stronger source domains
+
+## Security / Risk / Abuse Controls
+
+The treasury-control domain is a trust-sensitive control surface and MUST enforce:
+
+- strict separation between treasury-control truth and downstream execution truth
+- protection against unauthorized approval, category drift, silent history rewrite, misclassification, or unsafe public exposure
+- bounded service-to-service mutation pathways
+- privileged reason-coded treasury actions
+- safe handling of exceptional treasury treatment, restriction, and correction events
+- discrepancy detection when treasury meaning and downstream reporting or execution references drift
+- protection against treasury-sensitive actions hiding inside ordinary runtime or product-local pathways
+
+## Boundary Violation Detection / Non-Canonical Patterns
+
+The following patterns are non-canonical and forbidden:
+
+- treating separated reserves as one flexible pool in practice
+- treating treasury authority as a blanket right to move ecosystem capital
+- collapsing Foundation governance into ordinary treasury control
+- using separated reserves as generic backup capital for any platform need
+- funding payout cycles as though they were routine treasury deployment
+- routing treasury-controlled capital toward destinations inconsistent with reserve meaning
+- letting dashboards, exports, or narrative pages become write owners of treasury meaning
+- silently rewriting treasury classification or treatment without discrepancy or correction lineage
+
+## Audit / Traceability Requirements
+
+FUZE MUST be able to report on:
+
+- who or what proposed, approved, rejected, paused, escalated, exceptionally handled, superseded, or corrected a treasury-sensitive action
+- what reserve category, action class, sensitivity tier, destination class, and policy version applied
+- what approval path and control references applied
+- what downstream execution reference, if any, was linked
+- what reporting, registry, or payout linkage exists
+- what discrepancy or correction lineage exists
+- which policy or ruleset version governed the decision
+
+## Failure Handling / Edge Cases
+
+- if a proposal exists but the approval path is incomplete, the action remains incomplete and MUST NOT proceed
+- if approval exists but execution fails, treasury approval remains true while execution truth remains separate and failure-bearing
+- if a public treasury summary lags behind internal action, the public summary is a derived view and must reconcile rather than redefine internal treasury truth
+- if payout funding posture is unclear, the action MUST remain unresolved until policy-defined distributable amount, readiness, and authorization posture are explicit
+- if an exceptional treasury action is taken, exceptional handling MUST preserve explicit declaration, bounded treatment, and post-review requirements
+- if reserve category or destination is misclassified, a discrepancy case MUST be opened and resolved with preserved lineage rather than silent relabeling
+
+## Operational Considerations
+
+Operational systems SHOULD support:
+
+- deterministic treasury-action recording and lifecycle handling
+- reserve-category and destination validation
+- approval-path completeness checks
+- discrepancy detection between treasury truth and downstream execution/reporting references
+- bounded emergency handling with post-review
+- health monitoring for public-safe treasury views and internal control surfaces
+- runbooks for misclassification, incomplete review paths, payout-funding ambiguity, supersession propagation failure, public-summary lag, and exceptional-treasury review closure
+
+## Migration / Compatibility / Supersession Considerations
+
+Migrations into this canonical model MUST enforce the following:
+
+- legacy approvals or ad hoc admin sign-offs that act as hidden treasury-control truth must be retired or normalized
+- historical treasury labels MAY be preserved as lineage, but MUST NOT silently override canonical current interpretation
+- compatibility layers MAY preserve older route shapes or admin screens temporarily, but canonical treasury semantics MUST remain explicit
+- payout-funding treatment and reporting linkage MUST migrate from implicit assumptions to explicit references
+- downstream consumers MUST migrate to canonical treasury truth rather than local shadow approval stores or narrative pages
+
+## Implementation-Contract Guardrails
+
+1. treasury control remains distinct from source-domain truth and downstream execution truth
+2. reserve category, action class, sensitivity tier, and policy version remain explicit
+3. proposal, approval, and execution remain distinct lifecycle concepts
+4. destination and use restrictions remain explicit
+5. Foundation-sensitive flows remain more conservative than ordinary treasury behavior
+6. payout-funding treatment remains explicit
+7. public-safe treasury visibility remains bounded and distinct from internal treasury detail
+8. exceptional treasury handling remains narrow and reviewable
+9. historical treasury meaning and correction/supersession lineage remain preserved
+10. public summaries, APIs, and dashboards remain derived from canonical treasury truth
+11. idempotency, replay safety, and correction lineage remain explicit for trust-sensitive mutations
+12. downstream teams MUST NOT create local treasury-control truth that conflicts with this domain
+
+## Downstream Execution Staging
+
+1. stabilize reserve-category taxonomy, action-class semantics, and sensitivity-tier semantics
+2. stabilize canonical treasury policy, action, destination, and approval-path semantics
+3. stabilize control-reference, execution-reference, and reporting-reference behavior
+4. integrate Foundation, vault, payout, and multisig/timelock linkage rules
+5. integrate public-safe treasury summaries and transparency/reporting linkages
+6. integrate exceptional handling, discrepancy, correction, and remediation tooling
+
+## Required Downstream Specs / Contract Layers
+
+- `TREASURY_CONTROL_POLICY_API_SPEC.md`
+- `VAULT_ACTION_POLICY_SPEC.md`
+- `FOUNDATION_GOVERNANCE_SPEC.md`
+- `MULTISIG_AND_TIMELOCK_SPEC.md`
+- `PROFIT_PARTICIPATION_SYSTEM_SPEC.md`
+- treasury discrepancy/remediation runbooks
+- public-safe treasury reporting contracts
+- payout-linkage contracts where applicable
+
+## Canonical Examples / Anti-Examples
+
+### Canonical Examples
+- Category-Aware Treasury Reserve Deployment
+- Foundation Boundary Reinforcement
+- Payout-Related Funding as Formal Ecosystem Event
+- Transparent Post-Execution Explanation
+
+### Anti-Examples
+- Omnibus Treasury Behavior
+- Category Drift Through “Reasonable Exceptions”
+- Treasury as Generic Liquidity Source
+- Silent Rewrite of Treasury Meaning
+
+## Dependencies / Cross-Spec Links
+
+This specification depends on:
+- `REFINED_SYSTEM_SPEC_INDEX.md`
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
+- `GOVERNANCE_MODEL_SPEC.md`
+- `FOUNDATION_GOVERNANCE_SPEC.md`
+- `VAULT_ACTION_POLICY_SPEC.md`
+- `MULTISIG_AND_TIMELOCK_SPEC.md`
+- `PROFIT_PARTICIPATION_SYSTEM_SPEC.md`
+- `SNAPSHOT_AND_ELIGIBILITY_PIPELINE_SPEC.md`
+- `TRANSPARENCY_MODEL_SPEC.md`
+- `TRANSPARENCY_REPORTING_SPEC.md`
+- `PUBLIC_CONTRACT_AND_WALLET_REGISTRY_SPEC.md`
+- `CHAIN_ARCHITECTURE_SPEC.md`
+- `FUZE_WHITEPAPER_v.2026.3.0.1.pdf`
+
+## Explicitly Deferred Items
 
 - exact allowed-use matrix per reserve category
 - exact quorum thresholds by action class and sensitivity
@@ -604,10 +671,23 @@ The following areas are intentionally refined in downstream specifications:
 - exact reporting disclosure depth for treasury-sensitive actions
 - exact residual-handling rules for failed or partially executed treasury actions
 
-These do not weaken the canonical treasury control policy established here.
+## Final Normative Summary
 
----
+The FUZE treasury control policy defines how treasury-governed capital may be proposed, approved, executed by reference, and reported without eroding the meaning of the reserve architecture. It treats treasury control as a distinct governance domain, uses category-aware action classes and sensitivity tiers, reinforces separation between Treasury, Foundation, incentives, partnerships, liquidity, stability, and treasury-adjacent vesting functions, and requires policy-linked, auditable, and transparent handling of material treasury actions. By making treasury authority explicit and bounded, FUZE strengthens one of the most important trust layers in the ecosystem.
 
-## Closing Summary
+## Quality Gate Checklist
 
-The FUZE treasury control policy defines how treasury-governed capital may be proposed, approved, executed, and reported without eroding the meaning of the reserve architecture. It treats treasury control as a distinct governance domain, uses category-aware action classes and sensitivity tiers, reinforces separation between Treasury, Foundation, incentives, partnerships, liquidity, and stability functions, and requires policy-linked, auditable, and transparent handling of material treasury actions. By making treasury authority explicit and bounded, FUZE strengthens one of the most important trust layers in the entire ecosystem.
+- Canonical owner is explicit for treasury-control truth, action classification truth, and correction/supersession semantics.
+- Mutation boundaries are explicit for internal services, control-plane tools, and derived public surfaces.
+- Adjacent boundaries are explicit for governance model, Foundation, vault, multisig/timelock, payout, transparency, registry, and on-chain/off-chain domains.
+- Truth classes are explicit and separated.
+- Conflict-resolution rules are explicit.
+- Default decision rules are explicit for category ambiguity, destination ambiguity, payout-funding ambiguity, exceptional handling, and Foundation separation.
+- Non-canonical patterns are called out clearly.
+- Operator/admin override paths are bounded, reason-coded, and auditable.
+- Read-model, reporting, and public-summary rules are explicit.
+- Failure and degraded-mode behaviors are explicit.
+- Downstream implementation guardrails are explicit.
+- Dependencies and downstream impacts are explicit.
+- Non-goals and deferred items are explicit.
+- The document is strong enough to support downstream API, backend, control-plane, reporting, and chain-adjacent implementation without contradictory semantic invention.

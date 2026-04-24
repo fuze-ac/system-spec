@@ -1,931 +1,773 @@
-# SECURITY_AND_RISK_CONTROL_SPEC
+# FUZE Security and Risk Control Specification
+
+## Document Metadata
+
+- **Document Name:** `SECURITY_AND_RISK_CONTROL_SPEC.md`
+- **Document Type:** Canonical refined system specification
+- **Status:** Active refined system spec
+- **Version:** 2.0.0
+- **Effective Date:** 2026-04-22
+- **Last Updated:** 2026-04-22
+- **Reviewed On:** 2026-04-22
+- **Document Owner:** FUZE Platform Security and Risk Architecture Domain with shared implementation obligations across identity, session, authorization, audit, API, workflow, AI, integration, data, storage, and operations domains
+- **Approval Authority:** FUZE Platform Architecture and Governance Authority
+- **Review Cadence:** Quarterly or upon material change to identity and session posture, authorization and privileged-access posture, API exposure, event and webhook posture, workflow and worker runtime behavior, AI execution posture, data-classification rules, monitoring and incident response, secrets posture, or public-trust obligations
+- **Governing Layer:** Platform core / shared security, abuse, containment, and risk-control governance
+- **Parent Registry:** `REFINED_SYSTEM_SPEC_INDEX.md`
+- **Primary Audience:** Platform architecture, backend engineering, product engineering, security engineering, trust and safety, fraud/risk operations, support and control-plane operations, API and contract authors, AI platform engineering, workflow/runtime engineering, data engineering, observability engineering, reliability engineering, finance-risk stakeholders, implementation-contract authors
+- **Primary Purpose:** Define the canonical FUZE security and risk-control layer that governs cross-domain protection, detection, risk evaluation, abuse containment, step-up and restriction posture, operator security intervention, and downstream implementation guardrails without collapsing identity truth, session truth, authorization truth, workflow truth, event truth, audit truth, or monitoring truth into one ambiguous control surface
+- **Primary Upstream References:**
+  - `REFINED_SYSTEM_SPEC_INDEX.md`
+  - `DOCS_SPEC_INDEX.md`
+  - `SYSTEM_SPEC_INDEX.md`
+  - `API_SPEC_INDEX.md`
+  - `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+  - `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+  - `PLATFORM_ARCHITECTURE_SPEC.md`
+  - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+  - `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+  - `PRODUCT_BOUNDARY_AND_DOMAIN_OWNERSHIP_SPEC.md`
+  - `PRODUCT_ADMISSION_AND_EXPANSION_GATE_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_THESIS_FINAL_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
+  - `FUZE_WORKSPACE_ACCESS_CONTROL_BASICS_THESIS_FINAL_SPEC.md`
+  - `IDENTITY_AND_ACCOUNT_SPEC.md`
+  - `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_CONTINUITY_SPEC.md`
+  - `FUZE_PROVIDER_RESOLUTION_AND_LINKING_SPEC.md`
+  - `FUZE_SESSION_LIFECYCLE_AND_SECURITY_SPEC.md`
+  - `FUZE_ACCOUNT_RECOVERY_AND_CONFLICT_HANDLING_SPEC.md`
+  - `KEY_MANAGEMENT_AND_USER_RECOVERY_SPEC.md`
+  - `WORKSPACE_AND_ORGANIZATION_SPEC.md`
+  - `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
+  - `WORKSPACE_MEMBERSHIP_LIFECYCLE_SPEC.md`
+  - `SCOPED_AUTHORIZATION_MODEL_SPEC.md`
+  - `ACCESS_EVALUATION_AND_EFFECTIVE_PERMISSION_SPEC.md`
+  - `ADMIN_ACCESS_CORRECTION_AND_CONTAINMENT_SPEC.md`
+  - `API_ARCHITECTURE_SPEC.md`
+  - `PUBLIC_API_SPEC.md`
+  - `INTERNAL_SERVICE_API_SPEC.md`
+  - `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+  - `IDEMPOTENCY_AND_VERSIONING_SPEC.md`
+  - `MIGRATION_AND_BACKWARD_COMPATIBILITY_SPEC.md`
+  - `WORKFLOW_AND_AUTOMATION_SPEC.md`
+  - `JOB_QUEUE_AND_WORKER_SPEC.md`
+  - `AI_ORCHESTRATION_SPEC.md`
+  - `MODEL_ROUTING_AND_CONTEXT_SPEC.md`
+  - `AI_USAGE_METERING_SPEC.md`
+  - `FEATURE_FLAG_AND_ROLLOUT_CONTROL_SPEC.md`
+  - `INTEGRATION_CONNECTOR_FRAMEWORK_SPEC.md`
+  - `DATA_CLASSIFICATION_AND_HANDLING_SPEC.md`
+  - `DATA_RETENTION_DELETION_AND_ARCHIVAL_SPEC.md`
+  - `FILE_OBJECT_AND_ARTIFACT_STORAGE_SPEC.md`
+  - `SEARCH_INDEXING_AND_DISCOVERY_SPEC.md`
+  - `AUDIT_LOG_AND_ACTIVITY_SPEC.md`
+  - `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md`
+  - `SECRETS_CONFIG_AND_ENVIRONMENT_SPEC.md`
+  - `MONITORING_ALERTING_AND_INCIDENT_RESPONSE_SPEC.md`
+- **Primary Downstream Dependents:**
+  - domain API specifications and admin/control API contracts
+  - abuse, fraud, and risk-policy implementation layers
+  - session-security and recovery implementation contracts
+  - authorization, restriction, and containment implementation contracts
+  - AI safety/runtime policy implementation layers
+  - connector security and callback-authenticity contracts
+  - audit/evidence, monitoring, and incident-response runbooks
+  - product integration specifications and launch-readiness controls
+  - public and internal review, export, and disclosure tooling
+- **Supersedes:** Earlier or weaker interpretations that treat security as scattered per-product heuristics, let session validity outrank risk posture, let product-local throttles or feature flags substitute for canonical containment, treat audit, monitoring, or support notes as security truth, or allow operator convenience to bypass policy-bound review and evidence requirements
+- **Superseded By:** None currently defined
+- **Related Decision Records:** Not explicitly linked in the retrieved governing materials
+- **Canonical Status Note:** This document is the canonical governing FUZE specification for shared security and risk-control posture. Downstream APIs, products, services, workflows, AI systems, integrations, admin tooling, support tooling, monitoring pipelines, and operational playbooks MUST preserve the ownership, truth-separation, containment, and intervention rules defined here.
+- **Implementation Status:** Normative source; downstream schemas, APIs, event handlers, workflows, policy engines, decision services, dashboards, support tools, and incident procedures MUST align
+- **Approval Status:** Draft refined canonical specification pending explicit approval workflow attachment
+- **Change Summary:**
+  - elevates security and risk control into a distinct platform-owned cross-cutting domain rather than a generic policy appendix
+  - clarifies the distinction among policy truth, risk-decision truth, session truth, authorization truth, audit truth, and monitoring truth
+  - hardens step-up, restriction, review, and containment posture across identity, session, authorization, integrations, AI, workflows, and public surfaces
+  - adds explicit default decision rules, conflict resolution, operator-control boundaries, and non-canonical patterns
+  - expands implementation-contract guardrails for idempotency, replay safety, reason-coded intervention, degraded-mode behavior, and downstream anti-drift constraints
+
+## Title
+
+FUZE Security and Risk Control Specification
 
 ## Purpose
 
-This document defines the canonical security and risk control architecture of the FUZE ecosystem. Its purpose is to establish how FUZE protects platform identity, economic integrity, product operations, governance-sensitive systems, treasury-sensitive systems, transparency-critical surfaces, and payout-sensitive workflows through layered technical, procedural, and architectural controls.
+This specification defines the canonical FUZE security and risk-control layer.
 
-This specification is foundational because FUZE is not a simple SaaS application with ordinary web risk only. It is a multi-product, transparency-first platform ecosystem with shared identity, shared Platform Credits, payment rails, AI orchestration, workflow automation, wallet-aware participation, public contract architecture, reserve and vault controls, governance-sensitive actions, and stablecoin profit participation. In such an environment, security cannot be treated as a perimeter feature or a post-launch audit task. It must be embedded into platform boundaries, entity ownership, API design, contract control, payout lifecycle design, and operational response posture from the beginning.
+Its purpose is to make explicit:
 
----
+- what the security and risk-control domain governs and what it does not govern
+- how FUZE evaluates and applies protection, abuse prevention, review, step-up, restriction, and containment across platform surfaces
+- how security/risk decisions interact with identity, session, authorization, entitlement, workflow, AI, integrations, storage, and public surfaces without replacing their ownership
+- how FUZE handles uncertainty, compromise suspicion, abuse suspicion, policy-sensitive action classes, and privileged interventions
+- what downstream APIs, internal services, products, workers, connectors, AI systems, and operator tools MUST preserve
+- which controls are canonical, which are derived, and which are operational implementations of shared canonical rules
+
+This document is governing rather than descriptive. It does not merely recommend “best practices.” It defines the durable FUZE platform posture for security-sensitive decisioning and protective intervention.
 
 ## Scope
 
-This specification covers:
+This specification governs:
 
-- the canonical security philosophy of the FUZE ecosystem
-- the relationship between security, risk control, ownership boundaries, and trust-sensitive architecture
-- security controls across identity, auth, wallet-aware participation, credits, billing, AI, workflow, product integration, governance, treasury, and payout domains
-- security treatment for public APIs, internal service APIs, events, webhooks, reporting surfaces, registries, and contract-linked systems
-- prevention, detection, containment, recovery, and auditability expectations
-- security roles, control layers, and risk categories
-- how FUZE manages product execution risk, token and market risk, governance risk, treasury misuse risk, transparency failure risk, and technical/chain risk at the system-design level
-- security implications of chain-role separation between Ethereum and Base
-- degraded-mode and incident-oriented control posture
+- cross-domain security and risk-policy posture for FUZE platform surfaces
+- step-up, challenge, review, restriction, throttling, containment, kill-switch, and override semantics where those controls are security-significant
+- risk decision classes that may alter account, session, workspace, authorization, workflow, connector, AI, API, or artifact behavior
+- abuse and fraud prevention posture where platform-protective action is required
+- the distinction between canonical owner-domain truth and security/risk intervention truth
+- operator/admin security actions and their evidence, approval, and audit requirements
+- control interaction with public APIs, internal APIs, events, webhooks, workflows, workers, connectors, AI routing/execution, storage, search, and exports
+- degraded-mode security posture and default fail-safe behavior
+- architecture-level implementation guardrails for downstream security-sensitive systems
 
-This specification does not define every narrow operational runbook, every cloud control, every smart contract audit requirement, or every fraud rule implementation detail. Those are refined in:
+## Out of Scope
 
-- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
-- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
-- `IDENTITY_AND_ACCOUNT_SPEC.md`
-- `AUTH_SESSION_AND_LINKED_LOGIN_SPEC.md`
-- `WALLET_AWARE_USER_SPEC.md`
-- `PLATFORM_CREDITS_SPEC.md`
-- `PAYMENT_FRAUD_AND_ABUSE_PREVENTION_SPEC.md`
-- `TREASURY_CONTROL_POLICY_SPEC.md`
-- `VAULT_ACTION_POLICY_SPEC.md`
-- `MULTISIG_AND_TIMELOCK_SPEC.md`
-- `PROFIT_PARTICIPATION_SYSTEM_SPEC.md`
-- `MONITORING_ALERTING_AND_INCIDENT_RESPONSE_SPEC.md`
-- `BUSINESS_CONTINUITY_AND_RECOVERY_SPEC.md`
-- `SECRETS_CONFIG_AND_ENVIRONMENT_SPEC.md`
+This specification does not define in full depth:
 
----
+- canonical identity truth or account lifecycle semantics
+- detailed session lifecycle semantics beyond the security precedence imposed on them
+- detailed role and permission semantics beyond security overrides and containment posture
+- exact secrets infrastructure, cloud perimeter, network segmentation, or vendor products
+- exact SIEM schema, alert thresholds, dashboard layout, or staffing roster
+- exact legal/compliance obligations by jurisdiction
+- exact cryptographic primitive selection where narrower specifications govern it
+- exact per-product abuse heuristics or ML scoring formulas
+
+Those concerns belong in adjacent or downstream specifications and must remain compatible with this document.
 
 ## Design Goals
 
-The design goals of the FUZE security and risk control architecture are:
-
-1. to protect the platform without weakening the clarity and reusability of the platform model
-2. to preserve strict ownership boundaries so that security and correctness reinforce one another
-3. to reduce the probability and blast radius of failures in identity, commerce, credits, governance, treasury, and payout-sensitive domains
-4. to make risk reduction architectural rather than purely reactive
-5. to keep public trust surfaces legible, auditable, and harder to misuse
-6. to support secure multi-product expansion without recreating security design from zero for every product
-7. to ensure security controls remain compatible with transparency-first positioning
-8. to make detection, containment, correction, and recovery explicit parts of the system design
-
----
+1. preserve a platform-first security posture across all FUZE products and shared services
+2. keep security/risk intervention clearly separated from identity, session, authorization, entitlement, workflow, event, and audit ownership
+3. support consistent protective action across synchronous, asynchronous, human, and machine-driven flows
+4. ensure high-risk or ambiguous situations default toward safe containment rather than silent continuation
+5. support attributable, reason-coded, reviewable security intervention
+6. prevent product-local shortcuts from becoming shadow security truth
+7. make security controls implementation-usable across APIs, events, workflows, AI, connectors, and operator tooling
+8. preserve evidence quality for investigations, remediation, and public-trust obligations
+9. support future products and providers without weakening the shared control model
+10. reduce architectural drift, naming drift, and unsafe exception patterns
 
 ## Non-Goals
 
 This specification is not intended to:
 
-- claim that FUZE can eliminate all risk
-- reduce security to smart contract review alone
-- reduce risk control to internal policy language without implementation consequences
-- expose sensitive operational security details publicly
-- make every domain equally restrictive regardless of trust sensitivity
-- treat growth, execution, treasury, governance, and chain risks as separate from security architecture
-- substitute narrative trust for structured controls
+- make the security/risk layer the semantic owner of business entities or account identity
+- turn every operational anomaly into a canonical restriction event
+- let feature flags, throttles, dashboards, or ad hoc scripts become the sole source of security posture
+- allow support or admin convenience to bypass policy, approvals, or evidence requirements
+- collapse fraud prevention, abuse controls, challenge posture, and incident response into one undifferentiated workflow
+- expose protected internal security reasoning broadly to end users or partners
+- replace narrower secrets, monitoring, audit, session, or authorization specifications
 
----
+## Core Principles
 
-## Canonical Security Principle
+### 1. Security-Is-Intervention-Not-Ownership Principle
+Security and risk controls may constrain, review, suppress, or contain actions, but they do not become the owner of the underlying business or identity truth.
 
-The primary principle of FUZE security and risk control is:
+### 2. Stronger-Truth-Precedence Principle
+When security or risk posture materially changes, stale client state, stale sessions, product-local caches, rollout assumptions, or convenience read models MUST yield to the stronger current platform security posture.
 
-> FUZE must protect the correctness, continuity, and trustworthiness of its platform by combining ownership-aligned boundaries, least-privilege control, explicit policy, auditable workflows, and layered technical safeguards across all domains that create security, economic, governance, or public trust exposure.
+### 3. Conservative-Decision Principle
+When evidence is materially ambiguous for a high-impact action, FUZE MUST prefer deny, contain, review, or require stronger proof rather than silent continuation.
 
-This means:
+### 4. Bounded-Intervention Principle
+All privileged security interventions MUST be attributable, reason-coded, policy-constrained, and auditable.
 
-- domains should be protected partly by strong boundaries, not only by runtime filtering
-- public-facing openness must not weaken internal control-plane safety
-- economic and governance-sensitive actions require more explicit controls than routine product operations
-- security controls should preserve the distinction between token, credits, treasury, payouts, and product state
-- risk management in FUZE is not only about attackers; it is also about operator error, overreach, architectural drift, and public trust failure
+### 5. Shared-Control Principle
+Security controls that materially affect access, money, public exposure, connectors, AI execution, artifact release, or privileged operations MUST be shared-platform controls, not product-local exceptions.
 
-This principle is central because FUZE is building not only software products, but an ecosystem whose credibility depends on visible structural discipline.
+### 6. Derived-Views-Do-Not-Decide Principle
+Dashboards, alerts, reports, caches, and support notes MAY inform operators but MUST NOT become canonical security decision truth.
 
----
+### 7. Containment-Over-Convenience Principle
+When runtime trust is no longer acceptable, containment outranks convenience, continuity, or presentation smoothness.
 
-## Security as Architecture, Not Add-On
+### 8. Audience-Minimization Principle
+FUZE SHOULD disclose only the minimum security explanation appropriate for the audience while retaining internal reconstructability.
 
-FUZE treats security as architecture rather than as an isolated compliance or infrastructure function.
+### 9. Replay-and-Retry Safety Principle
+Security-relevant decisions, restrictions, and containment actions MUST remain idempotent, replay-safe, and lineaged across retries, redeliveries, and async execution.
 
-This is necessary because many serious failures do not happen because encryption was absent or because one request was improperly validated. They happen because:
+### 10. Product-Expansion-Safety Principle
+Products may integrate with the shared control domain, but they MUST NOT weaken it to accelerate launch or workaround shared-platform maturity gaps.
 
-- too many systems can mutate the same truth
-- treasury-like actions are not sufficiently separated from routine operations
-- retry behavior duplicates economic mutation
-- governance actions are too loosely defined
-- payout preparation is not bounded by clear cycle state
-- transparency surfaces drift away from canonical system truth
-- control roles are ambiguous
-- or one product is allowed to bypass platform rules for convenience
+## Canonical Definitions
 
-FUZE addresses this by embedding security into:
+### Security Control
+A platform-approved rule or mechanism that enforces protection, prevention, restriction, review, containment, or safe handling.
 
-- domain ownership
-- canonical write paths
-- credits mutation discipline
-- multisig and timelock governance
-- payout-cycle state transitions
-- public/private API separation
-- internal service authorization
-- event and webhook contracts
-- registry publication discipline
-- auditability and correction lineage
+### Risk Decision
+A canonical decision class indicating whether requested behavior is allowed, challenged, narrowed, delayed for review, restricted, or contained under current evidence and policy.
 
-The result is that security in FUZE is not only about blocking bad requests. It is also about making the system harder to misunderstand, harder to misuse, and harder to mutate incorrectly.
+### Step-Up
+A stronger proof or verification requirement applied before allowing a sensitive action or restoring trust.
 
----
-
-## Risk Taxonomy in FUZE
-
-FUZE should recognize that security and risk control cover more than classic cyber attack surfaces. At minimum, the platform must manage the following major risk categories:
-
-### 1. Product Execution Risk
-Risk that products are shipped too early, too broadly, too inconsistently, or without sufficient shared-platform maturity.
-
-### 2. Token and Market Risk
-Risk that token interpretation, liquidity conditions, or ecosystem narratives detach from platform reality or create trust fragility.
-
-### 3. Governance Risk
-Risk that authority is too concentrated, too vague, too flexible, or too weakly bounded.
-
-### 4. Treasury Misuse Risk
-Risk that reserves, allocations, or vaults are used ambiguously, inappropriately, or opaquely.
-
-### 5. Transparency Failure Risk
-Risk that public transparency claims become structurally weaker than the actual reporting and visibility environment.
-
-### 6. Technical and Chain Risk
-Risk arising from smart contracts, chain dependencies, wallet linkage, payout execution, credits accounting, and off-chain / on-chain coordination.
-
-### Taxonomy principle
-
-These risks should not be treated as separate from security architecture. In FUZE, they are different expressions of how system design can fail or remain trustworthy.
-
----
-
-## Security Domains in FUZE
-
-FUZE should organize security responsibilities by major domain.
-
-### Identity and Access Security
-Protects accounts, sessions, linked login methods, role assignments, admin access, and account recovery.
-
-### Workspace and Scope Security
-Protects organization boundaries, membership logic, billing-owner context, workspace entitlements, and collaborative access.
-
-### Wallet-Aware Participation Security
-Protects wallet linking, wallet verification, holder-context interpretation, and wallet-account relationship integrity.
-
-### Payment and Credits Security
-Protects payment verification, credits issuance, credits spend, reversals, refunds, ledger correctness, and economic mutation boundaries.
-
-### Product and Workflow Security
-Protects AI-powered and async product flows from duplication, misuse, privilege bypass, and unsafe execution patterns.
-
-### Governance and Treasury Security
-Protects reserve movement, vault actions, signer authority, timelock paths, and control-plane actions.
-
-### Payout and Profit Participation Security
-Protects eligibility preparation, cycle creation, funding, claim integrity, payout ledger publication, and holder-facing trust.
-
-### Transparency and Registry Security
-Protects the correctness, consistency, and publication integrity of transparency-facing artifacts.
-
-### Domain principle
-
-Each domain requires tailored controls, but all domains should still align to one shared security philosophy.
-
----
-
-## Identity and Account Security Controls
-
-Identity is the base trust layer of the FUZE platform and therefore requires strong protection.
-
-At minimum, the platform should protect:
-
-- account creation and recovery
-- linked login attachment and detachment
-- session lifecycle and revocation
-- role escalation and admin access
-- account suspension and restoration flows
-- support-assisted access repair
-
-### Control expectations
-
-- identity ownership should remain centralized in the identity domain
-- authentication and authorization should remain separate concerns
-- security-sensitive account changes should generate strong audit lineage
-- session invalidation should be possible for compromise response
-- support intervention should operate through explicit controlled flows rather than direct undocumented mutation
-
-### Risk implications
-
-Weak identity controls can lead to:
-- unauthorized product access
-- credits misuse
-- workspace takeover
-- wallet-link hijacking
-- payout claim confusion
-- or false transparency signals caused by account-level compromise
-
-Identity security is therefore one of the most important upstream controls in the whole platform.
-
----
-
-## Workspace and Scope Security Controls
-
-FUZE is workspace-aware, so security must preserve scope as well as identity.
-
-At minimum, the platform should protect:
-
-- workspace creation and ownership
-- member invitation and removal
-- role changes within workspace scope
-- workspace billing ownership transitions
-- workspace-scoped credits and entitlements
-- cross-product actions executed under workspace context
-
-### Control expectations
-
-- scope must be explicit, not loosely inferred
-- user-level and workspace-level capabilities must remain distinguishable
-- membership and role truth should only mutate through the owning domain
-- admin and support corrections should preserve scope-aware lineage
-- workspace-bound economic state should not be casually accessible from personal scope without explicit authorization
-
-### Risk implications
-
-Weak workspace controls can create:
-- commercial leakage
-- accidental cross-tenant data access
-- misapplied credits spending
-- broken team access boundaries
-- support ambiguity
-- and enterprise trust failure
-
-Because FUZE is intended for both individual and collaborative operating contexts, scope security is foundational.
-
----
-
-## Wallet-Aware User Security Controls
-
-The wallet-aware layer connects platform identity to ecosystem participation, which makes it sensitive both operationally and economically.
-
-At minimum, the platform should protect:
-
-- wallet link creation
-- verification of wallet ownership
-- wallet unlink rules
-- multi-wallet relationships
-- holder-rank recalculation triggers
-- wallet-linked participation views
-- payout eligibility context derivation where linked to user-facing surfaces
-
-### Control expectations
-
-- a wallet link is not merely a UI convenience; it is a trust-bearing relationship
-- wallet verification should be explicit and replay-resistant
-- wallet-aware context should remain platform-owned rather than locally redefined by products
-- products should consume holder context; they should not invent competing wallet participation truth
-- corrections to wallet relationships should remain auditable
-
-### Risk implications
-
-Weak wallet-aware controls can create:
-- false holder status
-- incorrect cross-product privileges
-- payout confusion
-- spoofed participation claims
-- and support disputes around token-linked benefits
-
-This domain is one of the main bridges between SaaS-style identity and Web3-style participation, which makes careful control especially important.
-
----
-
-## Payment, Credits, and Billing Security Controls
-
-The payment, credits, and billing layer is one of the highest-risk operational domains in FUZE.
-
-At minimum, the platform must protect:
-
-- payment verification correctness
-- provider callback integrity
-- credits issuance and non-duplication
-- credits spending correctness
-- reversal and refund safety
-- subscription state correctness
-- entitlement mutation correctness
-- support-issued commercial adjustments
-- channel-specific refund and chargeback treatment
-
-### Core security principles for this domain
-
-#### Canonical mutation ownership
-Credits, billing, and subscription truth must only mutate through their owning domains.
-
-#### Idempotent economic mutation
-Retries must not create duplicate credits, duplicate renewals, duplicate refunds, or duplicate compensation.
-
-#### Reason-coded correction
-Manual fixes must preserve why the correction occurred and through what authorized path.
-
-#### Ledger-first accountability
-Economic changes should be traceable through ledger or domain records, not inferred later from UI state.
-
-#### Separation from product-local accounting
-Products may request commercial actions, but they must not maintain competing internal balance truth.
-
-### Risk implications
-
-Failures in this domain can directly cause:
-- user loss
-- fraud exposure
-- reconciliation breakdown
-- revenue misstatement
-- false payout assumptions
-- and ecosystem-wide trust damage
-
-For FUZE, economic security is inseparable from platform integrity.
-
----
-
-## AI and Workflow Security Controls
-
-AI-powered and workflow-driven systems expand platform capability, but they also increase operational risk if they are not bounded carefully.
-
-At minimum, FUZE should protect:
-
-- AI task initiation
-- context injection and task scoping
-- usage metering
-- result publication
-- workflow step progression
-- retry and replay handling
-- approval gates
-- action delegation across services
-- output release to user-facing systems
-
-### Control expectations
-
-- AI orchestration should remain a shared controlled service, not an uncontrolled product-side free-for-all
-- workflow engines may coordinate, but they should not take ownership of business truth they do not own
-- long-running or AI-heavy actions should use explicit accepted-state and job state models
-- automation should be policy-aware where product or commercial consequences exist
-- unsafe automatic retries should not duplicate business meaning
-
-### Risk implications
-
-Weak AI/workflow controls can cause:
-- duplicate billable actions
-- unauthorized action amplification
-- incorrect output release
-- product-state corruption
-- accidental privilege escalation through automation
-- and operational opacity when failures occur
-
-Because FUZE products depend heavily on AI and workflow logic, security in this area must be treated as core infrastructure protection.
-
----
-
-## Public API and Integration Security Controls
-
-FUZE exposes or may expose public-facing interfaces, so public API security must be stricter than internal convenience patterns.
-
-At minimum, the platform should protect:
-
-- public endpoint authentication and authorization
-- user and workspace scoping
-- idempotent public writes where needed
-- rate limiting and abuse resistance
-- partner credential separation
-- public transparency and payout read surfaces
-- webhook registration and destination safety
-- public error behavior that does not leak unsafe internal detail
-
-### Control expectations
-
-- public APIs should expose business actions, not raw internal mutation primitives
-- sensitive domains such as governance, treasury, payout entitlement authoring, or generic credits mutation must remain non-public
-- public integrations should be versioned and contract-disciplined
-- API consumers should not gain more control than the public surface intentionally grants
-- public-facing async jobs should remain bounded and observable
-
-### Risk implications
-
-Weak public API security can create:
-- automated abuse
-- credits drain attempts
-- public misinformation via unstable surfaces
-- partner integration errors with commercial side effects
-- and accidental exposure of internal control-plane behaviors
-
-This matters especially because FUZE wants to be open where appropriate without becoming loosely exposed.
-
----
-
-## Internal Service Security Controls
-
-FUZE also needs strong internal security because many failures originate inside trusted infrastructure rather than at the public edge.
-
-At minimum, internal security should protect:
-
-- service identity
-- least-privilege service authorization
-- internal mutation routes
-- control-plane APIs
-- event consumers and worker permissions
-- registry and report publication paths
-- support/admin tooling boundaries
-- governance- and payout-sensitive service calls
-
-### Control expectations
-
-- being inside the platform boundary does not imply broad authority
-- internal services should not write directly into another domain’s truth unless explicitly permitted through the owning domain
-- control-plane services should remain especially restricted
-- high-trust domains require narrower and more auditable internal paths
-- degraded dependencies should not cause one service to assume another service’s ownership role
-
-### Risk implications
-
-Weak internal security can produce:
-- accidental cross-domain mutation
-- shadow admin behavior
-- duplicate economic mutation
-- hidden governance-path weaknesses
-- and security incidents with no clear accountability chain
-
-FUZE therefore treats internal interfaces as real trust boundaries, not merely engineering convenience.
-
----
-
-## Governance and Control-Plane Security
-
-Governance-sensitive actions require some of the strongest controls in the entire platform.
-
-At minimum, FUZE should protect:
-
-- governance action creation
-- policy version changes
-- signer rotation
-- control-role reassignment
-- timelock configuration changes
-- emergency pause usage
-- governance-sensitive publication steps
-- role-specific contract control paths
-
-### Control expectations
-
-- major control actions should use multisig where appropriate
-- important structural actions should use timelock where appropriate
-- governance actions should be domain-explicit rather than generic mutation commands
-- emergency powers should be narrow, reviewable, and non-normalized
-- governance audit lineage should remain strong enough for long-term institutional memory
-
-### Risk implications
-
-Weak governance security can cause:
-- concentrated practical control
-- ambiguous authority
-- invisible policy drift
-- emergency-path abuse
-- and long-term collapse of public trust in reserve, payout, or Foundation structures
-
-FUZE addresses this by treating governance as structured authority rather than symbolic narrative.
-
----
-
-## Treasury, Reserve, and Vault Security
-
-Treasury misuse risk is one of the most important trust-sensitive risks in FUZE, so reserve and vault controls must be explicit.
-
-At minimum, FUZE should protect:
-
-- reserve category separation
-- Foundation vs Treasury distinction
-- vesting vault integrity
-- holder incentives allocation boundaries
-- ecosystem partnership deployment boundaries
-- liquidity operations constraints
-- transparency/stability reserve meaning
-- destination restrictions
-- vault-action approval paths
-
-### Core architectural safeguards
-
-- dedicated contract-by-contract reserve structure
-- category-specific vault roles
-- policy-defined action classes
-- multisig and timelock protection where appropriate
-- public registry and transparency linkage
-- prohibition against using omnibus reserves as hidden flexible capital
-
-### Risk implications
-
-Weak reserve security can cause:
-- overt misuse
-- structural ambiguity
-- reserve category drift
-- loss of confidence in long-term stewardship
-- and distortion of how the market interprets platform integrity
-
-Reserve clarity is therefore both a security control and a trust control.
-
----
-
-## Profit Participation and Payout Security
-
-The profit participation system is one of the most scrutinized parts of the FUZE ecosystem, which makes payout security especially important.
-
-At minimum, the platform should protect:
-
-- snapshot reference selection
-- eligibility dataset preparation
-- exclusion-policy application
-- entitlement construction
-- cycle publication
-- stablecoin funding of the payout contract
-- claim-window state
-- payout ledger publication
-- cycle correction handling
-- holder-facing claim-status visibility
-
-### Control expectations
-
-- eligibility must derive from canonical Ethereum holder truth plus explicit policy treatment
-- payout funding must follow treasury/accounting finalization, not symbolic or casual distribution
-- payout cycles should use explicit state transitions
-- payout publication and correction should preserve lineage
-- public payout surfaces should be transparent without exposing unsafe internal detail
-
-### Risk implications
-
-Failures here can cause:
-- incorrect holder expectations
-- claim disputes
-- false entitlement assumptions
-- payout-cycle duplication or ambiguity
-- and major credibility damage even if product software remains healthy
-
-Because profit participation is central to the holder trust model, payout security must be designed as a formal lifecycle control problem.
-
----
-
-## Transparency and Reporting Security
-
-FUZE’s public trust model depends on transparency, which means transparency surfaces themselves require protection.
-
-At minimum, FUZE should protect:
-
-- registry entry correctness
-- transparency report consistency
-- payout ledger publication integrity
-- governance reporting integrity
-- report correction lineage
-- distinction between public artifact and canonical operational truth
-
-### Control expectations
-
-- transparency artifacts should be grounded in internal truth systems
-- publication should not rely on informal manual copying of critical facts
-- corrections should remain visible
-- public artifacts should not silently redefine reserve, payout, or governance truth
-- reporting delay should not mutate canonical state; it should only delay visibility
-
-### Risk implications
-
-Transparency failure can occur not only through secrecy, but through:
-- stale reporting
-- structural mislabeling
-- incomplete public mapping
-- silent correction
-- or divergence between public explanation and real architecture
-
-Because FUZE is transparency-first, reporting and registry integrity are part of the security model.
-
----
-
-## Product Execution Risk and Safeguards
-
-Product execution risk in FUZE is a security and platform integrity concern because weak product sequencing can overextend the system and weaken trust.
-
-### Key forms of risk
-
-- products launched before platform foundations are mature
-- too many product categories pursued simultaneously
-- inconsistent product quality due to weak shared layers
-- roadmap ambition exceeding execution capacity
-
-### Core safeguards
-
-- staged rollout logic
-- early focus on commercially strong wedge products such as QTB and AIMM
-- shared infrastructure reuse
-- platform-first prioritization over breadth-first product sprawl
-- explicit rollout dependency logic
-- control of product expansion through platform readiness
-
-### Principle
-
-Execution discipline is a risk control. FUZE becomes safer and more credible when product rollout follows architectural readiness rather than narrative ambition.
-
----
-
-## Token and Market Risk Controls
-
-Token and market risk are not fully controllable, but FUZE can reduce structural fragility.
-
-### Key forms of risk
-
-- token narrative overtaking platform reality
-- market confusion between token, credits, and payouts
-- unstable expectations around product usage and profit participation
-- liquidity conditions influencing perception of platform quality
-- overextended utility claims weakening credibility
-
-### Core safeguards
-
-- strict separation between FUZE token, Platform Credits, and stablecoin payouts
-- public chain-role clarity
-- bounded token role as ecosystem participation asset
-- reserve architecture clarity
-- transparency and reporting discipline
-- avoidance of utility inflation and undefined token promises
-
-### Principle
-
-FUZE cannot remove market volatility, but it can reduce market confusion through structural clarity. That clarity is itself a risk control.
-
----
-
-## Governance Risk Controls
-
-Governance risk emerges when power is too concentrated, too vague, or too weakly bounded.
-
-### Key forms of risk
-
-- overbroad operational discretion
-- insufficiently separated control roles
-- symbolic token-governance narratives without architectural safety
-- difficulty maintaining control quality as the ecosystem expands
-
-### Core safeguards
-
-- multisig-based sensitive control
-- timelock for important structural changes
-- governance domain separation
-- policy-defined action categories
-- DAO-lite future direction rather than premature raw token governance
-- explicit distinction between routine admin and governance-sensitive action
-
-### Principle
-
-Governance security is strongest when authority is bounded, interpretable, and harder to misuse casually.
-
----
-
-## Treasury Misuse Risk Controls
-
-Treasury misuse risk includes both direct misuse and structural ambiguity.
-
-### Key forms of risk
-
-- generalized omnibus reserve logic
-- poor category separation
-- unclear operational versus stewardship capital
-- reserve action paths that are hard to interpret externally
-
-### Core safeguards
-
-- dedicated reserve and vault separation
-- Foundation-specific treatment
-- category-aware action rules
-- contract-specific architecture
-- public registry and reporting surfaces
-- control-plane discipline for reserve deployment
-
-### Principle
-
-Reserve clarity is a protective control. The easier it is to understand the purpose of a reserve, the harder it is to misuse its meaning silently.
-
----
-
-## Transparency Failure Risk Controls
-
-A transparency-first platform can still fail if its public explanation layer lags behind its real structure.
-
-### Key forms of risk
-
-- visibility without interpretation
-- stale registry data
-- incomplete payout reporting
-- missing correction lineage
-- architecture/reporting drift
-- overexposure of low-value data that obscures trust-critical signals
-
-### Core safeguards
-
-- transparency-through-architecture
-- transparency-through-reporting
-- payout ledger structure
-- public contract and wallet registry
-- audit-backed reporting generation
-- explicit distinction between public report artifact and canonical operational truth
-
-### Principle
-
-Transparency should be maintained like infrastructure, not like occasional marketing content.
-
----
-
-## Technical and Chain Risk Controls
-
-FUZE’s layered chain model provides strength, but it also introduces coordination and implementation risk.
-
-### Key forms of risk
-
-- smart contract defects
-- reserve/vault control errors
-- payout preparation mistakes
-- credits accounting issues
-- wallet-link inconsistencies
-- degraded off-chain services that support on-chain logic
-- chain-environment changes affecting operational assumptions
-- weak linkage between Ethereum holder truth and Base execution logic
-
-### Core safeguards
-
-- explicit chain-role separation
-- contract-by-contract architecture
-- bounded upgradeability philosophy by role
-- governance and timelock protections
-- ledger and reporting reconciliation
-- on-chain/off-chain responsibility clarity
-- payout-cycle discipline grounded in snapshots and policy
-- operational monitoring and incident response readiness
-
-### Principle
-
-Complexity cannot be eliminated, but it can be segmented. FUZE reduces technical and chain risk by separating concerns rather than forcing all logic into one undifferentiated environment.
-
----
-
-## Layered Safeguard Model
-
-FUZE does not rely on one single safeguard. It uses a layered control model across the whole platform.
-
-### Platform and product sequencing
-Controls overextension and improves execution quality.
-
-### Shared infrastructure
-Reduces fragmentation and inconsistent product security posture.
-
-### Economic role separation
-Protects clarity between token, credits, and payouts.
-
-### Reserve and vault separation
-Protects treasury meaning and control quality.
-
-### Multisig and timelock governance
-Reduces concentration risk and increases observability of high-impact actions.
-
-### Policy-defined action categories
-Constrain discretion and preserve category meaning.
-
-### Transparency and reporting surfaces
-Support external trust and internal discipline.
-
-### Layered chain design
-Aligns technical environment with economic purpose.
-
-### Upgradeability discipline
-Allows constrained evolution without casual rewriting of trust-sensitive logic.
-
-### Auditability and correction lineage
-Preserve institutional memory and trust after mistakes, retries, or repairs.
-
-This layered model is what turns FUZE from a set of features into a controlled platform architecture.
-
----
-
-## Prevention, Detection, Containment, and Recovery
-
-Security and risk control in FUZE should be organized across four operating stages.
-
-### Prevention
-Use ownership boundaries, least privilege, policy constraints, contract separation, idempotency, and explicit interface design to reduce failure probability.
-
-### Detection
-Use audit events, monitoring, alerting, ledger checks, workflow status, and reporting integrity checks to identify issues quickly.
+### Restriction
+A bounded suppression of otherwise ordinary behavior due to security, abuse, risk, or policy posture.
 
 ### Containment
-Use session revocation, pause controls, route restrictions, emergency governance paths, and operational isolation to stop risk from spreading.
+A stronger control action that prevents unsafe continuation of runtime trust, access, execution, delivery, exposure, or propagation.
 
-### Recovery
-Use correction lineage, reversal/adjustment flows, replay-safe workflows, incident handling, and continuity procedures to restore integrity without erasing history.
+### Review Posture
+A state in which automation is intentionally insufficient and explicit human or higher-control review is required.
 
-### Principle
+### Security Incident Signal
+A trusted internal or external signal indicating compromise, abuse, misconfiguration, policy breach, or unsafe system behavior that may require investigation or action.
 
-A serious platform should not only stop problems. It should also be able to explain them, contain them, and recover from them with durable traceability.
+### Security Override
+A bounded privileged operator or system action that changes posture under approved policy without transferring ownership of the underlying business truth.
 
----
+### Challenge Result
+A structured result from step-up, verification, or proof collection used as input to a security/risk decision.
 
-## Minimum Control Expectations by Sensitivity Tier
+### Security Policy Version
+A stable versioned identifier for the rule set materially influencing a security decision or intervention.
 
-FUZE should apply stronger controls as trust sensitivity increases.
+## Truth Class Taxonomy
 
-### Low Sensitivity
-Routine reads, ordinary product metadata, low-risk UI operations.
+Downstream systems MUST preserve the following truth classes and MUST NOT collapse them:
 
-Expected controls:
-- normal auth
-- ordinary validation
-- standard logging
+1. **Identity truth** — canonical account, linked-auth, and provider-resolution truth
+2. **Session truth** — canonical runtime authenticated session state
+3. **Authorization truth** — role, permission, scope, restriction, and effective-permission truth
+4. **Security/risk decision truth** — the current platform protective posture, review posture, and containment decisions
+5. **Audit truth** — attributable evidence of security-sensitive actions and interventions
+6. **Monitoring truth** — alerts, detections, metrics, traces, and operational signals
+7. **Workflow/execution truth** — workflow meaning, queue state, worker execution lineage, and automation progression
+8. **Provider-input truth** — callback payloads, connector inputs, partner signals, device or geo observations, and external fraud signals before normalization
+9. **Data/storage truth** — classification, retention, artifact state, and storage lifecycle semantics
+10. **Reporting/presentation truth** — derived dashboards, user messaging, incident summaries, and public disclosures
 
-### Moderate Sensitivity
-Product writes, workspace changes, wallet-link actions, async job submissions.
+## Architectural Position in the Spec Hierarchy
 
-Expected controls:
-- scope-aware auth
-- idempotency where relevant
-- stronger audit lineage
-- operational retry controls
+This document sits below:
 
-### High Sensitivity
-Credits mutation, subscription transitions, support compensation, payout publication steps, registry publication, major product automation with commercial effect.
+- `REFINED_SYSTEM_SPEC_INDEX.md`
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `PRODUCT_BOUNDARY_AND_DOMAIN_OWNERSHIP_SPEC.md`
+- `PRODUCT_ADMISSION_AND_EXPANSION_GATE_SPEC.md`
 
-Expected controls:
-- canonical-owner-only writes
-- strong idempotency
-- reason-coded mutations
-- explicit workflow state
-- operator visibility
+and above or alongside:
 
-### Critical Sensitivity
-Treasury actions, governance configuration, signer changes, vault actions, payout funding, emergency controls.
+- `FUZE_SESSION_LIFECYCLE_AND_SECURITY_SPEC.md`
+- `KEY_MANAGEMENT_AND_USER_RECOVERY_SPEC.md`
+- `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
+- `ADMIN_ACCESS_CORRECTION_AND_CONTAINMENT_SPEC.md`
+- `PUBLIC_API_SPEC.md`
+- `INTERNAL_SERVICE_API_SPEC.md`
+- `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+- `WORKFLOW_AND_AUTOMATION_SPEC.md`
+- `JOB_QUEUE_AND_WORKER_SPEC.md`
+- `AI_ORCHESTRATION_SPEC.md`
+- `MODEL_ROUTING_AND_CONTEXT_SPEC.md`
+- `FEATURE_FLAG_AND_ROLLOUT_CONTROL_SPEC.md`
+- `INTEGRATION_CONNECTOR_FRAMEWORK_SPEC.md`
+- `DATA_CLASSIFICATION_AND_HANDLING_SPEC.md`
+- `AUDIT_LOG_AND_ACTIVITY_SPEC.md`
+- `MONITORING_ALERTING_AND_INCIDENT_RESPONSE_SPEC.md`
+- `SECRETS_CONFIG_AND_ENVIRONMENT_SPEC.md`
 
-Expected controls:
-- multisig or equivalent shared authorization where appropriate
-- timelock where appropriate
-- explicit policy reference
-- audit and reporting linkage
-- narrow internal access
-- correction and containment readiness
+## System Boundaries
 
-### Principle
+This specification governs only the following platform-owned boundaries:
 
-The more an action can affect public trust, economic meaning, or governance posture, the more explicit and bounded the control surface should be.
+- shared protection, challenge, review, restriction, and containment semantics
+- shared cross-domain risk-decision posture
+- the precedence of security posture over stale runtime trust or convenience layers
+- security-significant operator intervention posture
+- architecture-level handling of abuse, fraud, compromise suspicion, and unsafe automation outcomes
+- cross-plane coordination for public exposure restriction, integration containment, AI/tool execution restriction, and artifact-release safety
 
----
+It does not govern:
 
-## Minimum Architectural Entities
+- canonical account identity or provider-resolution truth in full depth
+- full session lifecycle semantics in full depth
+- full authorization truth in full depth
+- event meaning or webhook delivery semantics in full depth
+- workflow meaning or queue execution semantics in full depth
+- audit-record semantics in full depth
+- monitoring and incident lifecycle semantics in full depth
+- product-local presentation design or message copy
 
-At minimum, the FUZE security and risk control architecture should recognize the following conceptual entities:
+## Adjacent Boundaries
 
-### Risk Entities
-- `risk_category`
-- `risk_scope`
-- `risk_severity`
-- `risk_owner_domain`
-- `risk_status`
+### Identity / Auth / Session
+Identity and session domains own canonical account, auth-link, and session semantics. This document governs when security posture constrains issuance, continuation, refresh, recovery, or restoration.
 
-### Control Entities
-- `control_id`
-- `control_type`
-- `control_scope`
-- `sensitivity_tier`
-- `policy_reference`
-- `enforcement_reference`
+### Authorization / Effective Permission
+Authorization domains own grants and final permission logic. This document governs security overrides, review requirements, temporary restriction posture, and privileged containment that may suppress otherwise-valid grants.
 
-### Security Event Entities
-- `security_event_id`
-- `event_type`
-- `event_severity`
-- `actor_reference`
-- `scope_reference`
-- `correlation_id`
-- `audit_lineage_reference`
+### Key Management and Recovery
+Recovery and secret-management domains own recovery proofs, secret lifecycle, and restoration semantics. This document governs security requirements around high-risk changes, compromise response, and post-recovery containment.
 
-### Trust-Sensitive Action Entities
-- `governance_action_reference`
-- `treasury_action_reference`
-- `vault_action_reference`
-- `payout_cycle_reference`
-- `registry_publication_reference`
-- `transparency_report_reference`
+### Audit and Activity
+Audit domains own evidence semantics. This document requires attributable, durable evidence for security-sensitive actions and interventions but does not replace audit ownership.
 
-### Recovery and Correction Entities
-- `incident_reference`
-- `containment_reference`
-- `correction_reference`
-- `supersedes_reference`
-- `recovery_status`
+### Monitoring and Incident Response
+Monitoring and incident-response domains own operational detection, alerting, and incident workflow. This document governs which signals may influence canonical security/risk decisions and the minimum containment posture that must be available.
 
-These are minimum conceptual entities. Detailed implementation is refined downstream by domain.
+### API / Event / Workflow / Worker
+API, event, workflow, and worker domains own interface and execution semantics. This document governs how security posture constrains initiation, propagation, replay, continuation, and public or partner exposure.
 
----
+### AI / Connectors / Data / Storage
+AI, connector, data, and storage domains own their direct semantics. This document governs their security-sensitive gating, callback authenticity, context-release safety, malware/quarantine posture, and protective intervention boundaries.
 
-## Open Items
+## Conflict Resolution Rules
 
-The following areas are intentionally refined in downstream specifications and operational controls:
+When documents, implementations, or interpretations conflict, FUZE MUST resolve them in the following order unless a higher constitutional rule explicitly states otherwise:
 
-- exact service identity and internal authorization mechanism
-- exact anti-fraud rule systems for payments and abuse prevention
-- exact security alert thresholds and incident escalation rules
-- exact contract audit and release checklist requirements
-- exact secret rotation and environment hardening standards
-- exact business continuity controls for chain- or provider-level failure
-- exact sensitive operator tooling boundaries and approvals
+1. active refined registry and higher constitutional materials win over narrower documents
+2. `PLATFORM_ARCHITECTURE_SPEC.md`, `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`, and `DOMAIN_OWNERSHIP_MATRIX_SPEC.md` win on platform-plane roles, owner-domain truth, and mutation boundaries
+3. owner-domain specifications win on the semantic meaning of their owned business state
+4. this document wins on shared security/risk decision posture, restriction semantics, containment posture, and bounded intervention requirements
+5. `FUZE_SESSION_LIFECYCLE_AND_SECURITY_SPEC.md` wins on detailed session lifecycle semantics outside this document’s narrower security/risk scope
+6. `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`, `SCOPED_AUTHORIZATION_MODEL_SPEC.md`, and `ACCESS_EVALUATION_AND_EFFECTIVE_PERMISSION_SPEC.md` win on detailed authorization structure and evaluation outside this document’s narrower override scope
+7. `AUDIT_LOG_AND_ACTIVITY_SPEC.md` and `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md` win on evidence semantics outside this document’s narrower control posture
+8. dashboards, alerts, analytics, search, reports, product-local caches, and support notes never win over canonical owner-domain truth or canonical security/risk decision records
+9. when ambiguity remains, FUZE MUST choose the more conservative architecture-consistent interpretation and escalate unresolved ambiguity into downstream refinement or recorded decision work
 
-These do not weaken the canonical security and risk control architecture established here.
+## Default Decision Rules
 
----
+When no narrower approved exception exists, FUZE MUST default to the following:
 
-## Closing Summary
+1. high-impact ambiguous actions default to deny, contain, or review rather than allow
+2. security-significant account, auth, session, membership, billing, connector, AI, or export mutations default to step-up or stronger review posture if ordinary trust is insufficient
+3. stale sessions, stale caches, stale rollout decisions, and stale product-local permission hints default to invalid under stronger current security posture
+4. public exposure, webhook continuation, connector sync continuation, AI tool execution, and artifact release default to narrower behavior under security uncertainty
+5. operator security intervention defaults to reason-coded, policy-versioned, and auditable posture
+6. bulk actions default to stronger authorization and evidence requirements than equivalent single-item actions
+7. when security policy and product convenience disagree, the security-conservative interpretation wins
+8. if a downstream system cannot name the policy version, actor, target, scope, reason class, and correlation lineage for a high-impact security intervention, that implementation is incomplete and MUST NOT be treated as production-grade
 
-The FUZE security and risk control architecture is a layered system of ownership boundaries, policy-defined controls, platform guardrails, economic safeguards, governance protections, transparency discipline, and incident-aware operational posture. It addresses product execution risk, token and market risk, governance risk, treasury misuse risk, transparency failure risk, and technical/chain risk not through one control alone, but through architecture that makes the ecosystem harder to misuse, easier to audit, and more credible over time. By embedding security into platform design, reserve separation, API boundaries, credits mutation paths, payout lifecycles, and governance controls, FUZE strengthens the long-term trust foundation of the entire ecosystem.
+## Roles / Actors / Entities
+
+### Human Actors
+- end users
+- workspace administrators
+- support operators
+- security reviewers
+- fraud/risk reviewers
+- finance-risk operators
+- governance or approval actors
+- incident commanders or responders
+
+### System Actors
+- public API gateways
+- internal services
+- auth/session services
+- authorization and policy services
+- workflow orchestrators and workers
+- AI orchestration and tool-execution systems
+- connector installers and callback processors
+- artifact scanners and release processors
+- monitoring/detection systems
+- support and control-plane tooling
+
+### Core Entity Families
+- security decision records
+- challenge records and challenge results
+- restriction records
+- containment actions
+- review cases
+- policy versions
+- risk signals and normalized signal references
+- device/session/account/workspace/resource targets
+- override records
+- incident-correlation references
+
+## Ownership Model
+
+### Security and Risk Domain Owns
+- shared security/risk decision classes
+- shared challenge, review, restriction, and containment semantics
+- shared precedence rules when security posture constrains lower-level continuation
+- architecture-level protective posture for public, internal, async, AI, integration, and operator surfaces
+- security override and intervention discipline
+
+### Security and Risk Domain Does Not Own
+- canonical identity truth
+- canonical session truth
+- canonical authorization truth
+- canonical workflow meaning
+- canonical queue/worker meaning
+- canonical event meaning
+- canonical audit evidence semantics
+- canonical monitoring and incident workflow semantics
+
+### Adjacent Domains Must
+- consume and honor the security/risk decisions relevant to their owned surfaces
+- preserve reason, actor, target, scope, and lineage fields for security-sensitive interventions
+- avoid shadow security models that contradict shared policy
+
+### Products and Local Implementations Must Not
+- invent product-local super-admin or security bypass semantics
+- continue unsafe runtime trust after canonical containment
+- treat feature flags or dashboards as sufficient security decision truth
+- expose protected internal security reasoning as public truth without approved disclosure posture
+
+## Authority / Decision Model
+
+The following layered model is normative:
+
+1. owner domains propose or accept actions through their governed interfaces
+2. security/risk posture evaluates whether ordinary continuation is acceptable
+3. if allowed, owner-domain processing continues under normal contracts
+4. if challenge is required, the action pauses or narrows until stronger proof is satisfied
+5. if review is required, the action enters explicit controlled review posture
+6. if restriction or containment is required, owner-domain and runtime continuation MUST yield to the stronger security control
+7. all material interventions MUST preserve audit lineage and policy references
+
+Security/risk posture may constrain behavior. It does not redefine the semantic meaning of the owner-domain entity or action.
+
+## State Model
+
+### Security Decision States
+- `allow`
+- `allow_with_narrowing`
+- `challenge_required`
+- `review_required`
+- `temporarily_restricted`
+- `contained`
+- `deny`
+
+### Restriction States
+- `watch`
+- `rate_limited`
+- `step_up_required`
+- `feature_narrowed`
+- `scope_restricted`
+- `suspended_sensitive_actions`
+
+### Containment States
+- `targeted_containment`
+- `global_containment`
+- `connector_containment`
+- `artifact_quarantine`
+- `execution_halt`
+- `public_exposure_suppressed`
+
+### State Rules
+- transitions into stronger restriction or containment MUST be explicit and auditable
+- weaker posture restoration MUST occur only through policy-approved review or automated policy conditions with lineage
+- hidden destructive rewrites of past security decisions are forbidden where they erase material review history
+- derived dashboards or user messaging may summarize these states but do not own them
+
+## Lifecycle / Workflow Model
+
+### 1. Signal Intake
+Security/risk receives signals from approved sources such as auth anomalies, abuse indicators, provider callbacks, connector failures, policy breaches, malware scans, model-safety failures, operator reports, or incident inputs.
+
+### 2. Normalization and Correlation
+Signals are normalized into governed classes with actor/subject/target/scope context and correlated to account, session, workspace, resource, connector, artifact, AI run, workflow run, or API interaction as appropriate.
+
+### 3. Decisioning
+The system applies current policy version, reason class, risk posture, and materiality rules to determine allow, narrow, challenge, review, restrict, contain, or deny.
+
+### 4. Intervention
+Approved controls execute through owner-domain and runtime boundaries. Examples include step-up prompts, session invalidation, scope restriction, workflow halt, connector disablement, artifact quarantine, or public-surface suppression.
+
+### 5. Evidence and Notification
+Material interventions generate attributable audit lineage. Audience-appropriate messaging MAY be emitted, but audience messaging remains derived and MUST NOT leak protected internal security reasoning beyond policy.
+
+### 6. Review, Remediation, and Release
+Explicit review or remediation MAY strengthen, maintain, narrow, or lift posture. Lifting stronger controls MUST preserve supersession lineage and policy justification.
+
+## Invariants
+
+1. Security posture never silently transfers ownership of business truth.
+2. Stale runtime trust MUST yield to stronger current security posture.
+3. High-impact ambiguous actions MUST NOT continue silently.
+4. Privileged intervention MUST be attributable, reason-coded, and auditable.
+5. Derived monitoring and reporting systems do not become canonical security truth.
+6. Products may consume but MUST NOT redefine shared control semantics.
+7. Restriction and containment MUST be available across synchronous and asynchronous surfaces where relevant.
+8. Recovery, session, and authorization continuations remain subordinate to security posture.
+9. Public exposure and partner-facing delivery MUST narrow under credible security risk.
+10. Degraded-mode operation MUST not silently weaken canonical security meaning.
+
+## Functional Rules
+
+### Rule 1: Security-Significant Action Classes
+At minimum, the following SHOULD be treated as security-significant when applicable:
+- add or remove auth method
+- password reset and recovery completion
+- global or targeted session revoke
+- provider-link correction
+- workspace ownership or high-privilege membership changes
+- billing/payment-method changes and high-impact commercial actions
+- connector installation, credential update, or callback authenticity failure
+- AI tool execution with sensitive side effects
+- artifact publication, download-token issuance, or sensitive export
+- operator-driven identity, access, billing, or exposure remediation
+
+### Rule 2: Step-Up Requirement
+FUZE SHOULD require recent-auth, stronger proof, or explicit challenge posture before high-risk actions rather than assuming ordinary session presence is sufficient.
+
+### Rule 3: Restriction Precedence
+Security/risk restrictions MAY suppress otherwise-valid permissions, entitlements, or rollout posture when policy determines additional protection is required.
+
+### Rule 4: Containment Requirement
+FUZE MUST support targeted and global containment patterns across accounts, sessions, workspaces, connectors, artifacts, AI runs, workflows, and public exposure surfaces where materially relevant.
+
+### Rule 5: Async and Replay Safety
+Security-sensitive actions and decisions MUST remain idempotent, replay-safe, and correlation-safe across retries, redeliveries, queued execution, or event replay.
+
+### Rule 6: Public and External Surface Narrowing
+Public APIs, webhooks, exports, public artifacts, and partner-visible surfaces MAY be narrowed, delayed, or suppressed under security posture without redefining the underlying owner-domain truth.
+
+### Rule 7: AI and Automation Safety
+AI orchestration, model routing, workflow automation, and worker execution MUST honor security/risk posture before invoking tools, releasing outputs, or continuing unsafe runs.
+
+### Rule 8: Connector and Callback Security
+Connectors and callback processors MUST verify authenticity, scope, installation validity, and current posture before accepting provider input as actionable.
+
+### Rule 9: Quarantine and Release
+Artifacts, files, outputs, and derived assets MAY require quarantine-before-use or quarantine-before-public-release where security policy requires it.
+
+### Rule 10: Incident Hooks
+Security and risk controls MUST expose deterministic hooks for incident-driven containment, kill-switching, and post-incident restoration under review.
+
+## Permission / Access Considerations
+
+- privileged security actions require explicit internal operational or governance-aware permissions and MUST NOT be implied by workspace or product roles
+- review access to sensitive signals, evidence, or case notes MUST be narrower than ordinary operational access where policy requires it
+- user-facing self-service security actions MAY exist, but they remain bounded by platform policy and current posture
+- support operators MUST NOT receive unrestricted inspection or mutation power merely because a case exists
+
+## Entitlement Considerations
+
+- entitlement or paid-plan status MUST NOT weaken security posture
+- premium or enterprise capabilities MAY add stronger controls, but they MUST NOT create shadow security semantics incompatible with the platform model
+- product capability gating and security gating remain distinct; both may apply
+
+## API / Contract Implications
+
+- public and internal APIs MUST preserve challenge, review, restriction, and containment semantics explicitly rather than encoding them as generic failures only
+- security-sensitive APIs SHOULD preserve policy-version, reason-class, and correlation lineage where appropriate
+- admin/control APIs for containment, override, or release MUST be separated from ordinary user-facing mutation APIs where risk posture requires it
+- downstream contracts MUST NOT hide whether an action was denied by authorization, narrowed by security posture, or blocked pending review
+
+## Event / Async Implications
+
+- event publication MAY reflect security-sensitive outcomes, but event delivery state is not security decision truth
+- workflows and jobs MUST be able to halt, quarantine, or compensate when security posture changes materially
+- replay MUST NOT duplicate containment side effects without idempotent safeguards
+- security-sensitive webhook or callback redelivery MUST preserve authenticity and correlation checks on every attempt
+
+## Data Model / Storage Implications
+
+Downstream implementations SHOULD preserve at minimum:
+- security decision identity
+- actor identity or actor class
+- target identity and target type
+- scope reference
+- reason class
+- policy version
+- signal references
+- challenge or review status where applicable
+- intervention class
+- audit correlation identifiers
+- supersession or release lineage
+- sensitivity/visibility classification
+
+The implementation MAY use specialized stores or decision services, but canonical-vs-derived distinction MUST remain explicit.
+
+## Read Model / Projection / Reporting Rules
+
+- dashboards, reports, and support summaries are derived views over canonical security decision and audit data
+- read models MAY optimize for investigation or operations, but MUST NOT become hidden mutation owners
+- user-visible messaging MAY be simplified or redacted and MUST remain subordinate to canonical internal posture
+- search indexes MAY support investigation, but MUST preserve classification and access controls
+- derived metrics MUST NOT be the sole basis for irreversible intervention without approved policy support
+
+## Security / Risk / Abuse Controls
+
+The shared control layer MUST support, where applicable:
+- rate limiting and behavioral throttling
+- step-up or recent-auth checks
+- restriction and review posture for suspicious changes
+- targeted and global session containment
+- connector disablement and callback rejection
+- artifact quarantine and release gating
+- AI/tool invocation gating and unsafe-output suppression
+- public-surface suppression and kill switches
+- stronger access controls for internal review tooling
+- evidence preservation for post-incident review
+
+## Boundary Violation Detection / Non-Canonical Patterns
+
+The following are explicitly non-canonical and forbidden:
+- treating login success as sufficient authority for sensitive actions without current security posture evaluation
+- letting feature flags or rollout booleans replace canonical security containment
+- allowing products to continue on stale sessions or stale caches after canonical containment
+- treating webhook payloads, support notes, or dashboard rows as canonical security truth
+- letting support or product teams run privileged security interventions without policy, reason codes, and audit lineage
+- exposing raw internal security reasoning directly to public surfaces without approved disclosure posture
+- restoring restricted or contained posture silently without review or explicit policy conditions
+- allowing integration convenience or AI convenience to bypass challenge, quarantine, or review posture
+
+## Audit / Traceability Requirements
+
+- all material security-sensitive actions and interventions MUST emit durable audit evidence
+- privileged containment, override, release, and review decisions MUST preserve stronger reason and approval lineage
+- access to sensitive security evidence SHOULD itself be auditable where policy requires it
+- cross-domain correlation among account, session, workspace, connector, artifact, AI run, workflow run, and API request SHOULD be preserved when relevant
+
+## Failure Handling / Edge Cases
+
+- if a required security decision cannot be reached reliably for a high-impact action, the platform MUST fail closed or enter review posture rather than silently allow
+- if evidence is incomplete after accepted async work, the platform MUST mark the gap explicitly and preserve remediation posture
+- if monitoring is degraded, canonical existing restrictions or containments remain in effect until safely reviewed or released
+- if a user successfully proves identity during recovery, that does not automatically lift broader downstream restrictions if policy still requires them
+- if product-local state conflicts with canonical security posture, the canonical security posture wins and the product-local state is defective
+- if a release from containment would conflict with higher-order recovery, suspension, or incident posture, the higher-order posture wins
+
+## Operational Considerations
+
+- security/risk controls SHOULD be observable, replay-safe, and inspectable without changing their meaning
+- operators SHOULD have tools to inspect policy version, reason class, signal lineage, intervention scope, and release history
+- incident response MUST distinguish canonical containment state from derived dashboard summaries
+- broad containment and release actions SHOULD support explicit batching, review discipline, and audit evidence
+- operational metrics SHOULD track challenge rates, review rates, false-positive/false-negative governance where available, containment frequency, release latency, and policy drift indicators
+
+## Migration / Compatibility / Supersession Considerations
+
+- migration MUST NOT silently weaken challenge, restriction, or containment meaning
+- compatibility layers MAY preserve older endpoint or product behavior temporarily, but canonical shared security posture MUST remain platform-owned
+- older product-local controls that imply hidden shared security ownership are superseded within this specification’s scope
+- policy-version evolution MUST preserve the ability to reconstruct which rule set materially influenced a decision
+- future products and providers MUST integrate with this shared control model rather than introducing permanent local exceptions
+
+## Implementation-Contract Guardrails
+
+Downstream implementations MUST preserve at minimum:
+- explicit distinction between security/risk decision truth and owner-domain truth
+- policy-versioned, attributable, correlation-safe intervention records
+- idempotent and replay-safe containment behavior
+- explicit challenge, review, restriction, and containment outcome handling
+- bounded privileged operator pathways
+- derived-view subordination to canonical posture
+- fail-safe degraded-mode behavior for high-impact actions
+
+Downstream implementations MUST NOT:
+- optimize away security posture checks for convenience or latency alone
+- silently auto-release restrictive posture after manual intervention without policy support
+- treat dashboards, rollout flags, queues, or notifications as mutation owners of security meaning
+- let products invent incompatible cross-domain security semantics
+- hide high-impact interventions behind generic “error” handling with no durable lineage
+
+## Downstream Execution Staging
+
+Recommended downstream staging order:
+
+1. establish shared security decision taxonomy and policy-versioning posture
+2. finalize session, recovery, authorization, and admin-containment integrations
+3. finalize public/internal API and event/webhook security behaviors
+4. finalize workflow, worker, AI, and connector containment hooks
+5. finalize artifact, export, and public-surface quarantine/release behaviors
+6. finalize monitoring, review, and incident-response implementation contracts
+
+## Required Downstream Specs / Contract Layers
+
+This specification directly governs or materially informs:
+
+- session-security and recovery API contracts
+- privileged admin/control-plane security contracts
+- abuse, fraud, and risk-policy specifications
+- AI/tool safety runtime contracts
+- connector authenticity and credential-handling contracts
+- artifact scan/quarantine/release contracts
+- public/internal API error and review-state contracts
+- workflow, worker, and automation pause/compensation contracts
+- monitoring, evidence, and incident runbooks
+
+## Canonical Examples / Anti-Examples
+
+### Canonical Example 1
+A user with a valid session attempts to change a recovery-significant email. FUZE requires recent-auth or stronger challenge, records the challenge outcome, and may revoke prior sessions after completion. This is canonical.
+
+### Canonical Example 2
+A connector callback fails authenticity checks. The callback is rejected, the connector may enter contained posture, audit evidence is recorded, and downstream sync automation stops until reviewed. This is canonical.
+
+### Canonical Example 3
+An AI workflow attempts a sensitive tool action while the workspace is under restrictive security posture. The workflow pauses or narrows instead of continuing silently. This is canonical.
+
+### Anti-Example 1
+A product continues honoring a cached session because the user has not refreshed the page yet, even after canonical containment. This is forbidden.
+
+### Anti-Example 2
+A product team uses a rollout flag to suppress a public endpoint during incident response but leaves the canonical security posture unchanged and unaudited. This is forbidden.
+
+### Anti-Example 3
+A support operator lifts a restriction informally after reading a dashboard note, without policy reference, case linkage, or audit evidence. This is forbidden.
+
+### Anti-Example 4
+A dashboard anomaly count is treated as sufficient canonical proof to permanently suspend an account with no bounded review or lineage. This is forbidden.
+
+## Dependencies / Cross-Spec Links
+
+This specification depends materially on:
+
+- `FUZE_SESSION_LIFECYCLE_AND_SECURITY_SPEC.md`
+- `KEY_MANAGEMENT_AND_USER_RECOVERY_SPEC.md`
+- `ROLE_PERMISSION_AND_ACCESS_CONTROL_SPEC.md`
+- `ADMIN_ACCESS_CORRECTION_AND_CONTAINMENT_SPEC.md`
+- `PUBLIC_API_SPEC.md`
+- `INTERNAL_SERVICE_API_SPEC.md`
+- `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+- `WORKFLOW_AND_AUTOMATION_SPEC.md`
+- `JOB_QUEUE_AND_WORKER_SPEC.md`
+- `AI_ORCHESTRATION_SPEC.md`
+- `MODEL_ROUTING_AND_CONTEXT_SPEC.md`
+- `FEATURE_FLAG_AND_ROLLOUT_CONTROL_SPEC.md`
+- `INTEGRATION_CONNECTOR_FRAMEWORK_SPEC.md`
+- `AUDIT_LOG_AND_ACTIVITY_SPEC.md`
+- `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md`
+- `DATA_CLASSIFICATION_AND_HANDLING_SPEC.md`
+- `MONITORING_ALERTING_AND_INCIDENT_RESPONSE_SPEC.md`
+- `SECRETS_CONFIG_AND_ENVIRONMENT_SPEC.md`
+
+## Explicitly Deferred Items
+
+The following are intentionally deferred:
+
+- exact risk-scoring formulas and ML features
+- exact per-surface rate-limit values and challenge thresholds
+- exact dashboard designs, alert-routing logic, and responder staffing structures
+- exact cryptographic primitive selection and secrets-infrastructure implementation
+- exact SIEM schemas, event bus topics, and vendor configurations
+- exact legal/compliance disclosure language and jurisdiction-specific obligations
+- exact UI copy for user-facing security messaging
+
+These deferrals do not weaken the canonical model established here.
+
+## Final Normative Summary
+
+FUZE security and risk control is the shared platform layer that decides when ordinary behavior may continue and when the platform must challenge, narrow, review, restrict, contain, or deny. It is not the owner of identity, session, authorization, workflow, or audit truth, but it can constrain all of them through bounded, attributable, policy-versioned intervention.
+
+Products, APIs, workers, AI systems, connectors, artifacts, and public surfaces MUST honor stronger current security posture over stale runtime trust or convenience layers. High-impact ambiguous situations default to conservative handling. Privileged intervention must be auditable and reason-coded. Derived dashboards, alerts, reports, and support notes remain derived and MUST NOT become canonical security truth.
+
+This document is the canonical FUZE rule set for shared security and risk-control posture.
+
+## Quality Gate Checklist
+
+- [x] canonical owner is explicit for material truth families within scope
+- [x] mutation and intervention boundaries are explicit
+- [x] adjacent boundaries are explicit
+- [x] truth classes are explicit
+- [x] conflict-resolution rules are explicit where needed
+- [x] default decision rules are explicit where ambiguity could arise
+- [x] non-canonical patterns are clearly called out
+- [x] operator/admin override paths are bounded and audited
+- [x] read-model, cache, reporting, and projection rules are explicit
+- [x] failure and degraded-mode behaviors are explicit
+- [x] downstream implementation guardrails are explicit
+- [x] dependencies and downstream impacts are explicit
+- [x] non-goals and deferred items are explicit
+- [x] the document is strong enough to support backend, API, data, runtime, security, and operational implementation without contradictory semantics

@@ -1,623 +1,677 @@
-# BASE_PLATFORM_CREDITS_LAYER_SPEC
+# FUZE Base Platform Credits Layer Specification
+
+## Document Metadata
+
+- **Document Name:** `BASE_PLATFORM_CREDITS_LAYER_SPEC.md`
+- **Document Type:** Canonical refined system specification
+- **Status:** Active refined system spec
+- **Version:** 2.0.0
+- **Effective Date:** 2026-04-23
+- **Last Updated:** 2026-04-23
+- **Reviewed On:** 2026-04-23
+- **Document Owner:** FUZE Base Platform Credits Layer Domain (canonical owner for Base-side credits operational truth, scope-bound balance representation, commitment linkage, chain-adjacent synchronization posture, and implementation-contract guardrails); named individual owner is not explicitly specified in the retrieved governing materials
+- **Approval Authority:** Not explicitly specified in the retrieved governing materials; constitutional approval authority remains governed by `REFINED_SYSTEM_SPEC_INDEX.md` and the active FUZE approval workflow
+- **Review Cadence:** SHOULD be reviewed quarterly and whenever Platform Credits semantics, credits-ledger posture, Base chain architecture, payment-normalization posture, billing posture, correction posture, reconciliation posture, or governance-sensitive controls materially change
+- **Governing Layer:** Platform core / shared commercial infrastructure / Base operational credits layer
+- **Parent Registry:** `REFINED_SYSTEM_SPEC_INDEX.md`
+- **Primary Audience:** Platform architecture, backend engineering, contracts engineering, commerce and billing engineering, credits and ledger engineering, payments engineering, finance operations, treasury/governance operators, security engineering, audit/compliance, support operations, API design, data engineering, runtime operations, implementation-contract authors
+- **Primary Purpose:** Define the canonical FUZE Base Platform Credits layer as the Base-chain operational representation of Platform Credits after approved off-chain normalization and ledger-authorized mutation, while preserving explicit separation from Platform Credits semantic truth, credit-ledger truth, payment verification truth, token participation truth, accounting truth, and Base payout execution truth
+- **Primary Upstream References:**
+  - `REFINED_SYSTEM_SPEC_INDEX.md`
+  - `DOCS_SPEC_INDEX.md`
+  - `SYSTEM_SPEC_INDEX.md`
+  - `API_SPEC_INDEX.md`
+  - `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+  - `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+  - `PLATFORM_ARCHITECTURE_SPEC.md`
+  - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+  - `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+  - `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
+  - `CHAIN_ARCHITECTURE_SPEC.md`
+  - `PLATFORM_CREDITS_SPEC.md`
+  - `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md`
+  - `PAYMENT_RAILS_INTEGRATION_SPEC.md`
+  - `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`
+  - `REFUND_REVERSAL_AND_ADJUSTMENT_SPEC.md`
+  - `PRICING_AND_MONETIZATION_MODEL_SPEC.md`
+  - `AI_USAGE_METERING_SPEC.md`
+  - `ENTITLEMENT_AND_CAPABILITY_GATING_SPEC.md`
+  - `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md`
+  - `SECURITY_AND_RISK_CONTROL_SPEC.md`
+  - `MONITORING_ALERTING_AND_INCIDENT_RESPONSE_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_THESIS_FINAL_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
+  - `FUZE_WORKSPACE_ACCESS_CONTROL_BASICS_THESIS_FINAL_SPEC.md`
+- **Primary Downstream Dependents:**
+  - `BASE_PLATFORM_CREDITS_LAYER_API_SPEC.md`
+  - `CREDIT_LEDGER_SETTLEMENT_API_SPEC.md`
+  - `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`
+  - `PAYMENT_RAILS_INTEGRATION_SPEC.md`
+  - `INVOICING_AND_RECEIPTS_SPEC.md`
+  - `REFUND_REVERSAL_AND_ADJUSTMENT_SPEC.md`
+  - `PRICING_AND_MONETIZATION_MODEL_SPEC.md`
+  - `AI_USAGE_METERING_SPEC.md`
+  - product-specific monetization and spend-consumer specifications
+  - Base synchronization, reconciliation, reporting, support, and transparency workflows
+- **Supersedes:** Earlier or weaker FUZE Base-credits descriptions that did not clearly separate Base operational credits truth from semantic credits truth, ledger truth, payment verification, payout execution, or chain/off-chain responsibility boundaries
+- **Superseded By:** Not yet known
+- **Related Decision Records:** Not yet known
+- **Canonical Status Note:** This document is the canonical FUZE specification for the Base Platform Credits operational layer. Downstream APIs, services, workers, contracts adapters, support tooling, reconciliation jobs, dashboards, and product consumers MUST NOT reinterpret raw chain state, raw payment events, mutable counters, wallet addresses, or product-local balance views as substitutes for the bounded Base operational credits model defined here.
+- **Implementation Status:** Normative architecture baseline; downstream API, service, contract-adjacent, runtime, event, audit, and read-model contracts must conform
+- **Approval Status:** Drafted for refined-system inclusion; formal approval record not yet attached
+- **Change Summary:**
+  - hardened separation between Base operational credits truth and both semantic credits truth and ledger truth
+  - clarified owner-scope binding, class-aware state, commitment posture, reservation/release semantics, and reconciliation requirements
+  - strengthened conflict-resolution rules, correction-lineage requirements, public-surface constraints, and operator-control guardrails
+  - expanded implementation-contract requirements for idempotency, chain sync, degraded-mode behavior, derived projections, and migration safety
+
+## Title
+
+FUZE Base Platform Credits Layer Specification
 
 ## Purpose
 
-This document defines the canonical Base-based Platform Credits layer of the FUZE ecosystem. Its purpose is to establish why Base is used as the operational chain for Platform Credits, what the Base credits layer owns, how it relates to off-chain payment normalization and platform billing systems, how it connects to product consumption across the ecosystem, and how it remains distinct from both the Ethereum token layer and the Base payout execution layer.
+This specification defines the canonical Base-chain operational layer for FUZE Platform Credits.
 
-This specification is foundational because Platform Credits are the internal economic layer of FUZE. They are not a minor billing convenience. They are the shared internal unit through which subscriptions, usage billing, premium actions, AI-driven product activity, workspace consumption, and related product value flows become economically coherent across multiple applications. The Base Platform Credits layer is therefore one of the most important operational and economic components in the entire platform architecture.
+Its purpose is to make explicit:
 
----
+- why Base exists as the operational chain environment for Platform Credits
+- what the Base credits layer owns and what it does not own
+- how approved off-chain value normalization and ledger-authorized credits mutations become Base-side operational state
+- how account-scoped and workspace-scoped credits balances are represented on Base without collapsing semantic and ledger ownership
+- how issuance, reservation, spend, release, reversal, adjustment, and class-aware state must be represented at the Base operational layer
+- how the Base credits layer remains explicitly separate from Ethereum token participation, Base payout execution, payment verification, accounting meaning, and public reporting projections
+- what implementation-contract guardrails must be preserved by downstream APIs, workers, contracts adapters, synchronization jobs, support tooling, and product consumers
+
+FUZE defines Platform Credits as the shared internal consumption unit of the ecosystem. The Base credits layer exists because that internal consumption system requires an operational chain environment capable of supporting frequent, policy-bounded, auditable mutations across products and workspaces. This document governs that layer as a bounded operational domain rather than a vague “wallet balance” concept.
 
 ## Scope
 
-This specification covers:
+This specification governs:
 
 - the canonical role of Base in the Platform Credits architecture
-- why Base is used as the credits execution layer
-- what the Base credits layer owns and what it does not own
-- how verified payment becomes credits on Base
-- how account and workspace balances are represented on the Base layer
-- how credits issuance, spend, reservation, reversal, and adjustment relate to Base
-- how Base credits interact with subscriptions, usage billing, AI actions, and product monetization
-- the relationship between the Base credits layer and the Ethereum token layer
-- the relationship between the Base credits layer and the Base payout execution layer
-- transparency, security, and operational expectations for the Base credits layer
+- Base-side representation of scope-bound credits balances and class-aware operational state
+- Base-side operational representation of issuance, reservation, spend, release, reversal, adjustment, and approved reassignment outcomes where permitted
+- the relationship between Base operational credits state and upstream Platform Credits semantic truth
+- the relationship between Base operational credits state and upstream/downstream credit-ledger and settlement truth
+- chain-adjacent synchronization, reconciliation, discrepancy handling, and correction posture for Base credits state
+- minimum API, event, audit, security, operational, and migration requirements that downstream implementations must preserve
+- public-surface boundaries and read-model rules for Base credits visibility
 
-This specification does not define every detailed billing rule, every refund edge case, or every product-specific credits behavior. Those are refined in:
+This specification does not redefine in full depth:
 
-- `CHAIN_ARCHITECTURE_SPEC.md`
-- `PLATFORM_CREDITS_SPEC.md`
-- `PAYMENT_RAILS_INTEGRATION_SPEC.md`
-- `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`
-- `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md`
-- `REFUND_REVERSAL_AND_ADJUSTMENT_SPEC.md`
-- `BASE_PAYOUT_EXECUTION_LAYER_SPEC.md`
+- the semantic meaning of a Platform Credit
+- detailed append-oriented ledger mechanics for credits settlement truth
+- raw payment verification or provider normalization behavior
+- product-local pricing rules or entitlement policy in full depth
+- invoice truth, accounting-book truth, revenue recognition, reserve treatment, or treasury-finalization truth
+- Ethereum token-holder truth or snapshot/eligibility truth
+- Base payout execution, stablecoin disbursement, or payout-ledger semantics
+- exact contract ABI, batching design, gas optimization strategy, or RPC/indexer implementation
 
----
+Those concerns remain governed by adjacent specifications and MUST remain compatible with this document.
+
+## Out of Scope
+
+This specification is explicitly out of scope for:
+
+- proving actor identity or session validity
+- deciding whether a specific actor is authorized to spend against a shared subject in full depth
+- defining full billing, invoicing, refunds, or tax treatment
+- defining unrestricted transferability or market behavior for Platform Credits
+- defining final public transparency-report composition
+- defining exact database schemas or exact smart-contract source code
+- defining product-specific UX copy or balance-display wording
 
 ## Design Goals
 
-The design goals of the Base Platform Credits layer are:
-
-1. to provide a low-cost operational chain for the internal commerce layer of FUZE
-2. to support frequent issuance, deduction, and adjustment of Platform Credits in a practical way
-3. to maintain one coherent internal spending system across products
-4. to preserve strong separation between token participation and internal consumption
-5. to make credits activity auditable, structured, and compatible with transparent reporting
-6. to support both account-scoped and workspace-scoped credits balances
-7. to enable subscriptions, usage billing, premium AI actions, and product feature unlocks through one shared on-chain operational layer
-8. to avoid forcing high-frequency internal platform commerce onto the Ethereum token layer
-
----
+1. Provide a practical Base-chain operational environment for the shared FUZE internal commerce layer.
+2. Preserve strong separation between token participation, internal spending, and stablecoin payout execution.
+3. Represent Base-side credits state in a way that is auditable, class-aware, scope-aware, and reconcilable.
+4. Support both account-scoped and workspace-scoped consumption without ambiguous ownership.
+5. Enable policy-bounded issuance, reservation, spend, release, reversal, and adjustment behavior across multiple products.
+6. Preserve explicit lineage to upstream credits semantics, ledger entries, and approved payment/billing outcomes.
+7. Prevent products or operators from inventing shadow Base balance systems or unsafe mutation pathways.
+8. Support correction and recovery through explicit lineage rather than silent mutation or reinterpretation.
+9. Keep Base operational credits usable in production without allowing them to drift into an unrestricted market asset model.
+10. Provide a durable implementation-contract foundation for APIs, workers, reconciliation, support, and reporting.
 
 ## Non-Goals
 
 This specification is not intended to:
 
-- make Base the canonical source of FUZE token ownership truth
-- make Platform Credits equivalent to the FUZE token
-- make the Base credits layer the same thing as the stablecoin payout execution layer
-- require every external payment rail to settle directly on Base in raw form
-- replace off-chain payment verification, accounting, or billing logic with naive on-chain assumptions
-- define Platform Credits as freely transferable market assets
-- collapse product revenue, internal balances, and distributable profit into one chain meaning
+- make Base the canonical source of Platform Credits semantic meaning
+- make Base state the sole business-level source of credits truth
+- make Base the canonical source of payment verification or invoice truth
+- make Base credits equivalent to the FUZE token or profit-participation rights
+- collapse the Base credits layer into the Base payout execution layer because both use Base
+- allow unrestricted peer-to-peer transfer or public speculative behavior for credits
+- permit undocumented operator minting, rewriting, or rebinding shortcuts
+- let product teams redefine class semantics, balance ownership, or mutation categories locally
 
----
+## Core Principles
 
-## Canonical Layer Principle
+### 1. Base Operational Layer Principle
+Base is the operational chain environment where FUZE Platform Credits are represented and mutated after approved off-chain normalization and platform-governed interpretation.
 
-The primary principle of the Base Platform Credits layer is:
+### 2. Shared Chain, Distinct Meaning Principle
+Shared chain location does not create shared economic meaning. The Base credits layer and the Base payout execution layer are separate domains even when both operate on Base.
 
-> Base is the operational chain environment where verified platform value is normalized into FUZE Platform Credits and then consumed across products under one shared internal commerce model.
+### 3. Semantic-Then-Ledger-Then-Operational Principle
+Platform Credits semantic truth determines what credits mean. Credit-ledger truth determines why and how credits changed. Base operational truth represents the chain-adjacent operational state of those approved changes. These truth families MUST NOT be collapsed.
 
-This means:
+### 4. Scope-Bound Ownership Principle
+Every Base credits balance and mutation MUST bind to an explicit canonical owner scope, such as an account or workspace. Contextless or ambiguous Base balances are forbidden.
 
-- Base is where Platform Credits are issued and recorded as internal spending power
-- Base is where credits balances are represented for accounts and workspaces under platform policy
-- Base supports spend, reservation, reversal, and adjustment behavior for the internal economic layer
-- Base does not replace Ethereum as the participation and token-truth layer
-- Base credits operations remain distinct from Base stablecoin payout execution even though both live on the same chain
+### 5. Controlled Movement Principle
+Base credits movement MUST occur only through approved platform pathways. Unrestricted market transfer behavior is non-canonical and forbidden.
 
-This principle is essential because it gives Base a bounded and intelligible role in the FUZE ecosystem.
+### 6. Class-Aware Operational Principle
+Base credits operational state MUST preserve class-aware distinctions required by policy, including paid, bonus, restricted, or future approved classes.
 
----
+### 7. Reservation-Is-Operational Principle
+Reservation, release, settlement, reversal, and adjustment state MUST remain explicit at the operational layer where those behaviors materially affect spendable posture or Base-side state.
 
-## Why Base Is Used for Platform Credits
+### 8. Chain-Adjacency-Not-Myth Principle
+The Base credits layer is not a passive mirror. It is an explicit operational domain with its own synchronization, discrepancy, correction, and audit requirements.
 
-Base is used for Platform Credits because the internal commerce layer of FUZE must support more frequent operational activity than the token participation layer.
+### 9. Derived-Views-Are-Subordinate Principle
+Dashboards, product displays, public explainers, analytics, and support summaries are derived read models. They MUST NOT replace canonical Base operational truth.
 
-Platform Credits are expected to power:
+### 10. Correction-Lineage Principle
+Mistakes, drift, misbinding, duplication, or repair actions MUST be represented through explicit correction lineage, reversal, supersession, or compensating records rather than silent rewrite.
 
-- subscription activation and renewal
-- usage-based billing
-- premium feature unlocks
-- AI task billing
-- report generation
-- workspace consumption flows
-- reversals, adjustments, and release behavior
-- product-specific premium actions across multiple applications
+## Canonical Definitions
 
-These activities create a different operational profile from token holding. They are more frequent, more product-coupled, and more likely to require repeated mutation of balances, reservations, or settlement state.
+### Base Credits Layer
+The Base-chain operational layer that represents FUZE Platform Credits state after approved normalization and platform-controlled interpretation.
 
-Ethereum mainnet is used as the canonical token layer because it is the participation layer of the ecosystem. That role benefits from strong holder-truth semantics and public credibility. But it is not the most suitable place for frequent internal product commerce. Forcing daily or high-frequency operational credits activity onto Ethereum would make the internal economy less practical and less scalable.
+### Base Credits Account
+A Base-layer operational subject or partition bound to a canonical FUZE owner scope for credits representation and mutation.
 
-Base gives FUZE a more suitable operational environment for:
+### Owner Scope
+The canonical account, workspace, or other explicitly approved subject that owns or controls Platform Credits.
 
-- lower-cost credits issuance
-- repeated deduction and settlement
-- practical user and workspace interaction
-- integration with a shared on-chain credits ledger
-- a more usable internal economic system across products
+### Operational Entry
+A durable Base-layer record representing issuance, reservation, release, spend, reversal, adjustment, or approved rebinding/supersession posture.
 
-Base is therefore chosen because it fits the role of the internal consumption layer more effectively than Ethereum mainnet.
+### Commitment State
+The Base-chain commitment or synchronized operational state associated with one or more approved credits mutations.
 
----
+### Semantic Credits Truth
+The platform-owned policy meaning of Platform Credits, including class semantics, issuance categories, transfer restrictions, and lifecycle meaning.
 
-## Canonical Role of the Base Credits Layer
+### Credits Ledger Truth
+The authoritative append-oriented mutation lineage and settlement posture explaining why credits changed and how balances are derived.
 
-The Base credits layer exists to serve as the on-chain execution and recording layer for FUZE Platform Credits.
+### Chain Sync Record
+A durable operational record describing synchronization, confirmation, drift detection, retry posture, discrepancy state, or supersession across the Base credits layer.
 
-This means the Base credits layer is responsible for the on-chain representation of:
+### Available Base Credits
+The portion of a Base-bound credits balance currently usable under owner-scope, class-policy, reservation, restriction, and synchronization posture.
 
-- credits issuance after verified value enters the platform
-- credits balances by owner scope
-- credits spend and deduction behavior
-- credits reservations and later settlement where applicable
-- credits reversals, releases, and adjustments under policy
-- shared credits visibility across multiple platform products
+### Restricted Base Credits
+Credits represented at the Base layer whose operational usability is narrowed by class policy, containment posture, or explicit restrictions.
 
-The Base credits layer is not simply a wallet balance display. It is the execution layer of the internal platform economy.
+### Internal Rebinding
+A policy-approved correction or migration that reattaches Base credits lineage between permitted internal scopes without introducing open transfer semantics.
 
-### Strategic meaning
+## Truth Class Taxonomy
 
-In a multi-product platform, the internal commerce layer is a major long-term strategic asset. The Base credits layer is what allows that asset to become technically enforceable, operationally coherent, and publicly understandable enough to support long-term trust.
+Downstream implementations MUST preserve the following truth classes.
 
-This matters because FUZE is not just building products. It is building an internal economic operating system that those products can share.
+### 1. Canonical Identity Truth
+The durable actor anchor represented by `account_id` and canonical subject identity.
 
----
+### 2. Collaborative Scope Truth
+Canonical workspace, organization, and other approved shared ownership scopes and their lifecycle states.
 
-## What the Base Credits Layer Owns
+### 3. Structural Authorization Truth
+Role assignments, permission mappings, and scoped grants that determine who may request or administer Base credits actions.
 
-The Base credits layer owns the on-chain operational meaning of:
+### 4. Effective-Permission Truth
+The final allow, deny, restricted, or review-required outcome for a concrete mutation or privileged review action.
 
-- Platform Credits issuance records
-- Platform Credits spend and deduction records
-- credits reservations where adopted by the billing model
-- credits releases and reversals where reflected on-chain
-- scoped balances for accounts and workspaces
-- commitment state for the internal consumption economy
-- shared credits state that products may consume for commercial enforcement
+### 5. Platform Credits Semantic Truth
+The canonical meaning of credits, classes, ownership posture, issuance categories, and transfer restrictions owned by `PLATFORM_CREDITS_SPEC.md`.
 
-### Clarification of “owns”
+### 6. Credit Ledger and Settlement Truth
+The authoritative append-oriented mutation and settlement lineage explaining why credits changed and how balances are derived, owned by `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md`.
 
-To say the Base credits layer owns these meanings does not mean Base alone explains the full commercial system. Off-chain systems still verify payments, interpret policy, apply accounting treatment, and determine product billing logic. But when the question becomes “what is the on-chain state of the internal credits economy?” the answer belongs to the Base credits layer.
+### 7. Base Operational Credits Truth
+The chain-adjacent operational representation of credits state on Base, including scoped accounts, class-aware operational entries, committed/reserved posture, synchronization state, and discrepancy lineage, owned by this domain.
 
-This gives the platform a clean place to anchor its internal commerce state.
+### 8. Commerce / Billing Truth
+Subscriptions, invoices, payment methods, pricing results, refunds, and billing events that may justify credits mutations but do not replace Base operational truth.
 
----
-
-## What the Base Credits Layer Does Not Own
-
-The Base credits layer does **not** own:
-
-- canonical FUZE token balances
-- token-holder participation truth
-- raw external payment verification
-- final platform accounting profit determination
-- stablecoin payout entitlement logic
-- token-governance meaning
-- unrestricted market transfer behavior for credits
-- product authorization logic by itself without entitlement and policy layers
-- general-purpose treasury meaning
-
-This distinction is important because the Base credits layer is powerful but bounded. It supports internal platform commerce. It is not the universal answer to every economic question in FUZE.
-
----
-
-## Relationship to External Payment Rails
-
-The Base credits layer is downstream from the external payment rail system.
-
-Approved payment rails may include:
-
-- fiat through Stripe
-- supported stablecoins
-- FUZE token input where policy allows
-- Telegram Stars
-- Apple In-App Purchase
-- Google Play Billing
-
-### Canonical flow
-
-The correct flow is:
-
-1. external payment event occurs
-2. payment is verified and normalized under platform policy
-3. appropriate credits amount and class are determined
-4. Platform Credits are issued on Base
-5. those credits become available for internal ecosystem usage
-
-### Why this matters
-
-The Base credits layer does not assume that every raw payment event on every rail should automatically create on-chain spending power. Verification and normalization are required first. This preserves the integrity of the internal economy.
-
-The Base credits layer is therefore not a raw payment-rail mirror. It is the normalized internal spending layer that sits after verification and policy processing.
-
----
-
-## Payment -> Credits -> Base Ledger Flow
-
-The Platform Credits layer on Base is easiest to understand through the standard internal value flow:
-
-### 1. Value enters the platform
-The user or workspace pays through an approved external payment rail.
-
-### 2. Value is verified
-The payment rail is normalized and verified off-chain according to the payment integration and billing rules.
-
-### 3. Credits are calculated
-The platform determines the correct credits class, quantity, and destination scope.
-
-### 4. Credits are issued on Base
-The internal consumption unit is created or assigned through the Base credits layer.
-
-### 5. Credits are consumed across products
-Products then use these credits for subscriptions, usage actions, premium features, AI tasks, reports, and related platform services.
-
-This flow is important because it shows that Base is the internal commerce execution layer, not the direct raw input layer for every external asset.
-
----
-
-## Account-Scoped and Workspace-Scoped Credits on Base
-
-The Base credits layer must support both account-scoped and workspace-scoped balances.
-
-### Account-scoped usage
-Used when a personal user is the commercial owner of credits and product consumption.
-
-Examples include:
-- individual subscriptions
-- personal premium analysis
-- solo AI generation
-- personal usage-based actions
-
-### Workspace-scoped usage
-Used when a team, organization, or collaborative operating context is the commercial owner of credits and product consumption.
-
-Examples include:
-- workspace-funded AI actions
-- shared business software usage
-- team report generation
-- operator actions billed to a workspace
-- multi-user product environments
-
-### Scope principle
-
-The Base credits layer must preserve clarity about which owner scope holds the credits and which scope is being charged. This is essential for commercial correctness, support clarity, and product consistency across the ecosystem.
-
-A shared on-chain credits layer is only useful if ownership scope remains explicit.
-
----
-
-## Credit Classes on Base
-
-The Base credits layer should support distinct credit classes, reflecting the wider Platform Credits architecture.
-
-At minimum, it should be able to represent:
-
-- paid credits
-- bonus credits
-- restricted credits
-- policy-defined future classes if added under governance
-
-### Why classes matter on Base
-
-The on-chain operational layer must preserve the semantic differences between:
-- credits purchased directly,
-- credits issued as rewards or compensation,
-- and credits restricted to defined contexts.
-
-Without class-aware credits logic, the platform would lose flexibility around:
-- expiry policy
-- restricted usage
-- support compensation
-- spending priority
-- reward-campaign controls
-
-Base is therefore not only the place where balances live. It is also the place where the class-sensitive internal economy becomes operationally structured.
-
----
-
-## Spend and Settlement Behavior on Base
-
-The Base credits layer must support spend and settlement behavior that aligns with the shared billing and ledger model of FUZE.
-
-### Spend behavior may include:
-
-- direct immediate spend
-- reservation before high-cost action
-- partial settlement after job completion
-- release of unused reserved amount
-- policy-driven deductions for subscription or usage events
-- explicit reversal or adjustment entries where applicable
-
-### Examples
-
-- a QTB premium analysis request may deduct credits
-- a HerHelp generation job may reserve credits, then settle final usage after completion
-- a Botmad workflow scan may deduct credits according to premium action rules
-- a workspace subscription renewal may consume workspace-held paid credits
-
-### Settlement principle
-
-The Base layer should support credits state transitions that are legible and reconcilable. Spend should not appear as unstructured balance mutation with no reason or lineage. The Base credits layer works best when linked clearly to the credits ledger and settlement architecture.
-
----
-
-## Relationship to the Credits Ledger
-
-The Base credits layer and the canonical credits ledger are closely connected but not conceptually identical.
-
-### Credits ledger owns:
-- semantic business record of credits mutation
-- reason codes and mutation lineage
-- reservation and release logic
-- linkage to billing and payment reference
-- the append-oriented truth of the internal credits economy
-
-### Base credits layer owns:
-- on-chain operational representation of the credits economy
-- committed credits state
-- chain-visible issuance and mutation record where applicable
-- operational environment for the internal spending unit
-
-### Principle
-
-The platform ledger explains why credits changed.  
-The Base layer records the operational on-chain state of those credits.
-
-This distinction is important because on-chain state alone is not enough to explain the full economic history of the platform, but it is still a critical part of the internal commerce architecture.
-
----
-
-## Relationship to Product Consumption
-
-The Base credits layer exists so that products can operate inside one shared internal consumption economy.
-
-Products such as:
-
-- QTB
-- AIMM
-- ZAGA
-- AIE
-- HerHelp
-- Botmad
-- and future products
-
-should be able to consume Platform Credits without each creating a separate internal asset model.
-
-### Product integration implications
-
-Products may differ in:
-- pricing logic
-- included versus premium actions
-- subscription structure
-- action-based metering
-- workspace versus account billing model
-
-But they should share:
-- the same core credits unit
-- the same general issuance logic
-- the same general deduction model
-- the same internal economic vocabulary
-
-This is one of the core reasons the Base credits layer exists. It allows product diversity without internal economic fragmentation.
-
----
-
-## Relationship to Subscriptions and Usage Billing
-
-The Base credits layer is tightly connected to the platform subscriptions and usage billing architecture.
-
-### Subscriptions
-Recurring plans may activate, renew, downgrade, or lapse based on credits-backed logic under policy.
-
-### Usage billing
-Metered actions may deduct or reserve credits when the product value is consumed.
-
-### Premium AI actions
-AI-heavy or advanced actions may consume credits directly or after reservation and settlement.
-
-### Workspace billing
-A workspace may use a shared Base-held credits balance to fund product activity by authorized members.
-
-### Important boundary
-
-The Base credits layer is not the same as the billing-policy layer. Billing determines what should be charged and under what rules. The Base credits layer is where the internal consumption unit is represented and consumed operationally after those rules are applied.
-
----
-
-## Relationship to the Ethereum Token Layer
-
-The Base Platform Credits layer is intentionally separate from the Ethereum token layer.
-
-### Ethereum token layer
-Owns:
-- canonical token truth
-- holder balances
-- participation identity
-- snapshot source for eligibility
-
-### Base credits layer
-Owns:
-- internal spending unit
-- product-consumption balances
-- subscriptions and usage-linked commercial state
-- on-chain credits execution
-
-### Why this matters
-
-A user may hold FUZE on Ethereum and have no Platform Credits on Base.  
-A user or workspace may purchase and spend Platform Credits on Base without holding FUZE on Ethereum.  
-A product may charge Platform Credits for usage without that usage meaning anything about token-holder rank or payout eligibility.
-
-This separation is necessary because FUZE is designed with distinct roles for participation and consumption.
-
----
-
-## Relationship to the Base Payout Execution Layer
-
-The Base credits layer is also separate from the Base payout execution layer, even though both live on Base.
-
-### Base credits layer
-Represents internal platform spending power.
-
-### Base payout execution layer
-Represents stablecoin profit participation claims after cycle funding.
-
-### Why separation is necessary
-
-If the internal commerce layer and the payout layer were blurred together, the ecosystem would inherit multiple problems:
-- internal spending could be misread as holder reward rights
-- sold credits could be confused with distributable profit
-- payout assets could be confused with spendable product balances
-- treasury and accounting logic would become harder to explain
-
-### Principle
-
-Shared chain does not mean shared economic meaning.  
-Base hosts more than one bounded layer in FUZE.  
-The credits layer and the payout layer remain separate even though they share the same execution environment.
-
-This is one of the clearest examples of FUZE’s role-separation architecture.
-
----
-
-## Transferability and Internal Movement Rules
-
-The Base credits layer should preserve the non-market nature of Platform Credits.
-
-Platform Credits are intended to be:
-
-- account-bound
-- workspace-bound
-- transferable only through tightly controlled internal pathways
-- unsuitable for open speculative circulation
-
-### Controlled internal movement may include:
-- account to workspace allocation
-- workspace reassignment under policy
-- support-driven migration
-- internal correction or rebinding of ownership scope
-
-### Disallowed default behavior includes:
-- unrestricted peer-to-peer transfer
-- open-market liquidity behavior
-- treating Platform Credits as a public speculative token
-
-This rule is critical because the internal spending layer must remain clearly distinct from the ecosystem participation token.
-
----
-
-## Transparency Expectations for the Base Credits Layer
-
-Because Platform Credits are a core part of the internal economy of FUZE, the Base credits layer should support meaningful transparency.
-
-At minimum, the ecosystem should be able to explain:
-
-- that Platform Credits live on Base
-- that credits are the internal consumption unit
-- that credits are distinct from the FUZE token
-- that credits are distinct from stablecoin payout claims
-- how verified payments turn into credits
-- how credits balances are used across products
-- how reversals, restrictions, and classes affect the internal economy
-
-This transparency matters because the Base credits layer is one of the most distinctive structural components of the platform. If it is not explained clearly, users may confuse spending power with participation or profit.
-
----
-
-## Governance and Administrative Expectations
-
-The Base credits layer should be governed with role-appropriate control discipline.
-
-### Governance-sensitive actions may include:
-
-- allowed issuance pathways
-- credit-class policy changes
-- restricted-usage logic changes
-- controlled migration or rebinding operations
-- pause or emergency controls where necessary
-- contract or ledger-role updates where applicable
-
-### Governance principles
-
-- administrative control should be explicit
-- sensitive actions should remain policy-bounded
-- role separation should exist between commercial policy, accounting interpretation, and on-chain execution control
-- updates or control changes should be auditable and compatible with shared governance expectations
-
-The Base credits layer is a high-trust operational layer. Its control model must reflect that importance.
-
----
-
-## Security Principles for the Base Credits Layer
-
-The Base credits layer should follow strong security and operational integrity principles.
-
-### Key principles include:
-
-#### Internal Asset Clarity
-The layer should clearly represent Platform Credits and not drift into ambiguous token-like behavior.
-
-#### Mutation Discipline
-Credits issuance, spend, reversal, and adjustment should occur only through defined pathways.
-
-#### Scope Integrity
-Account and workspace ownership must remain explicit.
-
-#### Commercial Safety
-Retry, correction, and reversal behavior must not create silent duplication or ambiguous balances.
-
-#### Separation from Payout Layer
-Even though both layers live on Base, their roles must remain distinct.
-
-#### Observability
-Operators should be able to monitor issuance volume, spend patterns, failures, reversals, and reconciliation issues.
-
-These principles matter because internal economic systems often fail through ambiguity rather than through visible spectacular collapse. FUZE is designed to avoid that.
-
----
-
-## Risks and Failure Considerations
-
-The Base credits layer introduces several important risks that must be managed.
-
-### 1. Credits-Meaning Confusion
-Users may confuse Platform Credits with the FUZE token or with profit-participation rights if the architecture is not explained clearly.
-
-### 2. Commercial Mutation Risk
-If issuance, reversal, or spend logic is too flexible or poorly controlled, the internal economy may lose coherence.
-
-### 3. Cross-Scope Billing Risk
-If account and workspace ownership are not handled carefully, credits may be charged to the wrong commercial context.
-
-### 4. Reconciliation Risk
-The Base credits layer must stay consistent with off-chain payment verification, credits ledger records, and reporting systems.
-
-### 5. Cross-Layer Confusion
-Because Base also hosts the payout execution layer, the platform must explain clearly that the two roles are separate.
-
-These risks reinforce the need for strong documentation, strong control logic, and strong transparency around the Base credits architecture.
-
----
-
-## Minimum Architectural Entities
-
-At minimum, the Base Platform Credits layer should recognize the following entities:
-
-### Base Credits Contract / Ledger Entities
-- Platform Credits contract or ledger identity
-- credit class state
-- scoped balance state
-- issuance and deduction references
-
-### Ownership and Scope Entities
-- account-scoped credit owner
-- workspace-scoped credit owner
-- ownership rebinding or migration references where relevant
-
-### Settlement and Mutation Entities
-- spend references
-- reservation references where applicable
-- reversal and release references
-- adjustment references
-
-### Coordination Entities
-- payment verification linkage
-- billing and subscription linkage
-- reporting references
-- governance/control references
-
-These are minimum conceptual entities. More detailed schemas and contract models are refined in downstream specifications.
-
----
-
-## Open Items
-
-The following areas are intentionally refined in downstream specifications:
-
-- exact shared credit-ledger contract structure on Base
-- exact scope representation model for accounts and workspaces
-- exact reservation and release mechanics
-- exact restricted-credit enforcement mechanics
-- exact reporting schema for Base credits activity
-- exact emergency and pause controls for credits-layer operations
-
-These do not weaken the canonical Base Platform Credits layer model established here.
-
----
-
-## Closing Summary
-
-The Base Platform Credits layer is the operational internal commerce layer of the FUZE ecosystem. It is where verified external value becomes Platform Credits, where account- and workspace-scoped balances are represented, and where internal product consumption is executed across subscriptions, usage billing, premium features, AI actions, and related platform services. It is intentionally separate from the Ethereum token layer and intentionally separate from the Base payout execution layer. By giving Platform Credits a low-cost, bounded, and clearly explained on-chain home on Base, FUZE creates one of the most important structural foundations of its multi-product platform economy.
+### 9. Payment Verification Truth
+Verified, normalized external payment outcomes owned upstream from this domain.
+
+### 10. Token / Eligibility / Payout Truth
+Ethereum holder truth, eligibility dataset truth, profit-participation truth, payout-ledger truth, and Base payout execution truth, all of which remain distinct from Base credits operational truth.
+
+### 11. Policy / Restriction Truth
+Security, fraud, containment, governance, review, and emergency constraints that may suppress, restrict, or require review for Base credits operations.
+
+### 12. Derived Projection / Reporting Truth
+Product balance displays, exports, support summaries, analytics views, and public-safe explanations derived from canonical sources.
+
+## Architectural Position in the Spec Hierarchy
+
+This document sits below:
+
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
+- `CHAIN_ARCHITECTURE_SPEC.md`
+- `PLATFORM_CREDITS_SPEC.md`
+- `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md`
+- `SECURITY_AND_RISK_CONTROL_SPEC.md`
+
+and above:
+
+- `BASE_PLATFORM_CREDITS_LAYER_API_SPEC.md`
+- Base credits contracts adapters and synchronization workers
+- product spend-consumer integrations
+- support, reconciliation, and admin-control workflows
+- transparency-safe exports and reporting projections that include credits-related state
+
+## System Boundaries
+
+This domain governs the Base-chain operational representation of FUZE Platform Credits.
+
+It owns:
+
+- Base-scoped credits accounts and scope bindings
+- Base operational entries and class-aware state partitions
+- Base available/reserved/restricted posture where applicable
+- Base synchronization records, reconciliation records, and discrepancy cases
+- Base correction, supersession, resync, and suspension posture for the credits layer
+- Base-layer lineage needed to connect semantic and ledger truth to Base operational state
+
+It does not own:
+
+- what a Platform Credit means at the semantic layer
+- raw payment-provider verification outcomes
+- invoice truth, accounting-book truth, or treasury-finalized meaning
+- Ethereum token-holder balances or wallet registry semantics
+- eligibility datasets or profit-participation policy
+- stablecoin payout requests or payout execution runs on Base
+- unrestricted external transfer markets for credits
+
+## Adjacent Boundaries
+
+This specification must be interpreted with the following adjacent boundaries:
+
+- `PLATFORM_CREDITS_SPEC.md` governs what Platform Credits are, their class semantics, ownership rules, issuance categories, and controlled-transfer posture.
+- `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md` governs why credits changed, the append-oriented mutation model, settlement posture, and balance derivation rules.
+- `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md` governs the chain/off-chain ownership split and prevents Base state from absorbing policy, accounting, or product meaning it does not own.
+- `PAYMENT_RAILS_INTEGRATION_SPEC.md`, `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`, and `REFUND_REVERSAL_AND_ADJUSTMENT_SPEC.md` govern upstream causes that may justify Base operational changes.
+- `BASE_PAYOUT_EXECUTION_LAYER_SPEC.md` governs stablecoin payout execution on Base and MUST remain separate.
+- `CHAIN_ARCHITECTURE_SPEC.md` governs why Base is used for operational credits while Ethereum remains the token participation layer.
+
+## Conflict Resolution Rules
+
+When materials, systems, or interpretations disagree, the following rules apply:
+
+1. the active refined registry and higher constitutional materials win over narrower documents
+2. `PLATFORM_CREDITS_SPEC.md` wins on semantic meaning of credits, class semantics, and controlled-transfer posture
+3. `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md` wins on ledger mutation lineage, settlement posture, and balance derivation semantics
+4. this document wins on Base operational credits representation, synchronization posture, discrepancy handling, and chain-adjacent implementation guardrails
+5. `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md` wins on the chain/off-chain division of responsibility whenever a narrower interpretation tries to move off-chain policy or accounting meaning into Base state without explicit authority
+6. `BASE_PAYOUT_EXECUTION_LAYER_SPEC.md` wins on stablecoin payout execution behavior; Base credits state MUST NOT be used to reinterpret payout execution truth
+7. if Base chain state, platform ledger state, and derived product view disagree, semantic meaning remains with the semantic credits layer, mutation lineage remains with the credits ledger, and Base operational truth remains the authoritative record of the Base-layer operational state itself
+8. if a product attempts to treat local cached balance as canonical, the product interpretation is non-canonical and MUST be rejected
+
+## Default Decision Rules
+
+1. If the platform cannot safely bind a Base credits mutation to an explicit owner scope, the mutation MUST fail closed.
+2. If semantic credits meaning and Base operational representation appear inconsistent, operators MUST reconcile through the semantic and ledger domains rather than inventing local Base-only reinterpretation.
+3. If upstream billing or payment input is disputed, Base issuance MUST pause or remain provisional until upstream truth is normalized.
+4. If chain synchronization status is uncertain, product-facing spend approval SHOULD fail closed for materially sensitive actions unless a policy-approved degraded-mode path is explicitly defined.
+5. If a correction could materially alter historical meaning, the platform MUST create explicit compensating or superseding records instead of rewriting original lineage.
+6. If ownership between account and workspace is contested, the canonical off-chain ownership sources and approved rebinding policy govern; Base addresses or product assumptions do not decide ownership by themselves.
+
+## Roles / Actors / Entities
+
+### Roles and Actors
+- canonical account subject
+- workspace subject
+- backend service principals
+- credits/ledger services
+- Base contracts adapters and synchronization workers
+- billing, payments, pricing, and refund services
+- privileged admin/control-plane operators
+- finance/reconciliation reviewers
+- security/containment operators
+- product consumers and read-only UI surfaces
+
+### Core Entities
+- `base_credits_accounts`
+- `base_credits_scope_bindings`
+- `base_credits_class_states`
+- `base_credits_operational_entries`
+- `base_credits_balance_states`
+- `base_credits_reservations`
+- `base_credits_chain_sync_records`
+- `base_credits_reconciliation_records`
+- `base_credits_discrepancy_cases`
+- `base_credits_mutation_actions`
+- `base_credits_supersession_links`
+- audit and trace records emitted to the audit domain
+
+## Ownership Model
+
+- The **Platform Credits Domain** owns the semantic meaning of credits.
+- The **Credit Ledger and Settlement Domain** owns the append-oriented business-level mutation lineage and balance derivation truth.
+- The **Base Platform Credits Layer Domain** owns the Base-side operational representation of approved credits state and the synchronization/discrepancy/correction posture necessary to keep that representation reliable.
+- The **Payments/Billing domains** own upstream normalized causes.
+- The **Security/Risk domain** owns containment and restriction policy that may constrain Base mutations.
+- The **Audit domain** owns immutable audit records, sourced by this domain for sensitive actions.
+- Products MAY consume bounded derived views but MUST NOT own Base credits truth.
+
+## Authority / Decision Model
+
+- Semantic credits issuance categories, classes, and movement constraints are decided upstream and consumed here.
+- Ledger-authorized mutation lineage is the required business-level basis for materially meaningful Base operational change.
+- Backend-owned Base layer services authorize and coordinate Base operational state transitions.
+- Admin override paths MAY exist only for bounded correction, suspension, resync, rebind-if-allowed, or supersession workflows; every such path MUST be reason-coded, policy-constrained, and audited.
+- Smart contracts and Base writes enforce contract-visible operational state but do not independently define platform semantic meaning.
+
+## State Model
+
+### Base credits account lifecycle
+- `active`
+- `restricted`
+- `suspended`
+- `closed`
+- `superseded`
+
+### Base operational entry lifecycle
+- `created`
+- `committing`
+- `committed`
+- `reserved`
+- `released`
+- `settled`
+- `reversed`
+- `adjusted`
+- `failed`
+- `superseded`
+
+### Base reservation lifecycle
+- `opened`
+- `active`
+- `settled`
+- `released`
+- `expired`
+- `cancelled`
+- `superseded`
+
+### Chain sync lifecycle
+- `pending`
+- `synced`
+- `drift_detected`
+- `failed`
+- `repair_pending`
+- `superseded`
+
+### Discrepancy lifecycle
+- `opened`
+- `under_review`
+- `repair_authorized`
+- `resolved`
+- `closed`
+- `superseded`
+
+## Lifecycle / Workflow Model
+
+1. **Upstream cause occurs**: verified payment, billing event, refund, adjustment, or approved internal issuance path produces an authorized credits outcome.
+2. **Semantic and ledger validation occurs**: semantic class, owner scope, reason code, and ledger linkage are determined upstream.
+3. **Base operational mutation is requested**: backend submits an idempotent mutation request to the Base credits layer.
+4. **Base account and class partition are resolved**: the system binds the mutation to the correct account/workspace scope and class-aware partition.
+5. **Operational entry is created**: the Base domain records the requested action with linkage to ledger and upstream references.
+6. **Commitment/sync processing occurs**: the system writes or synchronizes the Base-side state and records chain sync posture.
+7. **Available/reserved state is projected**: derived Base balance states are updated from committed entries and active reservations.
+8. **Downstream events are emitted**: product consumers, support views, and reconciliation workflows receive bounded events.
+9. **Reconciliation confirms integrity**: the platform validates consistency between semantic truth, ledger truth, Base operational truth, and derived views.
+10. **Correction/supersession occurs if required**: discrepancies are repaired through bounded, explicit lineage.
+
+## Invariants
+
+1. Platform Credits on Base MUST remain distinct from FUZE token balances and Base payout execution balances.
+2. Every materially meaningful Base credits mutation MUST bind to an explicit owner scope.
+3. Every materially meaningful Base credits mutation MUST link to approved upstream lineage.
+4. Base available balance MUST be derivable from canonical Base operational state, not free-form mutation.
+5. Base operational state MUST preserve class-aware distinctions required by policy.
+6. Reservation and release MUST remain explicit when used.
+7. Public or product-facing views MUST remain derived and MUST NOT redefine canonical Base operational truth.
+8. Unrestricted peer-to-peer market transfer behavior for credits is forbidden.
+9. Admin/operator correction MUST preserve historical lineage and MUST be audited.
+10. Synchronization success and semantic correctness are separate facts and MUST be represented separately.
+
+## Functional Rules
+
+### Issuance Rules
+- Base issuance MUST only occur from approved upstream issuance paths.
+- Base issuance MUST preserve owner scope, credit class, reason linkage, and idempotency keys.
+- Payment-provider callbacks or invoice states alone MUST NOT be treated as sufficient Base issuance truth without approved normalization.
+
+### Spend and Reservation Rules
+- Spend MAY be immediate or reservation-backed depending on approved billing/usage policy.
+- Reservation MUST reduce usable posture in a deterministic and reviewable way.
+- Final spend MUST be explicitly settled; reservation alone is not final consumption.
+- Product consumers MUST NOT invent local spend semantics inconsistent with platform-owned credits logic.
+
+### Release, Reversal, and Adjustment Rules
+- Release MUST unwind reservation posture without silently erasing history.
+- Reversal MUST preserve lineage to the original or superseded operational entry where relevant.
+- Adjustment MUST be reason-coded and SHOULD be exceptional rather than the default operational path.
+- Manual correction MUST use explicit correction categories and MUST NOT masquerade as ordinary product spend.
+
+### Rebinding and Migration Rules
+- Rebinding between account and workspace scopes MAY occur only through approved internal policy.
+- Rebinding MUST preserve lineage and MUST be prohibited where it would create ambiguous ownership or unsupported commercial outcomes.
+- Products and support agents MUST NOT perform informal credit transfers outside approved rebinding pathways.
+
+## Permission / Access Considerations
+
+- Internal service routes MUST require service identity with least privilege.
+- Admin/control-plane routes MUST require privileged operator identity and heightened authorization checks.
+- Sensitive actions such as manual issuance, suspension, rebinding, supersession, discrepancy resolution, or resync MUST require reason codes and audited operator identity.
+- Read access to canonical Base operational truth SHOULD be bounded by business need, role, and subject scope.
+- Public unauthenticated mutation surfaces for Base credits are forbidden.
+
+## Entitlement Considerations
+
+- Credits-aware product consumption MAY coordinate with entitlement posture, but credits state does not replace entitlement truth.
+- A subject MAY hold credits without being entitled to every product capability.
+- Entitlement allow state does not by itself authorize credits spending against the wrong scope.
+- Base credits availability, entitlement posture, and authorization posture MUST be evaluated as distinct truth families.
+
+## API / Contract Implications
+
+Downstream API and contract layers MUST preserve the following:
+
+- idempotent mutation submission for every materially meaningful Base credits write
+- stable identifiers for owner scope, class partition, operational entry, sync record, and discrepancy case
+- explicit state-machine semantics for create, commit, reserve, release, reverse, adjust, suspend, resync, rebind-if-allowed, supersede, and resolve-discrepancy actions
+- machine-readable reason codes and policy-version references for privileged or exceptional actions
+- explicit separation between internal canonical APIs and bounded product-facing read APIs
+- no public API that exposes Base credits as unrestricted market-transfer balances
+
+## Event / Async Implications
+
+- Base credits lifecycle events MUST be emitted for materially meaningful operational state changes.
+- Event families SHOULD distinguish issuance, reservation, release, spend settlement, reversal, adjustment, suspension, sync status change, discrepancy creation, discrepancy resolution, and supersession.
+- Events MUST carry stable trace identifiers and idempotency lineage where appropriate.
+- Async workers MUST treat replay safety as mandatory.
+- Event consumers MUST treat Base lifecycle events as bounded operational signals, not as permission to redefine semantic credits meaning.
+
+## Data Model / Storage Implications
+
+- Canonical Base operational entities MUST be durable and reconstructable.
+- Current balance views MAY be materialized for performance but remain subordinate to operational-entry truth.
+- Class-aware state MUST remain queryable.
+- Scope bindings, chain sync posture, and discrepancy lineage MUST be durable rather than inferred from logs alone.
+- Support or analytics caches MUST be explicitly derived and refreshable.
+
+## Read Model / Projection / Reporting Rules
+
+- Product balance displays, support summaries, analytics exports, and public-safe explainers are derived views.
+- Derived views MAY summarize available, reserved, restricted, and historical posture, but MUST reference canonical state and refresh lineage.
+- Derived views MUST NOT invent hidden balance categories or discard class-aware distinctions if those distinctions affect behavior.
+- Public reporting MAY explain that Platform Credits operate on Base and may summarize credits architecture, but MUST NOT expose private or misleading subject-level state unless governed by an explicit public-trust specification.
+
+## Security / Risk / Abuse Controls
+
+- Mutation routes MUST enforce least privilege and fail-closed validation.
+- Suspicious issuance, duplicate mutation attempts, scope-misbinding, sync drift, replay attempts, and inconsistent reservation posture MUST trigger review or containment workflows.
+- Emergency suspension MAY be used to contain integrity risk but MUST be reason-coded, audited, and policy-bounded.
+- Secrets, signing paths, service credentials, and contract-role controls MUST follow platform security specifications.
+- Monitoring MUST cover issuance volume anomalies, duplicate requests, sync failures, drift rates, discrepancy backlogs, and privileged correction activity.
+
+## Boundary Violation Detection / Non-Canonical Patterns
+
+The following are non-canonical and forbidden:
+
+- treating raw Base balance counters as the only source of credits truth
+- treating Base wallet address presence as proof of commercial ownership without canonical scope bindings
+- allowing products to keep private shadow Base balances for shared credits meaning
+- using Base payout contracts or payout state to explain Platform Credits behavior
+- allowing unrestricted peer-to-peer credits transfers or exchange-like circulation
+- silently rewriting erroneous operational history instead of using correction lineage
+- using invoice-paid state or payment webhook receipt as direct substitute for approved Base issuance truth
+- permitting undocumented admin mint or rebinding behavior
+
+## Audit / Traceability Requirements
+
+- Every privileged mutation and materially meaningful automated mutation MUST emit audit lineage.
+- Audit records MUST capture actor or service identity, action type, reason code, target scope, prior and resulting state references, policy version where relevant, and trace identifiers.
+- Discrepancy review, resync, supersession, suspension, and rebinding actions require especially strong lineage.
+- Audit trails MUST remain queryable for support, security review, finance review, and incident investigation.
+
+## Failure Handling / Edge Cases
+
+- If upstream normalization is incomplete or disputed, Base issuance MUST remain blocked or provisional according to policy.
+- If chain submission succeeds but platform acknowledgment fails, the system MUST reconcile using explicit sync records rather than guessing from cache state.
+- If platform state updates succeed but chain synchronization fails, the domain MUST represent that discrepancy explicitly and prevent silent drift.
+- If duplicate requests are received, idempotency rules MUST suppress duplicate effect while preserving traceability.
+- If owner-scope lineage is contested, the platform MUST escalate to approved rebinding/correction workflows rather than performing ad hoc transfer.
+- If restricted or suspended posture exists, spendable availability MUST reflect that restriction deterministically.
+- If degraded mode is enabled, any temporary read fallback MUST be clearly marked subordinate and MUST NOT authorize unsafe spend by default.
+
+## Operational Considerations
+
+- The Base credits layer is a high-frequency, high-integrity operational domain and MUST be monitored accordingly.
+- Operators SHOULD maintain dashboards for issuance volume, spend rate, reservation aging, sync drift, discrepancy backlog, correction frequency, and scope-binding anomalies.
+- Reconciliation jobs, repair workers, and support tooling MUST be bounded by the same canonical state model.
+- Runbooks MUST explicitly distinguish semantic credits issues, ledger issues, Base operational issues, and payout-layer issues to avoid cross-domain confusion.
+
+## Migration / Compatibility / Supersession Considerations
+
+- Migration from weaker Base credits representations MUST preserve owner scope, class posture, lineage, and reconciliation evidence.
+- New class categories or operational states MAY be added only through forward-compatible, policy-governed changes.
+- Backward compatibility strategies MUST avoid reinterpreting legacy Base records into contradictory semantics.
+- Supersession records MUST explicitly state what was replaced, why, and which downstream projections require refresh.
+
+## Implementation-Contract Guardrails
+
+Downstream implementations MUST preserve the following guardrails:
+
+- Base writes are not allowed without explicit upstream lineage
+- materially meaningful mutations require idempotency protection
+- scope binding cannot be optional
+- reservation and settlement cannot be silently conflated
+- operator override cannot be unaudited
+- chain sync status cannot be assumed from optimistic writes alone
+- derived views cannot be treated as canonical mutation authority
+- shared chain presence cannot justify shared economic meaning with payout execution
+- unsupported open transfer patterns cannot be introduced for convenience
+
+## Downstream Execution Staging
+
+1. semantic credits policy evaluation
+2. ledger-authorized mutation preparation
+3. Base operational mutation request creation
+4. chain-adjacent commitment/synchronization
+5. derived balance projection refresh
+6. reconciliation and discrepancy detection
+7. support/reporting/public-safe projection refresh
+
+## Required Downstream Specs / Contract Layers
+
+- `BASE_PLATFORM_CREDITS_LAYER_API_SPEC.md`
+- Base credits contract/adapter specification(s)
+- reconciliation and discrepancy workflow contracts
+- product spend-consumer integration contracts
+- support/admin correction workflow contracts
+- reporting/export projection contracts where credits state is surfaced
+
+## Canonical Examples / Anti-Examples
+
+### Canonical Examples
+- A verified payment is normalized upstream, recorded in the credits ledger, then represented as Base `paid` credits for a workspace with explicit scope binding.
+- An AI-heavy product action opens a reservation against workspace credits on Base, settles the final amount on completion, and releases any remainder with explicit lineage.
+- A support-authorized correction supersedes a misbound Base operational entry using a reason-coded, audited repair workflow rather than rewriting history.
+- A product dashboard shows available and reserved credits from a bounded derived view while still treating canonical Base operational records as authoritative.
+
+### Anti-Examples
+- Treating a Stripe success callback as direct permission to mint Base credits without normalization and ledger linkage.
+- Letting a product maintain its own private Base credits balance because polling the shared domain is inconvenient.
+- Reclassifying Base credits as payout claims because both happen on Base.
+- Moving credits between users through an undocumented support script with no reason code, lineage, or approved rebinding policy.
+- Treating a stale cached balance as permission to spend when sync drift is known.
+
+## Dependencies / Cross-Spec Links
+
+This document depends materially on:
+
+- `REFINED_SYSTEM_SPEC_INDEX.md`
+- `SYSTEM_SPEC_INDEX.md`
+- `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
+- `PLATFORM_CREDITS_SPEC.md`
+- `CREDIT_LEDGER_AND_SETTLEMENT_SPEC.md`
+- `CHAIN_ARCHITECTURE_SPEC.md`
+- `PAYMENT_RAILS_INTEGRATION_SPEC.md`
+- `SUBSCRIPTIONS_AND_USAGE_BILLING_SPEC.md`
+- `REFUND_REVERSAL_AND_ADJUSTMENT_SPEC.md`
+- `BASE_PAYOUT_EXECUTION_LAYER_SPEC.md`
+- `AUDIT_AND_ACCESS_TRACEABILITY_SPEC.md`
+- `SECURITY_AND_RISK_CONTROL_SPEC.md`
+- `MONITORING_ALERTING_AND_INCIDENT_RESPONSE_SPEC.md`
+
+## Explicitly Deferred Items
+
+- exact Base contract ABI and bytecode structure
+- exact gas-optimization strategy and batching topology
+- exact database table schemas and index design
+- exact event payload shapes for every downstream consumer
+- exact public transparency presentation of credits-related state
+- exact degraded-read strategy under every incident class
+- exact support UI flows and admin approval UX
+
+## Final Normative Summary
+
+The FUZE Base Platform Credits layer is the canonical Base-chain operational representation of Platform Credits. It exists downstream from approved semantic interpretation and ledger-authorized mutation, and it remains explicitly distinct from payment verification, invoice/accounting meaning, Ethereum token participation, eligibility/payout semantics, and Base payout execution. Every materially meaningful Base credits mutation MUST be scope-bound, lineage-bound, idempotent, auditable, class-aware, and reconciliation-safe. Products, operators, contracts adapters, and reporting systems MUST consume this layer as a bounded operational domain and MUST NOT reinterpret it into a universal source of economic meaning.
+
+## Quality Gate Checklist
+
+- [x] Canonical owner is explicit for every material truth family relevant to this domain.
+- [x] Mutation boundaries are explicit.
+- [x] Adjacent boundaries are explicit.
+- [x] Truth classes are explicit.
+- [x] Conflict-resolution rules are explicit where needed.
+- [x] Default decision rules are explicit where ambiguity could arise.
+- [x] Non-canonical patterns are called out clearly.
+- [x] Operator/admin override paths are bounded and audited.
+- [x] Read-model, cache, reporting, and projection rules are explicit.
+- [x] On-chain vs off-chain responsibilities are explicit.
+- [x] Failure and degraded-mode behaviors are explicit.
+- [x] Downstream implementation guardrails are explicit.
+- [x] Dependencies and downstream impacts are explicit.
+- [x] Non-goals and deferred items are explicit.
+- [x] The document is strong enough that backend/API/data/runtime teams can implement without inventing contradictory semantics.

@@ -1,532 +1,734 @@
-# SNAPSHOT_AND_ELIGIBILITY_PIPELINE_SPEC
+# FUZE Snapshot and Eligibility Pipeline Specification
+
+## Document Metadata
+
+- **Document Name:** `SNAPSHOT_AND_ELIGIBILITY_PIPELINE_SPEC.md`
+- **Document Type:** Canonical refined system specification
+- **Status:** Active refined system spec
+- **Version:** 2.0.0
+- **Effective Date:** 2026-04-23
+- **Last Updated:** 2026-04-23
+- **Reviewed On:** 2026-04-23
+- **Document Owner:** FUZE Snapshot and Eligibility Pipeline Domain (canonical owner for snapshot-cycle semantics, policy-bound eligibility derivation, address-treatment interpretation, dataset lineage, exclusion discipline, and implementation-contract guardrails); named individual owner is not explicitly specified in the retrieved governing materials
+- **Approval Authority:** Not explicitly specified in the retrieved governing materials; constitutional approval authority remains governed by `REFINED_SYSTEM_SPEC_INDEX.md` and the active FUZE approval workflow
+- **Review Cadence:** SHOULD be reviewed quarterly and whenever Ethereum token-layer posture, payout-cycle design, address-classification policy, registry posture, treasury-control posture, transparency posture, wallet-aware linkage posture, chain-indexing posture, or implementation-contract posture materially changes
+- **Governing Layer:** Holder-participation derivation / cross-chain eligibility preparation / policy-bound dataset governance
+- **Parent Registry:** `REFINED_SYSTEM_SPEC_INDEX.md`
+- **Primary Audience:** Platform architecture, backend engineering, contracts engineering, data engineering, treasury/governance operators, reporting authors, security engineering, audit/compliance, runtime operations, wallet-aware platform authors, implementation-contract authors
+- **Primary Purpose:** Define the canonical FUZE snapshot and eligibility pipeline that transforms Ethereum FUZE holder-balance truth into policy-finalized cycle-specific eligible datasets and entitlement inputs for profit participation and other approved holder-aware functions without collapsing token truth, wallet-link truth, treasury policy, payout execution, reporting, or registry publication into one ambiguous system
+- **Primary Upstream References:**
+  - `REFINED_SYSTEM_SPEC_INDEX.md`
+  - `DOCS_SPEC_INDEX.md`
+  - `SYSTEM_SPEC_INDEX.md`
+  - `API_SPEC_INDEX.md`
+  - `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+  - `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+  - `PLATFORM_ARCHITECTURE_SPEC.md`
+  - `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+  - `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+  - `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
+  - `CHAIN_ARCHITECTURE_SPEC.md`
+  - `WALLET_AWARE_USER_SPEC.md`
+  - `PROFIT_PARTICIPATION_SYSTEM_SPEC.md`
+  - `PUBLIC_CONTRACT_AND_WALLET_REGISTRY_SPEC.md`
+  - `TREASURY_CONTROL_POLICY_SPEC.md`
+  - `TRANSPARENCY_MODEL_SPEC.md`
+  - `TRANSPARENCY_REPORTING_SPEC.md`
+  - `API_ARCHITECTURE_SPEC.md`
+  - `PUBLIC_API_SPEC.md`
+  - `INTERNAL_SERVICE_API_SPEC.md`
+  - `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+  - `IDEMPOTENCY_AND_VERSIONING_SPEC.md`
+  - `MIGRATION_AND_BACKWARD_COMPATIBILITY_SPEC.md`
+  - `AUDIT_LOG_AND_ACTIVITY_SPEC.md`
+  - `SECURITY_AND_RISK_CONTROL_SPEC.md`
+  - `MONITORING_ALERTING_AND_INCIDENT_RESPONSE_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_THESIS_FINAL_SPEC.md`
+  - `FUZE_ACCOUNT_ACCESS_AND_SESSION_CANONICAL_FINAL_SPEC.md`
+  - `FUZE_WORKSPACE_ACCESS_CONTROL_BASICS_THESIS_FINAL_SPEC.md`
+- **Primary Downstream Dependents:**
+  - `PAYOUT_LEDGER_SPEC.md`
+  - `BASE_PAYOUT_EXECUTION_LAYER_SPEC.md`
+  - `PROFIT_PARTICIPATION_SYSTEM_SPEC.md`
+  - `TRANSPARENCY_REPORTING_SPEC.md`
+  - `PUBLIC_CONTRACT_AND_WALLET_REGISTRY_SPEC.md`
+  - `SNAPSHOT_ELIGIBILITY_API_SPEC.md`
+  - payout entitlement-construction services
+  - holder-rank and privilege derivation services where approved
+  - public and holder-safe payout visibility surfaces
+  - discrepancy, remediation, and supersession runbooks
+- **Supersedes:** Earlier or weaker interpretations that treat raw Ethereum balances as automatically identical to payout entitlement, allow discretionary or undocumented exclusions, let treasury or product operators redefine eligibility post hoc, blur wallet-link context with token-balance truth, or treat spreadsheets, exports, dashboards, or public pages as canonical eligibility owners
+- **Superseded By:** None currently defined
+- **Related Decision Records:** Not explicitly specified in the retrieved governing materials
+- **Canonical Status Note:** This document is the canonical governing FUZE specification for snapshot and eligibility pipeline semantics. Downstream APIs, services, datasets, proof-generation components, reporting outputs, registry linkages, operator/admin tooling, and remediation workflows MUST preserve the ownership, truth-separation, lifecycle, policy-versioning, lineage, and correction rules defined here.
+- **Implementation Status:** Normative source; downstream snapshot, indexing, classification, eligibility, proof, payout, reporting, and read-model systems MUST align
+- **Approval Status:** Draft refined canonical specification pending explicit approval workflow
+- **Change Summary:** Refined the snapshot and eligibility pipeline into a production-grade canonical specification; normalized truth classes, ownership boundaries, lifecycle states, address-treatment semantics, dataset lineage, validation and reconciliation posture, conflict rules, default decisions, read-model restrictions, and implementation-contract guardrails while preserving explicit separation from Ethereum token truth, wallet-link truth, treasury control, payout execution, payout-ledger publication, and transparency artifacts
+
+## Title
+
+FUZE Snapshot and Eligibility Pipeline Specification
 
 ## Purpose
 
-This document defines the canonical snapshot and eligibility pipeline of the FUZE ecosystem. Its purpose is to establish how Ethereum-based FUZE holder balances become policy-defined eligibility inputs for stablecoin profit participation and other holder-aware ecosystem functions, while preserving strong separation between token ownership truth, policy interpretation, payout execution, and public reporting.
+This specification defines the canonical FUZE snapshot and eligibility pipeline.
 
-This specification is foundational because FUZE uses a layered chain model. The FUZE token remains on Ethereum as the canonical participation layer, while stablecoin profit participation executes on Base. The snapshot and eligibility pipeline is the bridge between those two layers. If this bridge is weak, ambiguous, or poorly governed, the entire holder-alignment model loses credibility. If it is strong, explicit, and auditable, the layered architecture becomes a long-term trust advantage.
+Its purpose is to make explicit:
 
----
+- what the snapshot and eligibility domain governs and what it does not govern
+- how Ethereum FUZE holder-balance truth becomes policy-treated cycle-specific eligibility truth
+- how address classification, exclusions, and treatment rules interact with holder balances without mutating token truth
+- how approved eligibility outputs become downstream entitlement inputs for profit participation and other bounded holder-aware functions
+- how auditability, reproducibility, traceability, correction, supersession, and public explanation must be preserved
+- what downstream implementations MUST preserve so they cannot reinterpret eligibility semantics inconsistently
+
+This document is not a thesis, a white paper, an analytics note, or a convenience export guide. It is the governing specification for the semantic and operational meaning of snapshot and eligibility preparation inside FUZE.
 
 ## Scope
 
-This specification covers:
+This specification governs:
 
-- the canonical role of the snapshot and eligibility pipeline in FUZE
-- how Ethereum holder balances become cycle-specific eligibility inputs
-- the distinction between raw holder-balance truth and policy-defined eligible balances
-- snapshot timing, cycle references, and dataset construction principles
-- included and excluded address treatment categories
-- eligibility derivation for stablecoin profit participation
-- optional reuse of holder datasets for rank, privileges, or ecosystem participation logic where applicable
-- off-chain and on-chain coordination in the pipeline
-- audit, transparency, governance, and failure-handling expectations for snapshot operations
+- canonical snapshot and eligibility semantics
+- cycle- or purpose-specific snapshot reference selection
+- the distinction between raw holder-balance truth and policy-finalized eligible-balance truth
+- address-category, inclusion, exclusion, and special-treatment interpretation
+- canonical lifecycle of raw dataset extraction, policy application, eligible dataset construction, validation, publication readiness, and downstream linkage
+- dataset lineage, versioning, idempotency, replay safety, correction, and supersession
+- what must be explicit for profit participation cycles and what MAY be reused for other holder-aware functions
+- interaction with wallet-aware context, public registry surfaces, transparency reporting, and payout execution without collapsing those domains together
+- implementation-contract guardrails for APIs, services, storage, proofs, events, projections, runbooks, and admin/control-plane tooling
 
-This specification does not fully define payout funding policy, full profit accounting logic, or final payout contract implementation details. Those are refined in:
+## Out of Scope
 
-- `ETHEREUM_TOKEN_LAYER_SPEC.md`
-- `BASE_PAYOUT_EXECUTION_LAYER_SPEC.md`
-- `PROFIT_PARTICIPATION_SYSTEM_SPEC.md`
-- `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
-- `TRANSPARENCY_REPORTING_SPEC.md`
-- `PAYOUT_LEDGER_SPEC.md`
+This specification does not fully define:
 
----
+- the FUZE token contract ABI, Ethereum token-layer internals, or low-level chain-indexing implementation details
+- the detailed Base payout contract ABI, claim UX, or final proof-verification mechanics
+- treasury approval matrices, multisig signing procedures, or reserve-category operating procedures in full detail
+- full payout-ledger publication schema, public-report templates, or registry publication templates
+- full wallet-link proof semantics, account recovery, or session/auth behavior beyond dependency constraints
+- generic holder-rank, campaign, or privilege rules beyond the requirements they must preserve if they consume this pipeline
+- low-level service topology, queue internals, database partitioning, or infrastructure-specific implementation details
+
+Those remain governed by adjacent specifications, especially `PROFIT_PARTICIPATION_SYSTEM_SPEC.md`, `BASE_PAYOUT_EXECUTION_LAYER_SPEC.md`, `PAYOUT_LEDGER_SPEC.md`, `PUBLIC_CONTRACT_AND_WALLET_REGISTRY_SPEC.md`, `WALLET_AWARE_USER_SPEC.md`, `TREASURY_CONTROL_POLICY_SPEC.md`, and the account/session foundation documents.
 
 ## Design Goals
 
-The design goals of the snapshot and eligibility pipeline are:
+The design goals of the FUZE snapshot and eligibility pipeline are to:
 
-1. to preserve Ethereum as the canonical source of FUZE holder truth
-2. to translate raw token balances into policy-defined eligibility datasets without blurring those two layers
-3. to support payout-cycle-specific entitlement construction with strong auditability
-4. to make inclusion and exclusion logic explicit rather than informal
-5. to reduce ambiguity around treasury, foundation, team, and operational address treatment
-6. to support transparent and reproducible payout-cycle preparation
-7. to provide a reusable participation dataset model for other holder-aware platform functions where appropriate
-8. to strengthen the trustworthiness of the layered chain architecture through explicit cross-layer coordination
-
----
+1. preserve Ethereum as the canonical holder-participation source for holder-aware economic logic
+2. transform raw balances into policy-defined eligible datasets without pretending those two truths are identical
+3. require explicit, versioned, reviewable treatment of treasury, Foundation, team, vesting, operational, migration, and other special address classes
+4. make each cycle or purpose reproducible through explicit snapshot references, policy references, dataset identifiers, and validation artifacts
+5. support profit participation cycles with enough rigor that downstream payout execution cannot silently distort eligibility meaning
+6. preserve strong audit, transparency, and public-trust posture without exposing unsafe private detail
+7. support bounded reuse of the pipeline for other holder-aware functions while preventing local redefinition of the platform model
+8. reduce architectural drift, terminology drift, and spreadsheet-driven shadow semantics across engineering, finance, governance, and reporting layers
 
 ## Non-Goals
 
 This specification is not intended to:
 
-- make raw Ethereum balances automatically identical to payout entitlement
-- let the payout contract determine all eligibility logic independently on-chain
-- define token-holder truth separately from Ethereum mainnet
-- replace treasury/accounting profit determination with snapshot logic
-- make every holder-aware feature use the exact same eligibility rules as profit participation
-- allow silent or ad hoc exclusions without policy basis
-- treat snapshot output as discretionary operator interpretation without structured controls
+- make raw balances automatically identical to eligible balances or claimable payout amounts
+- let Base payout execution decide eligibility independently
+- let wallet-link ownership replace token-balance truth or account-rooted identity rules
+- let public registries, transparency reports, dashboards, or exported CSVs become canonical eligibility owners
+- allow product teams or routine operators to improvise exclusion logic on a per-cycle basis
+- force all eligibility logic on-chain when policy interpretation and classification are explicitly off-chain responsibilities
+- require every holder-aware function to use identical treatment rules as profit participation
 
----
+## Core Principles
 
-## Canonical Pipeline Principle
+### Principle 1: Ethereum Participation Truth Is Canonical
+The FUZE token on Ethereum mainnet is the canonical source of raw holder-balance truth for holder-based eligibility.
 
-The primary principle of the FUZE snapshot and eligibility pipeline is:
+### Principle 2: Eligibility Truth Is Derived, Not Observed Directly
+Eligible-balance truth is a policy-treated derivative of raw balance truth. It is authoritative only after the approved snapshot and policy-treatment process has completed.
 
-> Ethereum provides canonical holder-balance truth, while the snapshot and eligibility pipeline applies published policy to that truth in order to produce cycle-specific eligible datasets for profit participation and other holder-aware ecosystem functions.
+### Principle 3: Policy Must Be Explicit
+Address-category treatment, exclusions, threshold rules, and purpose-specific policy variations MUST be explicit, versioned, and traceable. No payout-sensitive exclusion may exist only in operator memory or ad hoc spreadsheets.
 
-This means:
+### Principle 4: The Pipeline Bridges, It Does Not Replace Domains
+This pipeline bridges token participation truth to downstream holder-aware systems. It does not absorb treasury truth, wallet-link truth, payout-execution truth, payout-ledger truth, or public-report truth.
 
-- raw balance truth and eligible-balance truth are related but not identical
-- the snapshot pipeline is the formal bridge between token participation and payout execution
-- policy is applied through explicit dataset construction rather than vague narrative interpretation
-- every payout cycle should be explainable in terms of source balances, applied policy, and resulting eligibility output
-- the pipeline must remain structured enough to support reporting, audit, and public credibility
+### Principle 5: Reproducibility Is Mandatory
+A cycle or purpose MUST be reproducible from its snapshot reference, policy version, source token reference, classification basis, resulting dataset identifier, and validation lineage.
 
-This principle is essential because the quality of the holder-alignment model depends heavily on how clearly participation truth is transformed into payout eligibility.
+### Principle 6: Traceability Beats Convenience
+If an optimization would weaken lineage, reversibility, or public intelligibility for a trust-sensitive cycle, the optimization MUST be rejected or explicitly bounded.
 
----
+## Canonical Definitions
 
-## Why FUZE Needs a Snapshot and Eligibility Pipeline
+### Snapshot Reference
+The explicit canonical reference used to measure Ethereum FUZE balances for a given cycle or holder-aware purpose. This reference MAY be a block number, block hash, timestamp-bound block selection, or equivalent deterministic chain reference approved by policy.
 
-FUZE needs a dedicated snapshot and eligibility pipeline because the ecosystem intentionally separates:
+### Raw Holder Dataset
+The unmodified address-to-balance view derived from canonical Ethereum token truth at the chosen snapshot reference.
 
-- the **FUZE token** on Ethereum,
-- the **stablecoin payout execution layer** on Base,
-- and the **internal consumption economy** on Base through Platform Credits.
-
-That separation is an architectural strength, but it requires a disciplined bridge.
-
-If the system attempted to infer eligibility loosely, or relied only on vague statements such as “holders get payouts,” several problems would emerge:
-
-- it would be unclear which balances count
-- it would be unclear when balances count
-- treasury and operational wallets could distort participation meaning
-- payout-cycle funding could be technically correct but economically disputed
-- public trust would depend too heavily on informal explanation
-
-The snapshot and eligibility pipeline solves this by providing a formal process for converting canonical Ethereum token truth into cycle-specific participation eligibility.
-
-This makes the layered chain architecture workable in practice. Ethereum remains the canonical participation layer. Base remains the practical payout execution layer. The snapshot pipeline is what links them with structure rather than confusion.
-
----
-
-## Core Concepts
-
-### Snapshot
-A policy-defined reference state of Ethereum FUZE holder balances at a specified point or block reference for a specific purpose.
-
-### Eligibility Dataset
-The processed dataset derived from the snapshot after inclusion, exclusion, and policy treatment rules are applied.
-
-### Raw Holder Truth
-The direct balance state of FUZE token holders on Ethereum at the snapshot reference.
-
-### Eligible Balance
-The balance amount that counts toward a specific payout cycle or holder-aware logic after policy is applied.
-
-### Excluded Address
-An address or address category whose balance is not counted, or is counted differently, for the relevant cycle or purpose.
-
-### Cycle Reference
-The unique identifier or timeframe associated with the payout cycle or holder-aware operation being prepared.
-
-### Entitlement Input
-The dataset or proof basis produced by the pipeline for later payout execution or holder-aware feature logic.
+### Address Classification
+The policy-bound assignment of an address to one or more recognized treatment categories for the relevant purpose.
 
 ### Policy Treatment
-The rule set that determines how categories of addresses or balances are handled in the eligibility process.
+The rules that determine whether, how, and to what extent a balance counts toward the relevant holder-aware output.
 
----
+### Eligible Dataset
+The canonical derived dataset that results from applying policy treatment to the raw holder dataset for a specific cycle or purpose.
 
-## Canonical Role of the Pipeline
+### Entitlement Input
+The downstream-ready representation derived from the eligible dataset for use by payout execution or another approved holder-aware system.
 
-The snapshot and eligibility pipeline exists to do the following:
+### Cycle Eligibility Basis
+The linked set of references that together explain a specific cycle’s eligibility truth: token source, snapshot reference, policy version, classification basis, eligible dataset identifier, validation status, and approval lineage.
 
-1. read canonical FUZE holder-balance truth from Ethereum
-2. bind that truth to a specific cycle or purpose
-3. apply policy-defined treatment rules
-4. construct a clean eligibility dataset
-5. provide the resulting dataset to downstream payout, reporting, and audit systems
-6. preserve traceability between source balances and resulting entitlement logic
+### Excluded Address
+An address or address class whose balance is excluded entirely for the relevant purpose under the applicable policy.
 
-This means the pipeline is not just a one-time export script or an informal spreadsheet exercise. It is a structural part of the ecosystem’s participation model.
+### Special-Treatment Address
+An address or address class that is counted only under explicit alternative treatment, partial counting, capped counting, or other bounded policy logic.
 
-The pipeline is also not the same thing as the payout contract. It prepares eligibility. The payout contract executes claims based on already-prepared entitlement logic.
+### Purpose Variant
+A formally named variant of the pipeline for a specific approved downstream use such as profit participation, holder rank, ecosystem privilege, or future governance-aware dataset generation.
 
----
+## Truth Class Taxonomy
 
-## Canonical Input Source
+The snapshot and eligibility pipeline MUST distinguish the following truth classes:
 
-The canonical input source for the snapshot and eligibility pipeline is the **FUZE token on Ethereum mainnet**.
+1. **Participation Truth** — raw FUZE holder balances on Ethereum at a deterministic reference
+2. **Classification Truth** — policy-governed address-category assignments and treatment bases
+3. **Eligibility Truth** — the canonical derived result of applying policy to participation truth
+4. **Entitlement-Preparation Truth** — the downstream-ready allocation or proof input derived from eligibility truth
+5. **Wallet-Link Truth** — account-to-wallet linkage and wallet-proof acceptance owned by the wallet-aware user domain
+6. **Treasury / Governance Truth** — funding authority, approval posture, and sensitive control decisions owned by adjacent domains
+7. **Execution Truth** — Base funding state, claim state, and execution outcomes owned by the payout-execution domain
+8. **Ledger Truth** — the structured cycle-linked record owned by the payout-ledger domain
+9. **Reporting / Registry Truth** — public-safe publication outputs owned by transparency and registry domains
+10. **Audit Truth** — internal decision, mutation, and validation lineage
+11. **Projection / Read-Model Truth** — dashboards, public pages, internal summaries, search views, and exported files derived from canonical domains
 
-This is important because Ethereum is the canonical token layer of the ecosystem. The pipeline must begin from that layer in order to preserve the participation truth model of FUZE.
+These truth classes MUST NOT be collapsed into one undifferentiated “holder eligibility” object.
 
-### Canonical input includes:
+## Architectural Position in the Spec Hierarchy
 
-- token contract identity
-- total holder-balance view at the chosen snapshot reference
-- address-level balances
-- policy-linked metadata about known reserve or special-purpose addresses where applicable
+This document sits:
 
-### Important boundary
-
-The pipeline should not treat Base balances, internal credits balances, or payout contract state as substitutes for Ethereum holder truth. Those are different layers with different meanings.
-
-The only strong starting point for holder-based eligibility is the canonical token balance layer on Ethereum.
-
----
-
-## Snapshot Timing Model
-
-Each payout or holder-aware eligibility operation should be tied to an explicit snapshot timing model.
-
-### Snapshot timing should define:
-
-- which cycle or purpose the snapshot belongs to
-- what block height, timestamp reference, or equivalent canonical reference is used
-- how the timing relates to the payout cycle timeline
-- whether any freeze, cutoff, or publication policy applies
-
-### Why timing matters
-
-Eligibility can become disputed if the system is vague about when balances were measured. A strong pipeline should allow the platform to answer questions such as:
-
-- Which balances counted for this cycle?
-- At what reference point were they measured?
-- How does this relate to the payout cycle announcement and funding timeline?
-
-### Timing principle
-
-The snapshot timing model should be explicit enough to support reproducibility and trust, while remaining compatible with the operational needs of cycle preparation.
-
-This does not require publishing every internal operational step immediately, but it does require having a deterministic snapshot reference for each cycle.
-
----
-
-## Raw Balance Truth vs Eligible Balance Truth
-
-A crucial principle of the pipeline is the distinction between raw balance truth and eligible balance truth.
-
-### Raw balance truth
-Raw balance truth is the balance state visible on Ethereum at the snapshot reference.
-
-### Eligible balance truth
-Eligible balance truth is the balance state after policy-defined inclusion and exclusion rules are applied.
-
-### Why the distinction matters
-
-Not every raw balance should automatically count the same way in every cycle. For example:
-
-- treasury-controlled balances may not count as public-holder participation
-- foundation-held balances may require explicit policy treatment
-- team vesting balances may be excluded or treated specially
-- operational addresses may be non-participating
-- migration-related or internal-purpose contracts may not represent circulating holder participation
-
-This distinction is one of the most important trust features of the FUZE architecture. The system should not pretend that raw holder state and payout entitlement are always identical. Instead, it should make the transformation explicit.
-
----
-
-## Address Treatment Categories
-
-The pipeline should support policy-defined treatment categories for addresses and balances.
-
-At minimum, the platform should be able to distinguish among categories such as:
-
-### 1. Ordinary Holder Addresses
-Balances that count normally for the relevant purpose.
-
-### 2. Treasury-Controlled Addresses
-Addresses associated with treasury reserves or operational platform control that may be excluded or specially treated.
-
-### 3. Foundation Addresses
-Addresses associated with Foundation-controlled balances whose participation treatment should be explicitly defined by policy.
-
-### 4. Team and Vesting Addresses
-Addresses representing locked team, founder-merged, or advisor vesting balances that may require exclusion or special treatment.
-
-### 5. Operational or Programmatic Addresses
-Addresses used for migration, liquidity operations, incentives, or other structured categories that may not represent ordinary circulating participation.
-
-### 6. Explicitly Excluded Addresses
-Addresses excluded by published policy due to category, control, or structural reason.
-
-### Important principle
-
-The existence of categories does not mean every category must always be excluded. It means treatment must be explicit. The market should not have to guess whether Foundation, treasury, or vesting balances are counted in the same way as ordinary holder balances.
-
----
-
-## Eligibility Rules for Stablecoin Profit Participation
-
-For stablecoin profit participation, the eligibility pipeline should produce a cycle-specific eligible dataset that reflects:
-
-- the canonical Ethereum balance source
-- the cycle snapshot reference
-- the applicable exclusion and treatment policy
-- the final eligible-balance mapping used to construct payout entitlements
-
-### Stablecoin eligibility principles
-
-1. eligibility should be deterministic for a given cycle
-2. the dataset should reflect policy, not improvisation
-3. balances that do not represent intended circulating participation should not silently distort holder payout logic
-4. the resulting eligibility set should be suitable for Base payout execution
-5. the entitlement construction process should preserve traceability back to the snapshot and policy version used
-
-The stablecoin profit participation model is one of the strongest reasons this pipeline exists. The more clearly the platform can explain how eligibility is produced, the stronger the payout architecture becomes.
-
----
-
-## Relationship to Holder Rank and Ecosystem Privileges
-
-The snapshot and eligibility pipeline may also support other holder-aware ecosystem functions beyond profit participation, such as:
-
-- holder-rank calculations
-- cross-product privilege eligibility
-- ecosystem access tiers
-- participation-aware campaign logic
-- governance- or DAO-lite-related holder datasets in the future
-
-### Important boundary
-
-Not every holder-aware function must use the exact same eligibility rules as stablecoin profit participation. For example, a holder-rank system may choose to count or treat some categories differently from a payout cycle.
-
-### Reuse principle
-
-The snapshot and eligibility pipeline should therefore be reusable at the framework level while allowing purpose-specific policy variants where justified. What must remain consistent is the discipline:
-
-- canonical token source
-- explicit timing
-- explicit treatment policy
-- explicit output dataset
-
-This makes the pipeline a long-term ecosystem asset rather than a one-purpose payout tool only.
-
----
-
-## Pipeline Lifecycle
-
-At minimum, the snapshot and eligibility pipeline should support a structured lifecycle.
-
-### 1. Cycle or Purpose Initialization
-A specific payout cycle or holder-aware purpose is declared.
+- below the top-level constitutional platform, ownership, and on-chain/off-chain responsibility specifications
+- adjacent to token-layer, wallet-aware, payout, treasury, transparency, governance, and public-registry specifications
+- above downstream API, storage, proof, worker, publication, and remediation specifications for the snapshot and eligibility domain
+
+This document governs snapshot and eligibility semantics. It does not override higher-order ownership or chain-boundary documents, and it does not absorb the narrower responsibilities of adjacent domains.
+
+## System Boundaries
+
+The snapshot and eligibility domain governs:
+
+- snapshot reference semantics
+- raw holder dataset extraction semantics
+- address classification and treatment semantics
+- eligible dataset construction semantics
+- validation, reconciliation, and approval readiness semantics
+- dataset identity, lineage, versioning, and correction semantics
+- the semantic contract of what downstream systems may consume as eligibility basis
+
+The snapshot and eligibility domain does **not** own:
+
+- Ethereum token balances or token contract state itself
+- wallet-link records or account identity semantics
+- distributable-profit calculation or treasury funding authorization
+- Base claim execution state or payout contract balances
+- payout-ledger publication records
+- public registry publication records
+- transparency report publication truth
+- workspace authorization, product entitlements, or session/auth truths
+
+## Adjacent Boundaries
+
+### Relationship to Ethereum Token Layer
+The Ethereum token layer owns token identity, supply, transfer, and holder-balance truth. This pipeline reads that truth; it does not mutate or reinterpret token-layer ownership.
+
+### Relationship to Wallet-Aware User Domain
+Wallet-aware user truth governs account-to-wallet associations and wallet-proof acceptance. This pipeline MAY consume wallet-link context where a downstream experience requires account association, but wallet-link truth MUST NOT replace raw holder-balance truth or silently modify eligibility semantics.
+
+### Relationship to Profit Participation
+Profit participation defines the business meaning of a payout cycle and consumes approved eligibility outputs. It does not own the algorithmic or policy semantics of snapshot derivation.
+
+### Relationship to Base Payout Execution
+Base payout execution consumes approved entitlement inputs and owns claim execution state. It MUST NOT redefine the pipeline’s eligibility outputs.
+
+### Relationship to Payout Ledger
+The payout ledger owns the structured cycle record linking eligibility basis, funding basis, execution basis, and reporting basis. The pipeline must provide stable references that the payout ledger can link, but it does not own ledger truth.
+
+### Relationship to Treasury and Governance
+Treasury and governance domains approve whether a cycle is funded or paused. They MUST NOT silently alter classification or eligibility meaning after the fact. Changes affecting treatment policy require explicit policy versioning through the appropriate owner path.
+
+### Relationship to Public Registry and Transparency Reporting
+Registry and reporting domains may publish public-safe explanations and references about eligibility methodology, contract usage, and cycle lineage. They MUST remain derived and must not invent new eligibility truth.
+
+## Conflict Resolution Rules
+
+When materials, systems, or operators disagree, the following rules apply:
+
+1. the active refined registry and higher constitutional materials win over narrower documents
+2. `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md` wins on top-level ownership and mutation-owner interpretation
+3. `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md` wins on canonical-versus-derived status and entity-family ownership
+4. `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md` and `CHAIN_ARCHITECTURE_SPEC.md` win on chain-role boundaries and on-chain/off-chain responsibility posture
+5. `WALLET_AWARE_USER_SPEC.md` wins on wallet-link semantics, account association, and wallet-proof interpretation
+6. this document wins on snapshot-reference meaning, address-treatment semantics, eligibility derivation posture, validation discipline, and dataset lineage rules
+7. `PROFIT_PARTICIPATION_SYSTEM_SPEC.md` wins on the semantic business meaning of funded payout cycles
+8. `BASE_PAYOUT_EXECUTION_LAYER_SPEC.md` wins on claim-execution mechanics and contract-state meaning
+9. `PAYOUT_LEDGER_SPEC.md` wins on structured cycle-ledger record meaning and correction lineage
+10. if ambiguity remains, the more conservative architecture-consistent interpretation MUST be chosen, and no downstream layer may silently optimize away traceability or trust-sensitive explicitness
+
+## Default Decision Rules
+
+Where ambiguity is likely, the following defaults apply:
+
+1. **No deterministic snapshot reference means no valid eligibility basis.**
+2. **No explicit policy version means the dataset MUST NOT be treated as canonical.**
+3. **If raw balance truth and eligible balance truth differ, eligible balance truth controls only for the named cycle or purpose.**
+4. **If an address category is contested and no explicit treatment exists, the conservative default is exclusion until policy states otherwise.**
+5. **If wallet-link context conflicts with token-holder truth, token-holder truth controls eligibility unless a higher-order approved policy explicitly introduces an account-linked overlay for a specific downstream use.**
+6. **If funding has been approved but eligibility lineage is incomplete, the cycle MUST NOT open.**
+7. **If execution-ready entitlement input cannot be reconciled to the approved eligible dataset, downstream publication and execution MUST stop pending remediation.**
+8. **If public explanation would reveal unsafe or private operational detail, public output MUST be narrowed while preserving full internal canonical lineage.**
+9. **If operator convenience conflicts with reproducibility, reproducibility wins.**
+10. **If a material post-publication dataset error cannot be corrected safely in place, supersession MUST be used instead of silent rewrite.**
+
+## Roles / Actors / Entities
+
+### Roles / Actors
+- **Snapshot and Eligibility Domain Owner:** owns semantic rules, lifecycle meaning, conflict posture, and downstream guardrails
+- **Chain-Data / Indexing Function:** retrieves token-holder state from Ethereum according to the approved deterministic reference
+- **Policy / Classification Authority:** owns or approves address-category treatment and policy versions within the bounded governance model
+- **Treasury / Governance Authority:** approves downstream cycle-sensitive actions that depend on eligibility outputs, without owning eligibility derivation semantics
+- **Payout Execution Domain Owner:** consumes approved entitlement inputs for Base execution
+- **Payout Ledger Domain Owner:** records linked cycle basis and correction lineage
+- **Transparency / Registry Domain Owners:** publish public-safe derived artifacts
+- **Security / Audit / Operations Teams:** enforce controls, investigate discrepancies, and support remediation
+- **Eligible Holder or Downstream Consumer:** receives or consumes the consequences of the approved dataset according to the relevant purpose
+
+### Core Entities
+- purpose or cycle identifier
+- token contract reference
+- snapshot reference
+- raw holder dataset identifier
+- policy version record
+- address classification registry reference
+- treatment result set
+- eligible dataset identifier
+- entitlement-input identifier or proof-root reference
+- validation result reference
+- approval readiness reference
+- publication readiness reference
+- correction / supersession reference
+- operator reason code
+- audit trace identifier
+
+## Ownership Model
+
+The canonical ownership model is:
+
+- **Ethereum Token Domain** owns raw holder-balance truth
+- **Snapshot and Eligibility Domain** owns snapshot reference selection, address-treatment semantics, raw-to-eligible transformation rules, validation meaning, and eligible-dataset truth
+- **Wallet-Aware User Domain** owns account-to-wallet linkage and wallet-proof acceptance truth
+- **Profit Participation Domain** owns the payout-cycle semantic meaning of consuming the approved eligibility basis
+- **Base Payout Execution Domain** owns claim-execution truth
+- **Payout Ledger Domain** owns structured cycle-ledger truth
+- **Treasury / Governance Domains** own funding, approval, and control posture
+- **Transparency Reporting Domain** owns recurring public reporting publication truth
+- **Public Contract and Wallet Registry Domain** owns public registry publication truth
+- **Audit Domain** owns durable audit-event lineage
+
+No dashboard, spreadsheet, export, or local service MAY redefine this ownership model.
+
+## Authority / Decision Model
+
+### Canonical Authority Rules
+1. routine operators MUST NOT invent or adjust eligibility semantics outside approved policy versions
+2. address-category changes that materially affect a cycle MUST be explicit, reason-coded, and auditable
+3. funding approval does not confer authority to rewrite classification or treatment policy
+4. payout-execution teams MAY validate consumability of an entitlement input but MUST NOT redefine its meaning
+5. public-reporting or registry teams MAY summarize methodology but MUST NOT author canonical eligibility truth
+6. wallet-aware or product teams MAY consume the pipeline but MUST NOT replace it with product-local approximations for shared economic behavior
+
+### Operator/Admin Override Posture
+Override paths MAY exist only where they are:
+
+- explicitly named
+- policy-constrained
+- narrowly scoped
+- reason-coded
+- fully audited
+- reviewable after the fact
+- unable to silently rewrite historical dataset meaning
+
+Permitted override examples MAY include pausing publication, invalidating an in-progress dataset before approval, or superseding a published dataset through formal lineage. Silent mutation of an already-approved canonical dataset is forbidden.
+
+## State Model
+
+At minimum, the snapshot and eligibility pipeline MUST support explicit lifecycle state.
+
+Suggested canonical lifecycle states include:
+
+- `draft`
+- `reference_selected`
+- `raw_extracted`
+- `classification_applied`
+- `eligibility_constructed`
+- `validation_pending`
+- `validated`
+- `approved_for_downstream_use`
+- `published_internal`
+- `linked_to_cycle`
+- `discrepancy_under_review`
+- `superseded`
+- `cancelled_pre_approval`
+
+Downstream implementations MAY refine internal sub-states, but they MUST preserve explicit separation between reference selection, raw extraction, treatment, validation, approval readiness, downstream linkage, and supersession.
+
+## Lifecycle / Workflow Model
+
+### 1. Purpose or Cycle Initialization
+A specific purpose is declared, such as a profit participation cycle or another approved holder-aware use.
 
 ### 2. Snapshot Reference Selection
-The canonical Ethereum reference point for balance measurement is fixed.
+The deterministic Ethereum reference point is fixed and recorded.
 
-### 3. Raw Holder Dataset Extraction
-The raw balance view is constructed from Ethereum token state.
+### 3. Raw Holder Extraction
+The raw address-to-balance dataset is extracted from canonical token truth at that reference.
 
-### 4. Policy Application
-Exclusion and address-treatment rules are applied.
+### 4. Address Classification Resolution
+Known addresses and categories are resolved against the approved classification basis, registry references, and policy version.
 
-### 5. Eligible Dataset Construction
-The final eligible-balance dataset is produced.
+### 5. Policy Treatment Application
+Inclusion, exclusion, capping, weighting, or special-treatment rules are applied explicitly.
 
-### 6. Entitlement Input Preparation
-The dataset is transformed into the format required by downstream systems such as payout execution or rank logic.
+### 6. Eligible Dataset Construction
+The canonical eligible dataset is produced and given a stable identifier.
 
-### 7. Validation and Audit Check
-The dataset is reviewed, validated, and recorded for reporting and audit compatibility.
+### 7. Entitlement-Preparation Transformation
+Where required, the eligible dataset is transformed into the downstream input representation needed by payout execution or another approved consumer.
 
-### 8. Downstream Publication / Use
-The dataset or derived proof/reference is used by the Base payout layer or other holder-aware systems.
+### 8. Validation and Reconciliation
+The dataset is validated against expected totals, treatment expectations, reference integrity, and downstream consumability constraints.
 
-This lifecycle helps ensure that the pipeline behaves like a formal system rather than a discretionary operational task.
+### 9. Approval Readiness and Internal Publication
+The approved eligibility basis is published internally with stable references and audit lineage.
 
----
+### 10. Downstream Linkage
+The dataset is linked to a payout cycle, payout ledger record, proof-generation workflow, or another approved holder-aware downstream system.
 
-## On-Chain and Off-Chain Responsibilities in the Pipeline
+### 11. Public-Safe Explanation
+Where appropriate, public reporting or registry surfaces receive a derived explanation of methodology and lineage without exposing unsafe internal detail.
 
-The snapshot and eligibility pipeline is an explicitly cross-domain system.
+### 12. Correction, Remediation, or Supersession
+If a material issue is found, the dataset is corrected through explicit lineage or superseded according to policy; silent rewrite is forbidden.
 
-### On-chain responsibilities
-- Ethereum token state provides canonical balances
-- downstream Base contracts may use the final entitlement output for claim execution
+## Invariants
 
-### Off-chain responsibilities
-- selecting snapshot references
-- extracting holder data
-- classifying address categories
-- applying policy treatment
-- constructing eligibility datasets
-- preparing entitlement proofs or roots where needed
-- producing reporting and audit artifacts
+The following invariants are mandatory:
 
-### Responsibility principle
+1. Ethereum remains the canonical source of raw FUZE holder-balance truth
+2. raw balances are never automatically equal to eligible balances
+3. eligible datasets are purpose-specific and policy-versioned
+4. address treatment is always explicit, never implied by operator convention alone
+5. wallet-link truth never replaces token-balance truth
+6. funding approval never silently rewrites eligibility semantics
+7. payout execution never becomes the owner of eligibility meaning
+8. derived reports and public pages never become canonical eligibility truth
+9. every approved dataset must be reproducible from its references and lineage
+10. correction and supersession must preserve historical meaning and auditability
 
-On-chain layers provide canonical state and execution environments. Off-chain systems provide policy interpretation, classification, and dataset construction. The pipeline is strong when these responsibilities are explicit rather than blurred.
+## Functional Rules
 
-This is important because some observers may expect “everything” to happen on-chain. FUZE takes a more disciplined view: what needs enforceable chain state should be on-chain, and what requires policy logic, classification, and reporting may appropriately exist off-chain so long as it remains auditable and transparent enough.
+1. every canonical dataset MUST have a unique identifier
+2. every canonical dataset MUST reference the exact token contract and deterministic snapshot reference used
+3. every canonical dataset MUST reference the policy version applied
+4. every canonical dataset MUST record which address classification basis or registry references were used
+5. classification, exclusion, and special treatment MUST be explainable in structured terms
+6. downstream consumability checks MUST be explicit for payout-sensitive use cases
+7. entitlement inputs MUST remain traceable to the approved eligible dataset from which they were derived
+8. re-running extraction for the same reference and policy version MUST be idempotent or yield equivalent canonical output unless a correction path is explicitly invoked
+9. a dataset linked to an open payout cycle MUST NOT be silently mutated
+10. any purpose-specific variant MUST preserve the pipeline discipline even if treatment rules differ from profit participation
 
----
+## Permission / Access Considerations
 
-## Validation and Reconciliation Requirements
+Although the pipeline is not a workspace-owned workflow, access controls still apply:
 
-The pipeline should include validation and reconciliation steps before downstream use.
+- privileged mutation surfaces MUST require explicit domain-appropriate authorization
+- classification-policy changes and dataset-approval actions MUST require stronger controls than routine reads
+- public and holder-safe surfaces MAY expose bounded methodology and cycle linkage, but not unsafe internal detail
+- account, session, workspace, and authorization systems MAY authenticate user access to holder-facing views, but they MUST NOT redefine eligibility semantics
+- workspace scope MUST NOT be misused as a substitute for holder participation truth
 
-At minimum, validation should help confirm:
+## Entitlement Considerations
 
-- that the correct token contract and snapshot reference were used
-- that total included and excluded balances reconcile sensibly against raw supply views
-- that known controlled-address categories were treated according to policy
-- that the eligible dataset is internally consistent
-- that the resulting entitlement input matches the intended cycle parameters
+Eligibility truth is not the same as product entitlement or workspace capability.
 
-### Why validation matters
+For profit participation, eligibility truth becomes a bounded cycle-specific input to downstream entitlement construction. For other approved uses, a purpose variant MAY derive rank, privilege, or participation-aware outputs, but those outputs MUST remain explicitly derived from the pipeline rather than replacing it.
 
-A payout cycle can be technically executed on Base and still be strategically damaging if the eligibility dataset was prepared incorrectly. The stronger the validation discipline, the stronger the trustworthiness of the payout model.
+Downstream teams MUST NOT conflate:
 
-Validation and reconciliation should therefore be treated as a first-class part of the pipeline rather than an optional quality-control afterthought.
+- holder eligibility with workspace roles
+- holder eligibility with credits balances
+- wallet linkage with token-holder truth
+- eligible balances with executed payout receipts
+- public reporting state with canonical dataset state
 
----
+## API / Contract Implications
 
-## Transparency and Reporting Requirements
+Downstream APIs and contracts MUST preserve the following:
 
-Because the snapshot and eligibility pipeline is central to holder trust, it should support meaningful transparency and reporting.
+1. separate command surfaces for reference selection, extraction, validation, approval, publication linkage, and supersession
+2. strong idempotency for trust-sensitive mutations such as dataset creation, approval, invalidation, correction registration, and downstream linkage
+3. explicit correlation IDs, cycle/purpose references, policy references, dataset identifiers, and actor trace data for material mutations
+4. narrow, explicit mutation contracts rather than generic “update eligibility” endpoints
+5. a clear distinction between internal-service APIs, admin/control-plane APIs, and public-safe read APIs
+6. no API surface may permit silent post-approval mutation of canonical eligibility outputs
+7. contract layers that consume entitlement inputs MUST expose enough stable references to support ledger and reporting linkage without becoming the semantic owner of eligibility truth
 
-At minimum, the ecosystem should be able to explain:
+## Event / Async Implications
 
-- that Ethereum is the eligibility source
-- that a snapshot or equivalent reference is used
-- that exclusion and treatment policy exists
-- that payout eligibility is derived, not improvised
-- how the cycle dataset relates to downstream payout execution
-- what policy version or treatment logic applied for the cycle at a structural level
+The pipeline is a cross-domain workflow and SHOULD use event-first coordination for side effects.
 
-The platform does not necessarily need to expose every operational detail in raw form immediately, but it should preserve enough structure that the eligibility logic can be explained and defended publicly.
+Required event families MAY include:
+
+- snapshot reference selected
+- raw holder dataset extracted
+- classification basis resolved
+- policy treatment applied
+- eligible dataset constructed
+- validation completed
+- dataset approved for downstream use
+- entitlement input materialized
+- dataset linked to cycle
+- dataset invalidated pre-publication
+- discrepancy detected
+- dataset corrected or superseded
+- public methodology artifact published or superseded
+
+Events MUST be idempotent or replay-safe, include stable identifiers and policy references, and preserve source-domain ownership boundaries.
+
+## Data Model / Storage Implications
+
+The snapshot and eligibility domain SHOULD maintain durable canonical records for:
+
+- snapshot references
+- raw dataset identifiers and provenance references
+- policy versions and treatment references
+- address classification references and materialization lineage
+- eligible datasets and summary totals
+- entitlement-input lineage
+- validation results and reconciliation artifacts
+- approval status and downstream linkage references
+- discrepancy, correction, and supersession records
+- audit trace identifiers and reason codes
 
-This is especially important because payout trust depends not only on contract funding, but also on confidence that the correct people are eligible.
-
----
-
-## Governance and Control Expectations
-
-The snapshot and eligibility pipeline should be governed with strong discipline because it affects holder economics directly.
-
-### Governance-sensitive areas include:
-
-- selection of the official snapshot policy
-- treatment of controlled and excluded addresses
-- publication of cycle-specific eligibility logic
-- approval of entitlement-root or eligibility outputs for payout execution
-- changes to address-category interpretation
-- emergency handling of discovered dataset issues before funding or claim opening
-
-### Governance principles
-
-- policy should be explicit
-- meaningful changes should be auditable
-- eligibility-related authority should not be casually mixed with product admin powers
-- payout-affecting decisions should remain bounded by control-plane discipline, multisig processes, or equivalent governance structure where appropriate
-
-The pipeline is too important to holder trust to operate as an informal internal spreadsheet exercise.
-
----
-
-## Security Principles
-
-The snapshot and eligibility pipeline should follow strong correctness and trust-preserving principles.
-
-### Key principles include:
-
-#### Canonical Source Integrity
-The pipeline must always begin from the correct Ethereum token source.
-
-#### Deterministic Reference Integrity
-The chosen snapshot reference must be explicit and stable.
-
-#### Policy Legibility
-Inclusion and exclusion logic must be understandable and bounded.
-
-#### Controlled Classification
-Address categorization must be deliberate rather than ad hoc.
-
-#### Validation Before Execution
-Entitlement datasets should be validated before being used for payout execution.
-
-#### Traceability
-A cycle’s eligibility result should remain traceable to source balances and policy treatment.
-
-#### Separation from Treasury Discretion
-Treasury funding should not quietly redefine eligibility treatment after the fact.
-
-These principles matter because errors in this pipeline can damage trust even when every smart contract behaves technically as written.
-
----
-
-## Risks and Failure Considerations
-
-The snapshot and eligibility pipeline introduces several important risks that must be managed.
-
-### 1. Address Classification Risk
-A controlled or excluded address may be categorized incorrectly.
-
-### 2. Snapshot Reference Risk
-The wrong block or timing reference may be used for a cycle.
-
-### 3. Policy Interpretation Risk
-Eligibility policy may be ambiguous or inconsistently applied.
-
-### 4. Cross-Layer Coordination Risk
-The entitlement dataset may be correct in spirit but transformed incorrectly for downstream Base payout execution.
-
-### 5. Transparency Risk
-If the platform cannot explain the pipeline clearly, holders may distrust even technically valid payout cycles.
-
-### 6. Governance Risk
-If eligibility-affecting decisions are too discretionary, the participation model weakens.
-
-These risks do not invalidate the architecture. They reinforce why FUZE treats this pipeline as a formal trust-bearing system.
-
----
-
-## Minimum Architectural Entities
-
-At minimum, the snapshot and eligibility pipeline should recognize the following entities:
-
-### Snapshot Reference Entities
-- cycle or purpose identifier
-- Ethereum token contract reference
-- block height / timestamp reference
-- policy version reference
-
-### Raw Dataset Entities
-- raw holder-address list
-- raw balance mapping
-- total raw counted balance summary
-
-### Policy Treatment Entities
-- address category references
-- exclusion list references
-- special-treatment rules
-- inclusion/exclusion result markers
-
-### Eligible Dataset Entities
-- eligible address list
-- eligible balance mapping
-- cycle-specific dataset identifier
-- entitlement-input reference or proof root where applicable
-
-### Audit and Reporting Entities
-- validation result reference
-- publication/reporting reference
-- downstream payout linkage reference
-
-These are minimum conceptual entities. Detailed schema and proof formats are refined downstream.
-
----
-
-## Open Items
-
-The following areas are intentionally refined in downstream specifications:
-
-- exact snapshot-reference timing policy
-- exact excluded-address categories and registry structure
-- exact entitlement-root or proof-generation model
-- exact Foundation-treatment policy in payout cycles
-- exact publication level for cycle datasets
-- exact replay and recovery rules if a dataset issue is found before or after funding
-
-These do not weaken the canonical snapshot and eligibility pipeline model established here.
-
----
-
-## Closing Summary
-
-The FUZE snapshot and eligibility pipeline is the formal bridge between Ethereum-based token participation and Base-based stablecoin payout execution. It begins from canonical FUZE holder balances on Ethereum, applies explicit policy treatment to construct cycle-specific eligible datasets, and prepares the entitlement inputs required for downstream payout and holder-aware platform logic. By separating raw balance truth from eligible-balance truth, and by making the transformation structured, auditable, and policy-driven, FUZE strengthens one of the most important trust-bearing parts of its holder-alignment architecture.
+It MUST NOT rely solely on ephemeral jobs, spreadsheets, or unverifiable exports as the canonical record.
+
+## Read Model / Projection / Reporting Rules
+
+Derived read models MAY exist for:
+
+- internal cycle-readiness dashboards
+- holder-facing methodology summaries
+- public payout explanation pages
+- classification-review consoles
+- audit and support investigation views
+- data exports for bounded approved use
+
+These projections:
+
+- MUST remain subordinate to canonical source domains
+- MUST indicate when data is derived, delayed, or partial
+- MUST preserve supersession and correction lineage where omission would mislead
+- MUST NOT merge raw balance truth, eligible balance truth, and executed payout truth into one ambiguous field
+- MUST NOT expose unsafe internal-only classification detail unless explicitly approved for the audience and purpose
+
+## Security / Risk / Abuse Controls
+
+The snapshot and eligibility domain MUST include controls for:
+
+- unauthorized mutation of snapshot references, classifications, or approved datasets
+- replay or duplicate processing of extraction, approval, or downstream-linkage actions
+- incorrect token contract or wrong chain reference usage
+- malicious or accidental misclassification of controlled addresses
+- hidden post-approval changes to eligibility treatment
+- unsafe publication of private operational detail through public surfaces
+- shadow dataset generation outside canonical services
+- compromised operator or service credentials affecting payout-sensitive outputs
+
+Security posture MUST be stronger for payout-sensitive paths than for ordinary analytics or support exports.
+
+## Boundary Violation Detection / Non-Canonical Patterns
+
+The following patterns are explicitly non-canonical and forbidden unless a newer approved higher-order document says otherwise:
+
+1. treating raw Ethereum balances as automatically identical to payout entitlement
+2. using a spreadsheet, BI dashboard, or manual CSV as the canonical dataset owner
+3. letting treasury funding approval silently redefine classification or exclusion treatment
+4. letting wallet-link state rewrite token-holder truth
+5. allowing a product team to publish a “holder eligibility” list that conflicts with the canonical pipeline for shared economic behavior
+6. silently mutating an approved dataset after downstream linkage
+7. generating public explanations that imply every holder-aware function uses identical treatment when that is not true
+8. consuming an entitlement proof or root whose lineage cannot be traced to an approved eligible dataset
+9. collapsing raw balance truth, eligible balance truth, and execution truth into one field called “holder balance”
+10. bypassing formal correction or supersession because “the public won’t notice”
+
+## Audit / Traceability Requirements
+
+The pipeline MUST preserve audit lineage sufficient to answer:
+
+- what token contract was used
+- what deterministic reference was used
+- what policy version was used
+- what address classification basis was used
+- what inclusion/exclusion logic was applied
+- who initiated, approved, invalidated, corrected, or superseded the dataset
+- which downstream systems consumed the output
+- which public-safe artifacts referenced the output
+- what discrepancy, if any, was discovered and how it was resolved
+
+Material actions MUST be reason-coded where operator or admin discretion exists.
+
+## Failure Handling / Edge Cases
+
+The pipeline MUST define deterministic handling for at least the following cases:
+
+1. **Wrong Token or Wrong Chain Reference:** output MUST be invalidated; downstream linkage MUST stop; correction lineage MUST be created.
+2. **Ambiguous Address Ownership:** conservative exclusion MUST apply until explicit treatment is approved.
+3. **Late Discovery of Controlled Address:** if pre-publication, regenerate or supersede; if post-linkage, formal discrepancy handling and downstream remediation are required.
+4. **Validation Totals Do Not Reconcile:** dataset MUST NOT be approved.
+5. **Entitlement Transformation Mismatch:** downstream execution MUST NOT open until reconciliation succeeds.
+6. **Post-Publication Methodology Clarification:** public-safe explanation MAY be updated, but historical dataset lineage MUST remain intact.
+7. **Chain Reorg or Reference Integrity Issue:** affected datasets MUST be reviewed, invalidated, or superseded explicitly according to policy.
+8. **Purpose Variant Drift:** if a non-profit-participation use tries to reuse the pipeline with conflicting semantics, a formal purpose variant or adjacent spec is required before production use.
+
+## Operational Considerations
+
+Operational systems SHOULD provide:
+
+- deterministic and reviewable snapshot jobs
+- explicit validation checkpoints before downstream approval
+- reproducible artifact storage for source references and summary outputs
+- monitoring for dataset-generation failure, reconciliation anomalies, and downstream-consumption mismatches
+- operator tooling for discrepancy review, invalidation, and supersession with bounded authority
+- bounded emergency stop paths for payout-sensitive dataset usage
+
+Operational convenience MUST NOT erase canonical references or audit lineage.
+
+## Migration / Compatibility / Supersession Considerations
+
+Older exports, spreadsheets, or loosely defined eligibility lists MUST migrate toward explicit canonical dataset records with stable references.
+
+During migration:
+
+- legacy identifiers MAY be preserved as non-canonical aliases for lookup
+- canonical dataset identifiers, policy references, and lineage MUST become explicit
+- downstream consumers MUST migrate off local shadow logic and onto canonical eligibility references
+- supersession MUST preserve historical intelligibility instead of rewriting old records in place
+- backward-compatible read models MAY exist temporarily, but canonical meaning MUST remain explicit
+
+## Implementation-Contract Guardrails
+
+1. raw balance truth and eligible balance truth remain distinct
+2. deterministic reference, policy version, and classification basis remain explicit
+3. dataset approval and downstream linkage remain distinct lifecycle concepts
+4. wallet-link truth remains separate from eligibility truth
+5. funding and execution domains remain consumers, not owners, of eligibility semantics
+6. public-safe reporting remains derived and bounded
+7. correction and supersession lineage remain explicit and queryable
+8. idempotency, replay safety, and auditability remain mandatory for trust-sensitive mutations
+9. downstream teams MUST NOT create shadow eligibility truth that conflicts with this domain
+10. degraded runtime conditions MUST not cause the system to lose explicit references or silently fall back to ad hoc lists
+
+## Downstream Execution Staging
+
+1. stabilize snapshot-reference semantics and deterministic selection rules
+2. stabilize address-classification registry and treatment taxonomy
+3. stabilize eligible-dataset identity, summary, and lineage semantics
+4. stabilize entitlement-input linkage semantics for payout execution
+5. stabilize discrepancy, correction, and supersession workflows
+6. stabilize public-safe methodology publication and transparency/reporting linkage
+
+## Required Downstream Specs / Contract Layers
+
+- `SNAPSHOT_ELIGIBILITY_API_SPEC.md`
+- `PAYOUT_LEDGER_SPEC.md`
+- `BASE_PAYOUT_EXECUTION_LAYER_SPEC.md`
+- `PROFIT_PARTICIPATION_SYSTEM_SPEC.md`
+- public-safe eligibility methodology and payout-status publication contracts
+- snapshot discrepancy/remediation runbooks
+- classification registry and review contracts
+- proof-generation or entitlement-materialization contracts where applicable
+
+## Canonical Examples / Anti-Examples
+
+### Canonical Examples
+- **Deterministic Cycle Snapshot:** a payout cycle references an exact Ethereum snapshot reference, policy version, classification basis, eligible dataset identifier, and validation record before any claim-opening occurs.
+- **Conservative Controlled-Address Treatment:** a newly identified treasury-controlled address is excluded until explicit policy approval clarifies treatment, and the resulting decision is trace-linked.
+- **Purpose-Variant Reuse With Discipline:** a holder-rank service reuses the same snapshot discipline and explicit policy-versioning model but applies a distinct approved purpose variant rather than pretending payout logic and rank logic are identical.
+- **Supersession With Lineage:** a pre-publication validation issue causes a dataset to be superseded by a corrected version, with both lineage and reason code preserved.
+
+### Anti-Examples
+- **Spreadsheet Canonicality:** an analyst-maintained CSV becomes the de facto owner of eligibility for a payout cycle.
+- **Funding Implies Eligibility:** operators assume that because treasury has funded a cycle, the latest convenient address list is automatically valid.
+- **Wallet-Link Override:** an account-linked wallet table is used to omit or add holders without the canonical token snapshot and policy path.
+- **Silent Post-Open Rewrite:** an already-consumed dataset is changed without discrepancy handling, supersession, or payout-ledger correction lineage.
+
+## Dependencies / Cross-Spec Links
+
+This specification depends on:
+
+- `REFINED_SYSTEM_SPEC_INDEX.md`
+- `SYSTEM_BOUNDARY_AND_OWNERSHIP_SPEC.md`
+- `SYSTEM_OVERVIEW_AND_BOUNDARIES_SPEC.md`
+- `PLATFORM_ARCHITECTURE_SPEC.md`
+- `DOMAIN_OWNERSHIP_MATRIX_SPEC.md`
+- `DATA_MODEL_AND_ENTITY_OWNERSHIP_SPEC.md`
+- `ONCHAIN_OFFCHAIN_RESPONSIBILITY_SPEC.md`
+- `CHAIN_ARCHITECTURE_SPEC.md`
+- `WALLET_AWARE_USER_SPEC.md`
+- `PROFIT_PARTICIPATION_SYSTEM_SPEC.md`
+- `BASE_PAYOUT_EXECUTION_LAYER_SPEC.md`
+- `PAYOUT_LEDGER_SPEC.md`
+- `TREASURY_CONTROL_POLICY_SPEC.md`
+- `PUBLIC_CONTRACT_AND_WALLET_REGISTRY_SPEC.md`
+- `TRANSPARENCY_MODEL_SPEC.md`
+- `TRANSPARENCY_REPORTING_SPEC.md`
+- `API_ARCHITECTURE_SPEC.md`
+- `EVENT_MODEL_AND_WEBHOOK_SPEC.md`
+- `AUDIT_LOG_AND_ACTIVITY_SPEC.md`
+- `SECURITY_AND_RISK_CONTROL_SPEC.md`
+
+## Explicitly Deferred Items
+
+- exact block-selection algorithm if timestamp-to-block resolution is used
+- exact address-classification registry schema and storage topology
+- exact partial-counting or weighting rules for every future address category
+- exact proof-root or claimant-proof materialization format
+- exact public disclosure depth for methodology artifacts and excluded-address detail
+- exact quorum thresholds for classification-sensitive approvals and emergency actions
+- exact automation topology for indexing, retries, and recomputation workers
+
+## Final Normative Summary
+
+The FUZE snapshot and eligibility pipeline is the canonical bridge between Ethereum holder-participation truth and downstream holder-aware platform behavior. It begins from deterministic Ethereum token-balance truth, applies explicit policy-bound address treatment, produces purpose-specific canonical eligible datasets, and links those outputs to payout and reporting systems through explicit lineage. It does not replace wallet-link truth, treasury control, payout execution, payout-ledger publication, or transparency publication. Downstream implementations MUST preserve deterministic references, policy versioning, explicit classification, idempotent mutation discipline, correction-safe lineage, and clear separation between raw balances, eligible balances, entitlement inputs, and executed outcomes.
+
+## Quality Gate Checklist
+
+- [x] Canonical owner is explicit for every material truth family
+- [x] Mutation boundaries are explicit
+- [x] Adjacent boundaries are explicit
+- [x] Truth classes are explicit
+- [x] Conflict-resolution rules are explicit where needed
+- [x] Default decision rules are explicit where ambiguity could arise
+- [x] Non-canonical patterns are called out clearly
+- [x] Operator/admin override paths are bounded and audited
+- [x] Read-model, cache, reporting, and projection rules are explicit
+- [x] On-chain vs off-chain responsibilities are explicit
+- [x] Failure and degraded-mode behaviors are explicit
+- [x] Downstream implementation guardrails are explicit
+- [x] Dependencies and downstream impacts are explicit
+- [x] Non-goals and deferred items are explicit
+- [x] The document is strong enough that backend/API/data/runtime teams can implement without inventing contradictory semantics
